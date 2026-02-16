@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "869750794508",
+    "project_id": "dama-f7032",
+    "storage_bucket": "dama-f7032.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:869750794508:android:a22dd6b0037f55f607c129",
+        "android_client_info": {
+          "package_name": "com.dama.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8tsSbja04VbC_dOv0_4tgmSbwbafSYbY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

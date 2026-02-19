@@ -8,6 +8,7 @@ import 'package:dama/views/chat/chat_screen.dart';
 import 'package:dama/widgets/buttons/custom_button.dart';
 import 'package:dama/widgets/cards/profile_card.dart';
 import 'package:dama/widgets/custom_spinner.dart';
+import 'package:dama/widgets/profile_avatar.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -210,7 +211,7 @@ class _OtherUserProfileState extends State<OtherUserProfile> {
                                         left: 20,
                                         child: Stack(
                                           children: [
-                                            CircleAvatar(
+                                            ProfileAvatar(
                                               radius: 40,
                                               backgroundColor: kLightGrey,
                                               backgroundImage:

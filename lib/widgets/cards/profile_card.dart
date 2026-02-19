@@ -1,5 +1,6 @@
 import 'package:dama/routes/routes.dart';
 import 'package:dama/utils/constants.dart';
+import 'package:dama/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
 
 class ProfileCard extends StatelessWidget {
@@ -63,7 +64,7 @@ class ProfileCard extends StatelessWidget {
                           shape: BoxShape.circle,
                           border: Border.all(color: kWhite, width: 3),
                         ),
-                        child: CircleAvatar(
+                        child: ProfileAvatar(
                           radius: 50,
                           backgroundColor: kLightGrey,
                           backgroundImage:
@@ -143,28 +144,158 @@ class ProfileCard extends StatelessWidget {
                 ),
                 SizedBox(height: 12),
                 if (hasMembership) ...[
+                  // Glass Grey Membership Card
                   Container(
-                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: kGreen.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: kGreen.withOpacity(0.3)),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.grey.withOpacity(0.3),
+                          Colors.grey.withOpacity(0.1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.grey.withOpacity(0.3),
+                        width: 1,
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.verified, color: kGreen, size: 24),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            membershipName ?? 'Active Member',
-                            style: TextStyle(
-                              color: kGreen,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ACTIVE Status
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  'ACTIVE',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
+                            SizedBox(height: 12),
+                            // Professional Member
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.workspace_premium,
+                                  color:
+                                      isDarkMode ? kWhite : Colors.grey[700],
+                                  size: 20,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  membershipName ?? 'Professional Member',
+                                  style: TextStyle(
+                                    color:
+                                        isDarkMode ? kWhite : Colors.grey[800],
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            // All premium benefits unlocked
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.lock_open,
+                                  color:
+                                      isDarkMode
+                                          ? kWhite.withOpacity(0.7)
+                                          : Colors.grey[600],
+                                  size: 18,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  'All premium benefits unlocked',
+                                  style: TextStyle(
+                                    color:
+                                        isDarkMode
+                                            ? kWhite.withOpacity(0.7)
+                                            : Colors.grey[600],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 16),
+                            // Manage Plan Button
+                            InkWell(
+                              onTap: () {
+                                Navigator.pushNamed(context, AppRoutes.plans);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isDarkMode
+                                          ? Colors.grey[800]
+                                          : Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.settings,
+                                          color:
+                                              isDarkMode
+                                                  ? kWhite
+                                                  : Colors.grey[700],
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          'Manage Plan',
+                                          style: TextStyle(
+                                            color:
+                                                isDarkMode
+                                                    ? kWhite
+                                                    : Colors.grey[800],
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      color:
+                                          isDarkMode
+                                              ? kWhite
+                                              : Colors.grey[700],
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ] else ...[

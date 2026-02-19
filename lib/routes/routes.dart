@@ -12,6 +12,7 @@ import 'package:dama/views/drawer_screen/notifications_screen.dart';
 import 'package:dama/views/drawer_screen/plans_screen.dart';
 import 'package:dama/views/drawer_screen/profile_screen.dart';
 import 'package:dama/views/drawer_screen/transactions.dart';
+import 'package:dama/views/my_certificates_screen.dart';
 import 'package:dama/views/my_trainings_screen.dart';
 import 'package:dama/views/personal_details.dart';
 import 'package:dama/views/professional_details.dart';
@@ -38,9 +39,10 @@ class AppRoutes {
   static const String changePassword = '/changePassword';
   static const String requestChangePassword = '/requestChangePassword';
   static const String resetPassword = '/resetPassword';
-  static const String trainning = '/trainning';
+  static const String trainings = '/trainings';
   static const String todaySessions = '/today-sessions';
   static const String myTrainings = '/my-trainings';
+  static const String certificates = '/my-certificates';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -145,7 +147,7 @@ class AppRoutes {
           duration: Duration(milliseconds: 300),
         );
 
-      case trainning:
+      case trainings:
         return PageTransition(
           child: TrainingScreen(),
           type: PageTransitionType.fade,
@@ -162,6 +164,13 @@ class AppRoutes {
       case myTrainings:
         return PageTransition(
           child: MyTrainingsScreen(),
+          type: PageTransitionType.fade,
+          duration: Duration(milliseconds: 300),
+        );
+
+      case certificates:
+        return PageTransition(
+          child: MyCertificatesScreen(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );

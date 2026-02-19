@@ -1,5 +1,6 @@
 import 'package:dama/models/notification_model.dart';
 import 'package:dama/services/api_service.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class NotificationController extends GetxController {
@@ -12,18 +13,22 @@ class NotificationController extends GetxController {
   Future<void> fetchnotifications() async {
     isLoading.value = true;
     try {
-      List<NotificationModel> fetchedTranscations;
-      fetchedTranscations = await _notificationService.getNotifications();
-      notificationList.assignAll(fetchedTranscations);
+      List<NotificationModel> fetchedNotifications;
+      fetchedNotifications = await _notificationService.getNotifications();
+      
+      // Debug logging
+      debugPrint('=== FETCHED ${fetchedNotifications.length} NOTIFICATIONS ===');
+      for (var n in fetchedNotifications) {
+        debugPrint('Notification: ${n.title}');
+        debugPrint('  - type: ${n.type}');
+        debugPrint('  - data: ${n.data}');
+        debugPrint('  - notificationType: ${n.notificationType}');
+        debugPrint('  - refId: ${n.refId}');
+      }
+      
+      notificationList.assignAll(fetchedNotifications);
     } catch (e) {
-      print(e);
-      // Get.snackbar(
-      //   margin: EdgeInsets.only(top: 15, left: 15, right: 15),
-      //   "Error",
-      //   "Failed to fetch notifications",
-      //   colorText: kWhite,
-      //   backgroundColor: kRed.withOpacity(0.9),
-      // );
+      print('Error fetching notifications: $e');
     } finally {
       isLoading.value = false;
     }
@@ -33,10 +38,9 @@ class NotificationController extends GetxController {
     try {
       final success = await _notificationService.markAllNotificationsAsRead();
       if (success) {
-        // Update local state to mark all as read
-        for (var i = 0; i < notificationList.length; i++) {
-          final notification = notificationList[i];
-          notificationList[i] = NotificationModel(
+        // Update local state to mark all as read - create new list to trigger update
+        final updatedList = notificationList.map((notification) {
+          return NotificationModel(
             id: notification.id,
             read: true,
             title: notification.title,
@@ -44,8 +48,12 @@ class NotificationController extends GetxController {
             createdAt: notification.createdAt,
             type: notification.type,
             referenceId: notification.referenceId,
+            data: notification.data,
           );
-        }
+        }).toList();
+        
+        // Use assignAll to trigger reactive update
+        notificationList.assignAll(updatedList);
       }
       return success;
     } catch (e) {
@@ -54,18 +62,37 @@ class NotificationController extends GetxController {
     }
   }
 
-  Future<bool> deleteNotification(String notificationId) async {
+  Future<bool> markAsRead(String notificationId) async {
     try {
-      final success = await _notificationService.deleteNotification(
-        notificationId,
-      );
-      if (success) {
-        // Remove from local list
-        notificationList.removeWhere((n) => n.id == notificationId);
+      if (notificationId.isEmpty) {
+        debugPrint('Error: Cannot mark notification with empty ID as read');
+        return false;
       }
+      
+      final success = await _notificationService.markNotificationAsRead(notificationId);
+      
+      if (success) {
+        // Update local state
+        final index = notificationList.indexWhere((n) => n.id == notificationId);
+        if (index != -1) {
+          final notification = notificationList[index];
+          notificationList[index] = NotificationModel(
+            id: notification.id,
+            read: true,
+            title: notification.title,
+            body: notification.body,
+            createdAt: notification.createdAt,
+            type: notification.type,
+            referenceId: notification.referenceId,
+            data: notification.data,
+          );
+          notificationList.refresh(); // Trigger update
+        }
+      }
+      
       return success;
     } catch (e) {
-      print('Error deleting notification: $e');
+      debugPrint('Error marking notification as read: $e');
       return false;
     }
   }

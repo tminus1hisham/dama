@@ -50,8 +50,10 @@ class _EventsState extends State<Events>
 
   bool _isLoading = false;
   int selectedTab = 0;
-  String selectedFilter = 'all'; // all, upcoming, past, free, paid
   String _currentUserId = '';
+  
+  // Use controller's filter
+  String get selectedFilter => _eventsController.selectedFilter.value;
 
   @override
   void initState() {
@@ -955,7 +957,7 @@ class _EventsState extends State<Events>
         return events;
     }
   }
-
+  
   List<UserEventModel> _getFilteredUserEvents(List<UserEventModel> events) {
     final now = DateTime.now();
     switch (selectedFilter) {
@@ -978,8 +980,8 @@ class _EventsState extends State<Events>
       onTap: () {
         setState(() {
           selectedTab = index;
-          selectedFilter = 'all'; // Reset filter when switching tabs
         });
+        _eventsController.setFilter('all'); // Reset filter when switching tabs
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
@@ -1006,9 +1008,7 @@ class _EventsState extends State<Events>
     final bool isSelected = selectedFilter == filter;
     return GestureDetector(
       onTap: () {
-        setState(() {
-          selectedFilter = filter;
-        });
+        _eventsController.setFilter(filter);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -1073,7 +1073,7 @@ class _EventsState extends State<Events>
             ),
           ),
           // Filter chips
-          Container(
+          Obx(() => Container(
             color: isDarkMode ? kBlack : kWhite,
             padding: const EdgeInsets.only(left: 15, right: 15, bottom: 10),
             child: SingleChildScrollView(
@@ -1092,7 +1092,7 @@ class _EventsState extends State<Events>
                 ],
               ),
             ),
-          ),
+          )),
           Expanded(
             child: IndexedStack(
               index: selectedTab,

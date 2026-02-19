@@ -18,6 +18,7 @@ class InputField extends StatefulWidget {
     this.validator,
     required this.label,
     this.maxLines = 1,
+    this.keyboardType,
   });
 
   final String label;
@@ -32,6 +33,7 @@ class InputField extends StatefulWidget {
   final bool isRequired;
   final String? Function(String?)? validator;
   final int maxLines;
+  final TextInputType? keyboardType;
 
   @override
   _InputFieldState createState() => _InputFieldState();
@@ -67,7 +69,7 @@ class _InputFieldState extends State<InputField> {
             validator: widget.validator,
 
             keyboardType:
-                widget.integerOnly ? TextInputType.number : TextInputType.text,
+                widget.keyboardType ?? (widget.integerOnly ? TextInputType.number : TextInputType.text),
             inputFormatters:
                 widget.integerOnly
                     ? [FilteringTextInputFormatter.digitsOnly]
@@ -78,7 +80,7 @@ class _InputFieldState extends State<InputField> {
               hintStyle: TextStyle(
                 color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
               ),
-              errorText: _errorMessage,
+              errorText: widget.errorText ?? _errorMessage,
               suffixIcon:
                   widget.password
                       ? IconButton(
@@ -102,6 +104,14 @@ class _InputFieldState extends State<InputField> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10.0),
                 borderSide: BorderSide(color: kBlue, width: 1.0),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(color: Colors.red, width: 1.0),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(color: Colors.red, width: 1.0),
               ),
             ),
           ),

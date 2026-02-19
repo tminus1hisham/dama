@@ -9,15 +9,19 @@ class ResourcesCard extends StatelessWidget {
     required this.heading,
     required this.imageUrl,
     required this.rating,
+    required this.price,
     required this.onPressed,
     required this.onReadNowPressed,
+    this.isPurchased = false,
   });
 
   final double rating;
   final String heading;
   final String imageUrl;
+  final int price;
   final VoidCallback onPressed;
   final VoidCallback onReadNowPressed;
+  final bool isPurchased;
 
   @override
   Widget build(BuildContext context) {
@@ -75,29 +79,29 @@ class ResourcesCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              // Read Now, FREE tag, and Rating row
+              // Read Now or Purchase button and Rating row
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: kSidePadding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Read Now button (left)
+                    // Action button (left)
                     ElevatedButton.icon(
-                      onPressed: onReadNowPressed,
-                      icon: const Icon(
-                        Icons.menu_book_rounded,
+                      onPressed: isPurchased ? onReadNowPressed : onPressed,
+                      icon: Icon(
+                        isPurchased ? Icons.menu_book_outlined : Icons.shopping_cart_outlined,
                         size: 18,
-                        color: kWhite,
                       ),
-                      label: const Text(
-                        'Read Now',
-                        style: TextStyle(
+                      label: Text(
+                        isPurchased ? 'Read Now' : 'Purchase',
+                        style: const TextStyle(
                           color: kWhite,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kBlue,
+                        foregroundColor: kWhite,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 10,
@@ -108,22 +112,15 @@ class ResourcesCard extends StatelessWidget {
                         elevation: 0,
                       ),
                     ),
-                    // FREE tag (center)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kGreen,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'FREE',
+                    // Price/FREE (center)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text(
+                        price == 0 ? 'FREE' : (isPurchased ? 'OWNED' : 'KES $price'),
                         style: TextStyle(
-                          color: kWhite,
+                          color: price == 0 ? kGreen : (isPurchased ? kBlue : kGreen),
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: 14,
                         ),
                       ),
                     ),

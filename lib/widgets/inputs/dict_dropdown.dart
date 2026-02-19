@@ -36,7 +36,7 @@ class DictDropdown extends StatelessWidget {
           display,
           style: TextStyle(
             color: isPlaceholder
-                ? (isDarkMode ? Colors.grey[600] : kGrey)
+                ? (isDarkMode ? Colors.white : kGrey)
                 : (isDarkMode ? Colors.white : Colors.black),
           ),
         ),

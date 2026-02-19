@@ -11,6 +11,7 @@ import 'package:dama/utils/utils.dart';
 import 'package:dama/widgets/buttons/custom_button.dart';
 import 'package:dama/widgets/custom_spinner.dart';
 import 'package:dama/widgets/inputs/dict_dropdown.dart';
+import 'package:dama/widgets/profile_avatar.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -1058,32 +1059,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     left: 20,
                                     child: Stack(
                                       children: [
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: kWhite,
-                                              width: 3,
-                                            ),
-                                          ),
-                                          child: CircleAvatar(
-                                            radius: 40,
-                                            backgroundColor: kLightGrey,
-                                            backgroundImage:
-                                                profilePicture != null
-                                                    ? NetworkImage(
-                                                      profilePicture!,
-                                                    )
-                                                    : null,
-                                            child:
-                                                profilePicture == null
-                                                    ? Icon(
-                                                      Icons.person,
-                                                      size: 40,
-                                                      color: kGrey,
-                                                    )
-                                                    : null,
-                                          ),
+                                        ProfileAvatar(
+                                          radius: 40,
+                                          backgroundColor: kLightGrey,
+                                          backgroundImage:
+                                              profilePicture != null
+                                                  ? NetworkImage(
+                                                    profilePicture!,
+                                                  )
+                                                  : null,
+                                          borderColor: kBlue,
+                                          borderWidth: 1.0,
+                                          child:
+                                              profilePicture == null
+                                                  ? Icon(
+                                                    Icons.person,
+                                                    size: 40,
+                                                    color: kGrey,
+                                                  )
+                                                  : null,
                                         ),
                                         // Positioned(
                                         //   bottom: 0,
@@ -1125,9 +1119,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Edit Profile Details row
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Edit Profile Details',
+                                        style: TextStyle(
+                                          color: isDarkMode ? kWhite : kBlack,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: _showEditNameAndTitleDialog,
+                                        child: Icon(
+                                          FontAwesomeIcons.pen,
+                                          size: 16,
+                                          color: isDarkMode ? kWhite : kBlack,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // User info
                                 Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 20),
                                   child: Column(
@@ -1156,21 +1176,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                       SizedBox(height: 10),
                                     ],
-                                  ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(right: 20),
-                                  child: InkWell(
-                                    onTap: _showEditNameAndTitleDialog,
-                                    child: CircleAvatar(
-                                      radius: 15,
-                                      backgroundColor: kGrey,
-                                      child: Icon(
-                                        FontAwesomeIcons.pen,
-                                        size: 15,
-                                        color: kWhite,
-                                      ),
-                                    ),
                                   ),
                                 ),
                               ],

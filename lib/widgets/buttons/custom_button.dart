@@ -7,12 +7,14 @@ class CustomButton extends StatefulWidget {
     required this.label,
     required this.backgroundColor,
     this.isLoading = false,
+    this.textColor,
   });
 
   final dynamic callBackFunction;
   final String label;
   final Color backgroundColor;
   final bool isLoading;
+  final Color? textColor;
 
   @override
   _CustomButtonState createState() => _CustomButtonState();
@@ -44,7 +46,7 @@ class _CustomButtonState extends State<CustomButton> {
               )
             : Text(
                 widget.label,
-                style: TextStyle(color: kWhite, fontSize: 15),
+                style: TextStyle(color: widget.textColor ?? kWhite, fontSize: 15),
               ),
       ),
     );

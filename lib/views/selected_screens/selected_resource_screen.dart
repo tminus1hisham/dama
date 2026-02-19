@@ -1,6 +1,9 @@
+import 'package:dama/controller/get_user_data.dart';
 import 'package:dama/controller/payment_controller.dart';
 import 'package:dama/controller/rating_controller.dart';
+import 'package:dama/controller/transaction_controller.dart';
 import 'package:dama/models/rating_model.dart';
+import 'package:dama/models/transaction_model.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
@@ -14,6 +17,8 @@ import 'package:dama/widgets/modals/rating_dialog.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 import 'package:provider/provider.dart';
 
 class SelectedResourceScreen extends StatefulWidget {
@@ -25,6 +30,7 @@ class SelectedResourceScreen extends StatefulWidget {
   final String description;
   final String viewUrl;
   final bool isPaid;
+  final bool autoShowPayment;
   final String resourceID;
 
   const SelectedResourceScreen({
@@ -36,6 +42,7 @@ class SelectedResourceScreen extends StatefulWidget {
     required this.description,
     required this.viewUrl,
     required this.isPaid,
+    this.autoShowPayment = false,
     required this.resourceID,
     super.key,
   });
@@ -45,13 +52,18 @@ class SelectedResourceScreen extends StatefulWidget {
 }
 
 class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
+  final GetUserProfileController _getUserProfileController = Get.put(GetUserProfileController());
+  final TransactionController _transactionController = Get.put(TransactionController());
+  bool _hasPurchased = false;
   final PaymentController _paymentController = Get.put(PaymentController());
-  final TextEditingController _phoneController = TextEditingController();
   final RatingController _ratingController = Get.put(RatingController());
   late final GlobalKey<ScaffoldState> _resourceKey;
 
+  String? completePhoneNumber;
+  String? countryCode = '+254';
   String phoneNumber = '';
   String? fetchedPhoneNumber;
+  String fetchedUserId = '';
   double _currentRating = 0;
   String imageUrl = '';
   String firstName = '';
@@ -59,26 +71,33 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
   String title = '';
   String bio = '';
   String memberId = '';
+  bool _hasCheckedPurchase = false;
 
-  void _payForEvent(BuildContext context, title, price, isDark) async {
-    _paymentController.amountToPay.value = widget.price;
-    _paymentController.model.value = 'Resource';
-    _paymentController.object_id.value = widget.resourceID;
-    _paymentController.phoneNumber.value = phoneNumber;
-    final success = await _paymentController.pay(context);
+  void _payForResource(BuildContext context, String title, int price, bool isDark) async {
+    debugPrint('=== _payForResource DEBUG ===');
+    debugPrint('Resource ID: ${widget.resourceID}');
+    debugPrint('Price: ${widget.price}');
+    debugPrint('Phone: $phoneNumber');
+    debugPrint('Has Purchased (before): $_hasPurchased');
+    
+    _paymentController
+      ..amountToPay.value = widget.price
+      ..model.value = 'Resource'
+      ..object_id.value = widget.resourceID
+      ..phoneNumber.value = phoneNumber;
 
-    if (success) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final context = _resourceKey.currentContext;
-        if (context != null && context.mounted) {
-          showSuccessResource(context, title, price, isDark);
-        } else {
-          ScaffoldMessenger.of(
-            _resourceKey.currentContext!,
-          ).showSnackBar(SnackBar(content: Text('Payment successful!')));
-        }
-      });
-    }
+    final result = await _paymentController.pay(context);
+    
+    debugPrint('Payment result: $result');
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _resourceKey.currentContext;
+      if (result && context != null && context.mounted) {
+        // Refresh purchase status after successful payment
+        _checkIfPurchased(fetchedUserId);
+        showSuccessResource(context, title, price, isDark);
+      }
+    });
   }
 
   void showSuccessResource(
@@ -144,17 +163,6 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
     );
   }
 
-  String formatPhoneNumber(String input) {
-    input = input.trim();
-    if (input.startsWith('0') && input.length == 10) {
-      return '254${input.substring(1)}';
-    } else if (input.startsWith('254') && input.length == 12) {
-      return input;
-    } else {
-      throw FormatException("Invalid phone number format");
-    }
-  }
-
   void _showPhoneNumberModal(bool isDark, title, price) {
     showModalBottomSheet(
       context: context,
@@ -176,10 +184,55 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                 children: [
                   SizedBox(height: 10),
                   Image.asset("images/mpesa.png", height: 50),
-                  InputField(
-                    controller: _phoneController,
-                    hintText: "eg: 07XXXXXXXX",
-                    label: "Phone Number *",
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 15),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Phone Number *",
+                          style: TextStyle(
+                            color: isDark ? kWhite : kBlack,
+                            fontWeight: FontWeight.bold,
+                            fontSize: kNormalTextSize,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        IntlPhoneField(
+                          decoration: InputDecoration(
+                            hintText: "7*******",
+                            hintStyle: TextStyle(
+                              color: isDark ? Colors.grey[400] : Colors.grey[700],
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(color: kBlue, width: 1.0),
+                            ),
+                          ),
+                          style: TextStyle(
+                            color: isDark ? kWhite : kBlack,
+                          ),
+                          dropdownTextStyle: TextStyle(
+                            color: isDark ? kWhite : kBlack,
+                          ),
+                          dropdownIcon: Icon(
+                            Icons.arrow_drop_down,
+                            color: isDark ? kWhite : kBlack,
+                          ),
+                          initialCountryCode: 'KE',
+                          onChanged: (PhoneNumber phone) {
+                            completePhoneNumber = phone.completeNumber;
+                          },
+                          onCountryChanged: (country) {
+                            countryCode = '+${country.dialCode}';
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                   SizedBox(height: 20),
                   Padding(
@@ -188,18 +241,25 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                       width: double.infinity,
                       child: CustomButton(
                         callBackFunction: () {
-                          Navigator.pop(context);
-                          phoneNumber = formatPhoneNumber(
-                            _phoneController.text,
-                          );
-                          _payForEvent(context, title, price, isDark);
+                          if (completePhoneNumber != null && completePhoneNumber!.isNotEmpty) {
+                            phoneNumber = completePhoneNumber!;
+                            Navigator.pop(context);
+                            _payForResource(context, title, price, isDark);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Please enter a valid phone number"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         },
                         label: "Confirm Payment",
                         backgroundColor: kBlue,
                       ),
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -209,28 +269,103 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
     );
   }
 
-  String reformatPhoneNumber(String input) {
-    input = input.trim();
-    if (input.startsWith('254') && input.length == 12) {
-      return '0${input.substring(3)}';
-    } else if (input.startsWith('0') && input.length == 10) {
-      return input;
-    } else {
-      throw FormatException("Invalid phone number format");
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    _fetchPhoneNumber();
+    _fetchPhoneNumberAndUser();
     _resourceKey = GlobalKey();
     _loadData();
   }
 
-  void _fetchPhoneNumber() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // If caller requested automatic payment flow, show the payment modal
+    // after purchase check is complete (called in initState via _fetchPhoneNumberAndUser)
+    if (widget.autoShowPayment && _hasCheckedPurchase) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        if (!mounted) return;
+        if (!_hasPurchased) {
+          _showPhoneNumberModal(isDark, widget.title, widget.price);
+        }
+      });
+    }
+  }
+
+  /// Check if resource is purchased - uses user profile (like events use QR codes)
+  /// Also checks transactions as fallback since backend may not update resources array
+  void _checkIfPurchased(String userId) async {
+    try {
+      debugPrint('=== Checking if resource is purchased ===');
+      debugPrint('Resource ID: ${widget.resourceID}');
+      
+      bool hasResource = false;
+      
+      // PRIMARY CHECK: Fetch user profile to get resources list (like events use eventQRCode)
+      await _getUserProfileController.fetchUserProfile(userId);
+      final userProfile = _getUserProfileController.profile.value;
+      
+      if (userProfile != null && fetchedUserId == userProfile.id) {
+        // Check if resource ID is in user's resources list
+        hasResource = userProfile.resources.contains(widget.resourceID);
+        
+        debugPrint('User resources: ${userProfile.resources}');
+        debugPrint('Found in user resources: $hasResource');
+      }
+      
+      // FALLBACK CHECK: Also check completed transactions
+      // This handles cases where backend doesn't update the resources array
+      if (!hasResource) {
+        await _transactionController.fetchTransactions();
+        final transactions = _transactionController.transactionList;
+        
+        debugPrint('Total transactions: ${transactions.length}');
+        
+        final foundInTransactions = transactions.any((tx) {
+          final isResource = tx.onModel == 'Resource';
+          final isCompleted = tx.status.toLowerCase() == 'completed';
+          
+          // Check both object ID and raw object_id
+          bool objectIdMatch = false;
+          
+          // Try object ID if object is populated
+          if (tx.object is ResourceTransactionModel) {
+            objectIdMatch = (tx.object as ResourceTransactionModel).id == widget.resourceID;
+          }
+          
+          // Also check raw object_id as fallback (object_id from API response)
+          final rawIdMatch = tx.rawObjectId == widget.resourceID;
+          
+          final matches = isResource && isCompleted && (objectIdMatch || rawIdMatch);
+          debugPrint('Transaction: ${tx.id}, onModel: ${tx.onModel}, status: ${tx.status}, objectMatch: $objectIdMatch, rawIdMatch: $rawIdMatch, combinedMatch: $matches');
+          
+          return matches;
+        });
+        
+        debugPrint('Found in completed transactions: $foundInTransactions');
+        hasResource = foundInTransactions;
+      }
+      
+      setState(() {
+        _hasPurchased = hasResource;
+      });
+      
+      debugPrint('Final _hasPurchased: $_hasPurchased');
+    } catch (e) {
+      debugPrint('Error checking purchase status: $e');
+      // Don't change _hasPurchased on error - keep existing state
+    }
+  }
+
+  Future<void> _fetchPhoneNumberAndUser() async {
     fetchedPhoneNumber = await StorageService.getData("phoneNumber");
-    _phoneController.text = reformatPhoneNumber(fetchedPhoneNumber!);
+    fetchedUserId = await StorageService.getData('userId');
+    // Check purchase status after getting user ID (only once)
+    if (!_hasCheckedPurchase) {
+      _hasCheckedPurchase = true;
+      _checkIfPurchased(fetchedUserId);
+    }
   }
 
   void _loadData() async {
@@ -336,30 +471,30 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                                       ),
                                       child: SelectedResource(
                                         onRatingUpdated: _showRatingDialog,
-                                        isPaid: true,
-                                        onViewPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (context) => PDFViewerPage(
-                                                    title: widget.title,
-                                                    pdfUrl: widget.viewUrl,
+                                        isPaid: _hasPurchased,
+                                        onPressed: (_hasPurchased || widget.price == 0)
+                                            ? () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => PDFViewerPage(
+                                                      title: widget.title,
+                                                      pdfUrl: widget.viewUrl,
+                                                    ),
                                                   ),
-                                            ),
-                                          );
-                                        },
+                                                );
+                                              }
+                                            : () => _showPhoneNumberModal(
+                                                  isDarkMode,
+                                                  widget.title,
+                                                  widget.price,
+                                                ),
                                         heading: widget.title,
                                         imageUrl: widget.imageUrl,
                                         rating: widget.rating,
                                         price: '${widget.price}',
                                         description: widget.description,
-                                        onPressed:
-                                            () => _showPhoneNumberModal(
-                                              isDarkMode,
-                                              widget.title,
-                                              widget.price,
-                                            ),
+                                        priceInt: widget.price,
                                       ),
                                     ),
                                   ),

@@ -1,5 +1,6 @@
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
+import 'package:dama/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -82,7 +83,7 @@ class NewsCard extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CircleAvatar(
+                              ProfileAvatar(
                                 radius: 30,
                                 backgroundColor: kLightGrey,
                                 backgroundImage:

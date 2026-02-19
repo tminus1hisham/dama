@@ -47,7 +47,7 @@ class ApiService {
   Future<bool> _refreshToken() async {
     if (_isRefreshing) return false;
     _isRefreshing = true;
-    
+
     try {
       final success = await AuthService.refreshToken();
       if (success) {
@@ -60,6 +60,64 @@ class ApiService {
       return success;
     } finally {
       _isRefreshing = false;
+    }
+  }
+
+  // Initiate payment via STK Push
+  Future<Map<String, dynamic>?> initiatePayment({
+    required int amount,
+    required String phoneNumber,
+    required String model,
+    required String objectId,
+  }) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+      final response = await http.post(
+        Uri.parse('$BASE_URL/transactions/pay'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode({
+          'object_id': objectId,
+          'model': model,
+          'amountToPay': amount,
+          'phoneNumber': phoneNumber,
+        }),
+      );
+      if (response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to initiate payment: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('initiatePayment error: $e');
+      return null;
+    }
+  }
+
+  // Handle STK Push callback
+  Future<Map<String, dynamic>?> handlePaymentCallback(
+      Map<String, dynamic> callbackData) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+      final response = await http.post(
+        Uri.parse('$BASE_URL/transactions/callback'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode(callbackData),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(
+            'Failed to handle payment callback: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('handlePaymentCallback error: $e');
+      return null;
     }
   }
 
@@ -76,7 +134,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print('Server health check failed: $e');
+      debugPrint('Server health check failed: $e');
       return null;
     }
   }
@@ -125,16 +183,15 @@ class ApiService {
         final data = json.decode(response.body);
         // The expected response is a list of category objects with a 'name' field
         if (data is List) {
-          final categories =
-              data
-                  .map(
-                    (item) =>
-                        item is Map<String, dynamic> && item['name'] != null
-                            ? item['name'].toString()
-                            : null,
-                  )
-                  .whereType<String>()
-                  .toList();
+          final categories = data
+              .map(
+                (item) =>
+                    item is Map<String, dynamic> && item['name'] != null
+                        ? item['name'].toString()
+                        : null,
+              )
+              .whereType<String>()
+              .toList();
 
           // Throw exception if categories list is empty so controller can use fallback
           if (categories.isEmpty) {
@@ -171,16 +228,15 @@ class ApiService {
         final data = json.decode(response.body);
         // The expected response is a list of category objects with a 'name' field
         if (data is List) {
-          final categories =
-              data
-                  .map(
-                    (item) =>
-                        item is Map<String, dynamic> && item['name'] != null
-                            ? item['name'].toString()
-                            : null,
-                  )
-                  .whereType<String>()
-                  .toList();
+          final categories = data
+              .map(
+                (item) =>
+                    item is Map<String, dynamic> && item['name'] != null
+                        ? item['name'].toString()
+                        : null,
+              )
+              .whereType<String>()
+              .toList();
 
           // Throw exception if categories list is empty so controller can use fallback
           if (categories.isEmpty) {
@@ -229,16 +285,30 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
+        List<dynamic> newsData = [];
 
         if (jsonData['newsPosts'] is List) {
-          List<NewsModel> newsList =
-              (jsonData['newsPosts'] as List)
-                  .map((item) => NewsModel.fromJson(item))
-                  .toList();
-          return newsList;
+          newsData = jsonData['newsPosts'] as List;
+        } else if (jsonData['NewsPosts'] is Map &&
+            (jsonData['NewsPosts'] as Map).containsKey('docs')) {
+          newsData = jsonData['NewsPosts']['docs'] as List;
         } else {
-          throw Exception('Invalid news data format: newsPosts is not a List');
+          throw Exception(
+            'Invalid news data format: expected newsPosts as List or NewsPosts.docs as List',
+          );
         }
+
+        List<NewsModel> newsList = [];
+        for (var item in newsData) {
+          try {
+            NewsModel news = NewsModel.fromJson(item);
+            newsList.add(news);
+          } catch (e) {
+            debugPrint('Error parsing news item: $e, item: $item');
+            // Skip this item
+          }
+        }
+        return newsList;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
@@ -253,58 +323,30 @@ class ApiService {
     }
   }
 
-  Future<NewsModel> getNewsById(String newsId) async {
+  Future<List<NewsModel>> getPopularNews(
+      {int limit = 10, String? category}) async {
     try {
       final accessToken = await StorageService.getData("access_token");
+      final queryParameters = {
+        'limit': limit.toString(),
+        if (category != null && category.isNotEmpty && category != 'All News')
+          'category': category.toLowerCase(),
+      };
+      final uri = Uri.parse(
+        '$BASE_URL/news/get/popular',
+      ).replace(queryParameters: queryParameters);
       final response = await http.get(
-        Uri.parse('$BASE_URL/news/get/$newsId'),
-        headers: {'Authorization': 'Bearer $accessToken'},
+        uri,
+        headers: {
+          if (accessToken != null && accessToken.isNotEmpty)
+            'Authorization': 'Bearer $accessToken',
+        },
       );
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
+        List<dynamic> newsData = [];
 
-        if (jsonData['newsPost'] != null) {
-          return NewsModel.fromJson(jsonData['newsPost']);
-        } else {
-          throw Exception('Invalid response format: newsPost not found');
-        }
-      } else if (response.statusCode == 401 || response.statusCode == 403) {
-        HandleUnauthorizedService.showUnauthorizedDialog();
-        throw Exception('Unauthorized request');
-      } else {
-        throw Exception('Failed to load news: ${response.statusCode}');
-      }
-    } on SocketException catch (_) {
-      NetworkModal.showNetworkDialog();
-      throw Exception('Network error');
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<List<NewsModel>> getPopularNews({required int limit}) async {
-    try {
-      final accessToken = await StorageService.getData("access_token");
-      debugPrint(
-        'Making API call to get popular news with token: ${accessToken != null && accessToken.isNotEmpty ? 'present' : 'null or empty'}',
-      );
-      final headers = <String, String>{};
-      if (accessToken != null && accessToken.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $accessToken';
-      }
-      final response = await http.get(
-        Uri.parse('$BASE_URL/news/popular?limit=$limit'),
-        headers: headers,
-      );
-      debugPrint('Popular news API response status: ${response.statusCode}');
-      debugPrint('Popular news API response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-
-        // Handle different response formats
-        List<dynamic> newsData;
         if (jsonData['newsPosts'] is List) {
           newsData = jsonData['newsPosts'] as List;
         } else if (jsonData['NewsPosts'] is Map &&
@@ -332,6 +374,34 @@ class ApiService {
         throw Exception('Unauthorized request');
       } else {
         throw Exception('Failed to load popular news: ${response.statusCode}');
+      }
+    } on SocketException catch (_) {
+      NetworkModal.showNetworkDialog();
+      throw Exception('Network error');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<NewsModel> getNewsById(String newsId) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+      final response = await http.get(
+        Uri.parse('$BASE_URL/news/get/$newsId'),
+        headers: {
+          if (accessToken != null && accessToken.isNotEmpty)
+            'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        return NewsModel.fromJson(jsonData);
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        throw Exception('Failed to load news: ${response.statusCode}');
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -406,16 +476,15 @@ class ApiService {
         final data = json.decode(response.body);
         // The expected response is a list of category objects with a 'name' field
         if (data is List) {
-          final categories =
-              data
-                  .map(
-                    (item) =>
-                        item is Map<String, dynamic> && item['name'] != null
-                            ? item['name'].toString()
-                            : null,
-                  )
-                  .whereType<String>()
-                  .toList();
+          final categories = data
+              .map(
+                (item) =>
+                    item is Map<String, dynamic> && item['name'] != null
+                        ? item['name'].toString()
+                        : null,
+              )
+              .whereType<String>()
+              .toList();
 
           // Throw exception if categories list is empty so caller can use fallback
           if (categories.isEmpty) {
@@ -467,24 +536,64 @@ class ApiService {
     }
   }
 
-  Future<List<ResourceModel>> getResources() async {
+  Future<List<ResourceModel>> getResources({
+    required int page,
+    int limit = 10,
+  }) async {
     try {
       final accessToken = await StorageService.getData("access_token");
 
+      final queryParameters = {
+        'page': page.toString(),
+        'limit': limit.toString(),
+      };
+
+      final uri = Uri.parse(
+        '$BASE_URL/resources/get/all',
+      ).replace(queryParameters: queryParameters);
+
       final response = await http.get(
-        Uri.parse('$BASE_URL/resources/get/all'),
+        uri,
         headers: {'Authorization': 'Bearer $accessToken'},
       );
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
 
-        List<dynamic> Resources = jsonData['resources'];
+        // Check if response has nested 'data' -> 'resources' structure
+        if (jsonData is Map<String, dynamic> &&
+            jsonData.containsKey('data') &&
+            jsonData['data'] is Map<String, dynamic> &&
+            jsonData['data'].containsKey('resources')) {
+          List<dynamic> resourcesData = jsonData['data']['resources'];
 
-        List<ResourceModel> resourcesList =
-            Resources.map((item) => ResourceModel.fromJson(item)).toList();
+          List<ResourceModel> resourcesList = resourcesData
+              .map((item) => ResourceModel.fromJson(item))
+              .toList();
 
-        return resourcesList;
+          return resourcesList;
+        }
+        // Fallback: Check if response has 'resources' key directly (old format)
+        else if (jsonData is Map<String, dynamic> &&
+            jsonData.containsKey('resources')) {
+          List<dynamic> resourcesData = jsonData['resources'];
+
+          List<ResourceModel> resourcesList = resourcesData
+              .map((item) => ResourceModel.fromJson(item))
+              .toList();
+
+          return resourcesList;
+        }
+        // Handle case where API returns a list directly
+        else if (jsonData is List) {
+          List<ResourceModel> resourcesList =
+              jsonData.map((item) => ResourceModel.fromJson(item)).toList();
+          return resourcesList;
+        } else {
+          throw Exception(
+            'Invalid response format: expected data.resources key, resources key, or List',
+          );
+        }
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
@@ -511,10 +620,10 @@ class ApiService {
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
 
-        List<dynamic> Resources = jsonData['resources'];
+        List<dynamic> resources = jsonData['resources'];
 
         List<ResourceModel> resourcesList =
-            Resources.map((item) => ResourceModel.fromJson(item)).toList();
+            resources.map((item) => ResourceModel.fromJson(item)).toList();
 
         return resourcesList;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
@@ -684,30 +793,57 @@ class ApiService {
     try {
       final accessToken = await StorageService.getData("access_token");
 
+      debugPrint('=== API PAYMENT DEBUG ===');
+      debugPrint(
+          'Token available: ${accessToken != null && accessToken.isNotEmpty}');
+      debugPrint('Model: ${request.model}');
+      debugPrint('ObjectId: ${request.objectId}');
+      debugPrint('Amount: ${request.amountToPay}');
+      debugPrint('Phone: ${request.phoneNumber}');
+
+      // Use the generic transactions/pay endpoint for all models
+      // The backend will handle initiating M-Pesa STK Push and linking the purchase to the user
+      final url = '$BASE_URL/transactions/pay';
+      final body = jsonEncode(request.toJson());
+
+      debugPrint('Payment URL: $url');
+      debugPrint('Request Body: $body');
+
       final response = await http.post(
-        Uri.parse('$BASE_URL/transactions/pay'),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: jsonEncode(request.toJson()),
+        body: body,
       );
 
-      if (response.statusCode == 201) {
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
         final data = json.decode(response.body);
         return data;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
       } else {
-        throw Exception('Failed to complete payment: ${response.statusCode}');
+        // Try to parse error message from response
+        try {
+          final errorData = json.decode(response.body);
+          final errorMessage =
+              errorData['message'] ?? errorData['error'] ?? 'Unknown error';
+          throw Exception('Payment failed: $errorMessage');
+        } catch (_) {
+          throw Exception('Failed to complete payment: ${response.statusCode}');
+        }
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
       return null;
     } catch (e) {
       debugPrint('Payment error: $e');
-      return null;
+      rethrow; // Rethrow to let controller handle it
     }
   }
 
@@ -769,10 +905,9 @@ class ApiService {
           debugPrint('First notification raw data: ${notifications.first}');
         }
 
-        List<NotificationModel> notificationList =
-            notifications
-                .map((item) => NotificationModel.fromJson(item))
-                .toList();
+        List<NotificationModel> notificationList = notifications
+            .map((item) => NotificationModel.fromJson(item))
+            .toList();
 
         return notificationList;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
@@ -794,8 +929,10 @@ class ApiService {
     try {
       final accessToken = await StorageService.getData("access_token");
 
-      final response = await http.patch(
-        Uri.parse('$BASE_URL/notifications/mark/all/read'),
+      // Try multiple endpoint patterns for compatibility
+      // Pattern 1: POST /notifications/mark-as-read (mark all)
+      final response = await http.post(
+        Uri.parse('$BASE_URL/notifications/mark-as-read'),
         headers: {
           'Authorization': 'Bearer $accessToken',
           'Content-Type': 'application/json',
@@ -808,42 +945,58 @@ class ApiService {
         HandleUnauthorizedService.showUnauthorizedDialog();
         return false;
       } else {
-        debugPrint('Failed to mark all as read: ${response.statusCode}');
-        return false;
+        debugPrint(
+            'Failed to mark all as read: ${response.statusCode} - ${response.body}');
+        // Silently fail - UI will still update locally
+        return true; // Return true so UI updates even if server fails
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
-      return false;
+      return true; // Return true so UI updates locally
     } catch (e) {
       debugPrint('Error marking all notifications as read: $e');
-      return false;
+      return true; // Return true so UI updates locally
     }
   }
 
-  Future<bool> deleteNotification(String notificationId) async {
+  Future<bool> markNotificationAsRead(String notificationId) async {
     try {
       final accessToken = await StorageService.getData("access_token");
 
-      final response = await http.delete(
-        Uri.parse('$BASE_URL/notifications/delete/$notificationId'),
-        headers: {'Authorization': 'Bearer $accessToken'},
+      // Validate notificationId before making the request
+      if (notificationId.isEmpty) {
+        debugPrint('Error: notificationId is empty');
+        return false;
+      }
+
+      // Try the correct endpoint based on API docs: POST /notifications/mark-as-read/{notificationId}
+      final response = await http.post(
+        Uri.parse('$BASE_URL/notifications/mark-as-read/$notificationId'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         HandleUnauthorizedService.showUnauthorizedDialog();
         return false;
+      } else if (response.statusCode == 404) {
+        debugPrint('Mark as read endpoint not found (404) - marking locally only');
+        return true; // Return true so UI updates locally
       } else {
-        debugPrint('Failed to delete notification: ${response.statusCode}');
-        return false;
+        debugPrint(
+            'Failed to mark notification as read: ${response.statusCode} - ${response.body}');
+        return true; // Return true so UI updates locally
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
-      return false;
+      return true; // Return true so UI updates locally
     } catch (e) {
-      debugPrint('Error deleting notification: $e');
-      return false;
+      debugPrint('Error marking notification as read: $e');
+      return true; // Return true so UI updates locally
     }
   }
 
@@ -1282,6 +1435,10 @@ class ApiService {
     try {
       final accessToken = await StorageService.getData("access_token");
 
+      debugPrint('=== RATING DEBUG ===');
+      debugPrint('Resource ID: $resourceID');
+      debugPrint('Rating: ${request.toJson()}');
+
       final response = await http.post(
         Uri.parse('$BASE_URL/resources/rate/$resourceID'),
         headers: {
@@ -1291,39 +1448,34 @@ class ApiService {
         body: json.encode(request.toJson()),
       );
 
-      if (response.statusCode == 200) {
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
         return data;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
       } else {
-        throw Exception('Failed to rate resource');
+        // Try to parse error message from response
+        try {
+          final errorData = json.decode(response.body);
+          final errorMessage = errorData['message'] ??
+              errorData['error'] ??
+              'Failed to rate resource';
+          throw Exception(errorMessage);
+        } catch (_) {
+          throw Exception('Failed to rate resource: ${response.statusCode}');
+        }
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
       throw Exception('Network error');
     } catch (e) {
       debugPrint('Error rating resource: $e');
-      throw Exception('Error rating resource');
+      rethrow;
     }
-  }
-
-  Future<int> varifyQrCode(VerifyQrCode request) async {
-    final accessToken = await StorageService.getData("access_token");
-
-    final body = jsonEncode({'qrData': request.toJson()});
-
-    final response = await http.post(
-      Uri.parse('$BASE_URL/transactions/verify/qr'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $accessToken',
-      },
-      body: body,
-    );
-
-    return response.statusCode;
   }
 
   Future<int> verifyByPhone(VerifyByPhoneModel request) async {
@@ -1450,7 +1602,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> getUserTrainings() async {
     final accessToken = await StorageService.getData("access_token");
-    print(
+    debugPrint(
       'Making API call to get user trainings with token: ${accessToken != null ? 'present' : 'null'}',
     );
 
@@ -1462,13 +1614,13 @@ class ApiService {
       },
     );
 
-    print('User trainings API response status: ${response.statusCode}');
-    print('User trainings API response body: ${response.body}');
+    debugPrint('User trainings API response status: ${response.statusCode}');
+    debugPrint('User trainings API response body: ${response.body}');
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      print(
+      debugPrint(
         'Failed to fetch user trainings: ${response.statusCode} - ${response.body}',
       );
       throw Exception('Failed to fetch user trainings');
@@ -1680,7 +1832,8 @@ class ApiService {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
       } else {
-        throw Exception('Failed to fetch training sessions: ${response.statusCode}');
+        throw Exception(
+            'Failed to fetch training sessions: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error fetching training sessions: $e');
@@ -1815,21 +1968,21 @@ class ApiService {
     String code,
     String state,
   ) async {
-    print('=== LINKEDIN CALLBACK ===');
-    print('Code: ${code.substring(0, min(20, code.length))}...');
-    print('State: $state');
+    debugPrint('=== LINKEDIN CALLBACK ===');
+    debugPrint('Code: ${code.substring(0, min(20, code.length))}...');
+    debugPrint('State: $state');
 
     final url =
         '$BASE_URL/auth/social/linkedin/callback?code=$code&state=$state';
-    print('Request URL: $url');
-    print('Headers: $_headers');
+    debugPrint('Request URL: $url');
+    debugPrint('Headers: $_headers');
 
     final response = await http.get(Uri.parse(url), headers: _headers);
 
-    print('Response status: ${response.statusCode}');
-    print('Response headers: ${response.headers}');
-    print('Response body length: ${response.body.length}');
-    print(
+    debugPrint('Response status: ${response.statusCode}');
+    debugPrint('Response headers: ${response.headers}');
+    debugPrint('Response body length: ${response.body.length}');
+    debugPrint(
       'Response body preview: ${response.body.substring(0, min(200, response.body.length))}...',
     );
 
@@ -1842,25 +1995,25 @@ class ApiService {
       }
       try {
         final decoded = json.decode(response.body);
-        print('Successfully decoded JSON: $decoded');
+        debugPrint('Successfully decoded JSON: $decoded');
         return decoded;
       } catch (e) {
-        print('JSON decode error: $e');
-        print('Raw response body: ${response.body}');
+        debugPrint('JSON decode error: $e');
+        debugPrint('Raw response body: ${response.body}');
         throw Exception('Invalid JSON response from server: $e');
       }
     } else {
-      print('HTTP error: ${response.statusCode}');
+      debugPrint('HTTP error: ${response.statusCode}');
       if (response.body.trim().startsWith('<!DOCTYPE html>') ||
           response.body.trim().startsWith('<html>')) {
-        print(
+        debugPrint(
           'Server returned HTML error page: ${response.body.substring(0, min(500, response.body.length))}...',
         );
         throw Exception(
           'Server returned HTML error page (status ${response.statusCode}). Check server configuration.',
         );
       }
-      print('Error response: ${response.body}');
+      debugPrint('Error response: ${response.body}');
       throw Exception(
         'Failed to handle LinkedIn callback: ${response.statusCode} - ${response.body}',
       );
@@ -1868,23 +2021,22 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> getLinkedInAuthUrl({String? state}) async {
-    final url =
-        state != null
-            ? '$BASE_URL/user/linkedin?state=$state'
-            : '$BASE_URL/user/linkedin';
+    final url = state != null
+        ? '$BASE_URL/user/linkedin?state=$state'
+        : '$BASE_URL/user/linkedin';
 
-    print('=== LINKEDIN AUTH URL REQUEST ===');
-    print('URL: $url');
-    print('Headers: $_headers');
+    debugPrint('=== LINKEDIN AUTH URL REQUEST ===');
+    debugPrint('URL: $url');
+    debugPrint('Headers: $_headers');
 
     final client = http.Client();
     try {
       final response = await client.get(Uri.parse(url), headers: _headers);
 
-      print('Response status: ${response.statusCode}');
-      print('Response headers: ${response.headers}');
-      print('Response body length: ${response.body.length}');
-      print(
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response headers: ${response.headers}');
+      debugPrint('Response body length: ${response.body.length}');
+      debugPrint(
         'Response body preview: ${response.body.substring(0, min(200, response.body.length))}...',
       );
 
@@ -1892,7 +2044,7 @@ class ApiService {
       if (response.statusCode == 302 || response.statusCode == 301) {
         final redirectUrl = response.headers['location'];
         if (redirectUrl != null) {
-          print('Server redirected to: $redirectUrl');
+          debugPrint('Server redirected to: $redirectUrl');
           return {'authUrl': redirectUrl};
         }
       }
@@ -1907,7 +2059,7 @@ class ApiService {
               response.body.contains('LinkedIn') ||
               response.body.contains('li_') ||
               response.body.contains('oauth')) {
-            print(
+            debugPrint(
               'Server returned LinkedIn OAuth HTML page - using request URL as auth URL',
             );
             // If server returns LinkedIn HTML, use the request URL as the auth URL
@@ -1921,7 +2073,7 @@ class ApiService {
               response.body.contains('Page Not Found') ||
               response.body.contains('error') ||
               response.body.contains('Error')) {
-            print(
+            debugPrint(
               'Server returned error HTML page instead of LinkedIn auth URL',
             );
             throw Exception(
@@ -1929,7 +2081,7 @@ class ApiService {
             );
           }
 
-          print(
+          debugPrint(
             'Server returned LinkedIn HTML page - using request URL as auth URL',
           );
           // If server returns HTML, use the request URL as the auth URL
@@ -1941,11 +2093,11 @@ class ApiService {
         try {
           return json.decode(response.body);
         } catch (e) {
-          print('Failed to parse response as JSON: $e');
+          debugPrint('Failed to parse response as JSON: $e');
           throw Exception('Invalid response format from server');
         }
       } else {
-        print(
+        debugPrint(
           'ERROR: Failed to get LinkedIn auth URL with status ${response.statusCode}',
         );
         if (response.statusCode == 404) {
@@ -1970,25 +2122,25 @@ class ApiService {
     String state,
     String platform,
   ) async {
-    print('=== EXCHANGING LINKEDIN CODE ===');
-    print('Code: ${code.substring(0, min(20, code.length))}...');
-    print('State: $state');
-    print('Platform: $platform');
+    debugPrint('=== EXCHANGING LINKEDIN CODE ===');
+    debugPrint('Code: ${code.substring(0, min(20, code.length))}...');
+    debugPrint('State: $state');
+    debugPrint('Platform: $platform');
 
     final url = '$BASE_URL/user/linkedin/callback';
     final fullUrl = Uri.parse(url).replace(
       queryParameters: {'code': code, 'state': state, 'platform': platform},
     );
 
-    print('Request URL: $fullUrl');
-    print('Headers: $_headers');
+    debugPrint('Request URL: $fullUrl');
+    debugPrint('Headers: $_headers');
 
     final response = await http.get(fullUrl, headers: _headers);
 
-    print('Response status: ${response.statusCode}');
-    print('Response headers: ${response.headers}');
-    print('Response body length: ${response.body.length}');
-    print(
+    debugPrint('Response status: ${response.statusCode}');
+    debugPrint('Response headers: ${response.headers}');
+    debugPrint('Response body length: ${response.body.length}');
+    debugPrint(
       'Response body preview: ${response.body.substring(0, min(200, response.body.length))}...',
     );
 
@@ -2001,25 +2153,25 @@ class ApiService {
       }
       try {
         final decoded = json.decode(response.body);
-        print('Successfully decoded JSON: $decoded');
+        debugPrint('Successfully decoded JSON: $decoded');
         return decoded;
       } catch (e) {
-        print('JSON decode error: $e');
-        print('Raw response body: ${response.body}');
+        debugPrint('JSON decode error: $e');
+        debugPrint('Raw response body: ${response.body}');
         throw Exception('Invalid JSON response from server: $e');
       }
     } else {
-      print('HTTP error: ${response.statusCode}');
+      debugPrint('HTTP error: ${response.statusCode}');
       if (response.body.trim().startsWith('<!DOCTYPE html>') ||
           response.body.trim().startsWith('<html>')) {
-        print(
+        debugPrint(
           'Server returned HTML error page: ${response.body.substring(0, min(500, response.body.length))}...',
         );
         throw Exception(
           'Server returned HTML error page (status ${response.statusCode}). Check server configuration.',
         );
       }
-      print('Error response: ${response.body}');
+      debugPrint('Error response: ${response.body}');
       throw Exception(
         'Failed to exchange code: ${response.statusCode} - ${response.body}',
       );
@@ -2090,13 +2242,13 @@ class ApiService {
               'Authorization': _headers['Authorization'] ?? '',
             },
           );
-          
+
           if (retryResponse.statusCode == 200) {
             final jsonData = jsonDecode(retryResponse.body);
             return CertificateModel.fromJson(jsonData['certificate']);
           }
         }
-        
+
         // If refresh failed or retry failed, show unauthorized dialog
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
@@ -2104,7 +2256,9 @@ class ApiService {
         // Parse error message from response body
         try {
           final errorData = jsonDecode(response.body);
-          final errorMessage = errorData['message'] ?? errorData['error'] ?? 'Unknown error';
+          final errorMessage = errorData['message'] ??
+              errorData['error'] ??
+              'Unknown error';
           throw Exception('Failed to generate certificate: $errorMessage');
         } catch (parseError) {
           // If can't parse JSON, use status code
@@ -2134,22 +2288,21 @@ class ApiService {
       if (response.statusCode == 200) {
         // Get the file bytes from response
         final bytes = response.bodyBytes;
-        
+
         // Generate filename with timestamp to avoid conflicts
         final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final fileName = 'certificate_$certificateNumber\_$timestamp.pdf';
-        
+        final fileName = 'certificate_${certificateNumber}_$timestamp.pdf';
+
         // Get the application documents directory
         final directory = await getApplicationDocumentsDirectory();
         final filePath = '${directory.path}/$fileName';
-        
+
         // Write the file to device storage
         final file = File(filePath);
         await file.writeAsBytes(bytes);
-        
+
         debugPrint('Certificate downloaded successfully: $filePath');
         return filePath; // Return the file path for further actions
-        
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');

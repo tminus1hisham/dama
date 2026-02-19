@@ -125,8 +125,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   HeroThemeAwareLogo(
                                     tag: "logo",
-                                    height: 100,
-                                    width: 150,
+                                    height: 40,
+                                    width: 75,
                                   ),
                                   SizedBox(height: screenHeight * 0.02),
                                   Center(

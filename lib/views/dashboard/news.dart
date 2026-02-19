@@ -469,6 +469,7 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
           }),
           // Popular News Section
           Obx(() {
+            final filteredPopular = _newsController.filteredPopularNews;
             return Container(
               color: isDarkMode ? kBlack : kWhite,
               padding: EdgeInsets.only(bottom: 12, top: 4),
@@ -499,7 +500,7 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                       ],
                     ),
                   ),
-                  _newsController.popularNews.isEmpty
+                  filteredPopular.isEmpty
                       ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
@@ -517,9 +518,9 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: EdgeInsets.symmetric(horizontal: 12),
-                          itemCount: _newsController.popularNews.length,
+                          itemCount: filteredPopular.length,
                           itemBuilder: (context, index) {
-                            final news = _newsController.popularNews[index];
+                            final news = filteredPopular[index];
                             return _buildPopularCard(news, isDarkMode);
                           },
                         ),

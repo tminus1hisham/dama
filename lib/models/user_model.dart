@@ -9,6 +9,9 @@ class UserProfileModel {
   String title;
   String company;
   String brief;
+  String? authType;
+  String? password;
+  bool? passwordSet;
 
   UserProfileModel({
     required this.firstName,
@@ -21,6 +24,9 @@ class UserProfileModel {
     required this.title,
     required this.company,
     required this.brief,
+    this.authType,
+    this.password,
+    this.passwordSet,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -28,13 +34,16 @@ class UserProfileModel {
       firstName: json['firstName'] ?? '',
       middleName: json['middleName'] ?? '',
       lastName: json['lastName'] ?? '',
-      nationality: json['nationality'] ?? '',
+      nationality: json['country'] ?? json['nationality'] ?? '',
       county: json['county'] ?? '',
       phoneNumber: json['phone_number'] ?? '',
       profilePicture: json['profile_picture'] ?? '',
       title: json['title'] ?? '',
       company: json['company'] ?? '',
       brief: json['brief'] ?? '',
+      authType: json['authType'],
+      password: json['password'],
+      passwordSet: json['password_set'],
     );
   }
 
@@ -50,6 +59,9 @@ class UserProfileModel {
       title: json['title'] ?? '',
       company: json['company'] ?? '',
       brief: json['brief'] ?? '',
+      authType: 'linkedin',
+      password: json['password'],
+      passwordSet: json['password_set'],
     );
   }
 
@@ -59,13 +71,16 @@ class UserProfileModel {
     if (firstName.isNotEmpty) data['firstName'] = firstName;
     if (middleName.isNotEmpty) data['middleName'] = middleName;
     if (lastName.isNotEmpty) data['lastName'] = lastName;
-    if (nationality.isNotEmpty) data['nationality'] = nationality;
+    if (nationality.isNotEmpty) data['country'] = nationality;
     if (county.isNotEmpty) data['county'] = county;
     if (phoneNumber.isNotEmpty) data['phone_number'] = phoneNumber;
     if (profilePicture.isNotEmpty) data['profile_picture'] = profilePicture;
     if (title.isNotEmpty) data['title'] = title;
     if (company.isNotEmpty) data['company'] = company;
     if (brief.isNotEmpty) data['brief'] = brief;
+    if (authType != null) data['authType'] = authType;
+    if (password != null && password!.isNotEmpty) data['password'] = password;
+    if (passwordSet != null) data['password_set'] = passwordSet;
 
     return data;
   }

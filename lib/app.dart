@@ -174,7 +174,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           page: () => RequestChangePassword(),
         ),
         GetPage(name: AppRoutes.resetPassword, page: () => ResetPassword()),
-        GetPage(name: AppRoutes.trainning, page: () => TrainingScreen()),
+        GetPage(name: AppRoutes.trainings, page: () => TrainingScreen()),
         GetPage(
           name: AppRoutes.todaySessions,
           page: () => TodaySessionsScreen(),

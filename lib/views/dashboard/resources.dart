@@ -38,6 +38,10 @@ class _ResourcesState extends State<Resources>
   String bio = '';
   String memberId = '';
 
+  // Scroll controller for pagination
+  final ScrollController _allResourcesScrollController = ScrollController();
+  final ScrollController _myResourcesScrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +49,25 @@ class _ResourcesState extends State<Resources>
     _resourceController.fetchResources();
     _userResourceController.fetchUserResources();
     _loadData();
+    _setupScrollListeners();
+  }
+
+  void _setupScrollListeners() {
+    _allResourcesScrollController.addListener(_onAllResourcesScroll);
+    _myResourcesScrollController.addListener(_onMyResourcesScroll);
+  }
+
+  void _onAllResourcesScroll() {
+    if (_allResourcesScrollController.position.pixels >=
+            _allResourcesScrollController.position.maxScrollExtent - 200 &&
+        !_resourceController.isLoadingMore.value &&
+        _resourceController.hasMore.value) {
+      _resourceController.loadMoreResources();
+    }
+  }
+
+  void _onMyResourcesScroll() {
+    // My resources pagination can be added later if needed
   }
 
   void _loadData() async {
@@ -59,7 +82,7 @@ class _ResourcesState extends State<Resources>
     setState(() {
       _isLoading = true;
     });
-    await _resourceController.fetchResources();
+    await _resourceController.refreshResources();
     await _userResourceController.fetchUserResources();
     setState(() {
       _isLoading = false;
@@ -94,6 +117,8 @@ class _ResourcesState extends State<Resources>
 
   @override
   void dispose() {
+    _allResourcesScrollController.dispose();
+    _myResourcesScrollController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -130,6 +155,7 @@ class _ResourcesState extends State<Resources>
             child: IndexedStack(
               index: selectedTab,
               children: [
+                // All Resources Tab with Pagination
                 RefreshIndicator(
                   color: kWhite,
                   backgroundColor: kBlue,
@@ -139,7 +165,8 @@ class _ResourcesState extends State<Resources>
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: 800),
                       child: Obx(() {
-                        if (_resourceController.isLoading.value || _isLoading) {
+                        if (_resourceController.isLoading.value &&
+                            _resourceController.resourceList.isEmpty) {
                           return ListView.builder(
                             padding: const EdgeInsets.all(0),
                             itemCount: 3,
@@ -187,16 +214,37 @@ class _ResourcesState extends State<Resources>
                         }
 
                         return ListView.builder(
+                          controller: _allResourcesScrollController,
                           padding: const EdgeInsets.all(0),
-                          itemCount: _resourceController.resourceList.length,
+                          itemCount: _resourceController.resourceList.length +
+                              (_resourceController.hasMore.value ? 1 : 0),
                           itemBuilder: (context, index) {
+                            // Show loading indicator at the bottom
+                            if (index >=
+                                _resourceController.resourceList.length) {
+                              return Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(
+                                    color: kBlue,
+                                  ),
+                                ),
+                              );
+                            }
+
                             final resource =
                                 _resourceController.resourceList[index];
+                            // Check if user has purchased this resource
+                            final isPurchased = _userResourceController
+                                .resourceList
+                                .any((r) => r.id == resource.id);
 
                             return ResourcesCard(
                               heading: resource.title,
                               imageUrl: resource.resourceImageUrl,
                               rating: resource.averageRating,
+                              price: resource.price,
+                              isPurchased: isPurchased,
                               onReadNowPressed: () {
                                 Navigator.push(
                                   context,
@@ -209,41 +257,48 @@ class _ResourcesState extends State<Resources>
                                 );
                               },
                               onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder:
-                                        (
-                                          context,
-                                          animation,
-                                          secondaryAnimation,
-                                        ) => SelectedResourceScreen(
-                                          resourceID: resource.id,
-                                          isPaid: true,
-                                          title: resource.title,
-                                          imageUrl: resource.resourceImageUrl,
-                                          description: resource.description,
-                                          price: 0,
-                                          viewUrl: resource.resourceLink,
-                                          date: resource.createdAt,
-                                          rating: resource.averageRating,
-                                        ),
-                                    transitionsBuilder: (
-                                      context,
-                                      animation,
-                                      secondaryAnimation,
-                                      child,
-                                    ) {
-                                      return FadeTransition(
-                                        opacity: animation,
-                                        child: child,
-                                      );
-                                    },
-                                    transitionDuration: const Duration(
-                                      milliseconds: 200,
+                                if (isPurchased) {
+                                  // Already purchased - open PDF directly
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PDFViewerPage(
+                                        title: resource.title,
+                                        pdfUrl: resource.resourceLink,
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                } else if (resource.price > 0) {
+                                  // Not purchased - navigate to payment modal
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SelectedResourceScreen(
+                                        resourceID: resource.id,
+                                        isPaid: false,
+                                        autoShowPayment: true,
+                                        title: resource.title,
+                                        imageUrl: resource.resourceImageUrl,
+                                        description: resource.description,
+                                        price: resource.price,
+                                        viewUrl: resource.resourceLink,
+                                        date: resource.createdAt,
+                                        rating: resource.averageRating,
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  // Free resource - open directly
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PDFViewerPage(
+                                        title: resource.title,
+                                        pdfUrl: resource.resourceLink,
+                                      ),
+                                    ),
+                                  );
+                                }
                               },
                             );
                           },
@@ -252,6 +307,7 @@ class _ResourcesState extends State<Resources>
                     ),
                   ),
                 ),
+                // My Resources Tab
                 RefreshIndicator(
                   color: kWhite,
                   backgroundColor: kBlue,
@@ -312,6 +368,7 @@ class _ResourcesState extends State<Resources>
                         }
 
                         return ListView.builder(
+                          controller: _myResourcesScrollController,
                           padding: const EdgeInsets.all(0),
                           itemCount:
                               _userResourceController.resourceList.length,
@@ -322,6 +379,8 @@ class _ResourcesState extends State<Resources>
                               heading: resource.title,
                               imageUrl: resource.resourceImageUrl,
                               rating: resource.averageRating,
+                              price: resource.price,
+                              isPurchased: true,
                               onReadNowPressed: () {
                                 Navigator.push(
                                   context,
@@ -344,11 +403,11 @@ class _ResourcesState extends State<Resources>
                                           secondaryAnimation,
                                         ) => SelectedResourceScreen(
                                           resourceID: resource.id,
-                                          isPaid: true,
+                                          isPaid: resource.price > 0,
                                           title: resource.title,
                                           imageUrl: resource.resourceImageUrl,
                                           description: resource.description,
-                                          price: 0,
+                                          price: resource.price,
                                           viewUrl: resource.resourceLink,
                                           date: resource.createdAt,
                                           rating: resource.averageRating,

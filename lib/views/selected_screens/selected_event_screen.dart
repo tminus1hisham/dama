@@ -14,10 +14,13 @@ import 'package:dama/widgets/cards/selected_event_card.dart';
 import 'package:dama/widgets/custom_spinner.dart';
 import 'package:dama/widgets/inputs/custom_input.dart';
 import 'package:dama/widgets/modals/success_bottomsheet.dart';
+import 'package:dama/widgets/profile_avatar.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -57,10 +60,11 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   final GetUserProfileController _getUserProfileController = Get.put(
     GetUserProfileController(),
   );
-  final TextEditingController _phoneController = TextEditingController();
 
   late final GlobalKey<ScaffoldState> _scaffoldKey;
 
+  String? completePhoneNumber;
+  String? countryCode = '+254';
   String phoneNumber = '';
   String? fetchedPhoneNumber;
   String fetchedUserId = '';
@@ -101,7 +105,6 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
 
   Future<void> _fetchPhoneNumberAndUser() async {
     fetchedPhoneNumber = await StorageService.getData("phoneNumber");
-    _phoneController.text = reformatPhoneNumber(fetchedPhoneNumber ?? '');
     fetchedUserId = await StorageService.getData('userId');
     await _getUserProfileController.fetchUserProfile(fetchedUserId);
   }
@@ -113,28 +116,6 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
       roles = rolesData;
     });
     return rolesData;
-  }
-
-  String formatPhoneNumber(String input) {
-    input = input.trim();
-    if (input.startsWith('0') && input.length == 10) {
-      return '254${input.substring(1)}';
-    } else if (input.startsWith('254') && input.length == 12) {
-      return input;
-    } else {
-      throw FormatException("Invalid phone number format");
-    }
-  }
-
-  String reformatPhoneNumber(String input) {
-    input = input.trim();
-    if (input.startsWith('254') && input.length == 12) {
-      return '0${input.substring(3)}';
-    } else if (input.startsWith('0') && input.length == 10) {
-      return input;
-    } else {
-      return input;
-    }
   }
 
   void _showPhoneNumberModal(bool isDark) {
@@ -158,10 +139,55 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                 children: [
                   const SizedBox(height: 10),
                   Image.asset("images/mpesa.png", height: 50),
-                  InputField(
-                    controller: _phoneController,
-                    hintText: "eg: 07XXXXXXXX",
-                    label: "Phone Number *",
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Phone Number *",
+                          style: TextStyle(
+                            color: isDark ? kWhite : kBlack,
+                            fontWeight: FontWeight.bold,
+                            fontSize: kNormalTextSize,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        IntlPhoneField(
+                          decoration: InputDecoration(
+                            hintText: "7*******",
+                            hintStyle: TextStyle(
+                              color: isDark ? Colors.grey[400] : Colors.grey[700],
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(color: kBlue, width: 1.0),
+                            ),
+                          ),
+                          style: TextStyle(
+                            color: isDark ? kWhite : kBlack,
+                          ),
+                          dropdownTextStyle: TextStyle(
+                            color: isDark ? kWhite : kBlack,
+                          ),
+                          dropdownIcon: Icon(
+                            Icons.arrow_drop_down,
+                            color: isDark ? kWhite : kBlack,
+                          ),
+                          initialCountryCode: 'KE',
+                          onChanged: (PhoneNumber phone) {
+                            completePhoneNumber = phone.completeNumber;
+                          },
+                          onCountryChanged: (country) {
+                            countryCode = '+${country.dialCode}';
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Padding(
@@ -171,9 +197,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                       child: CustomButton(
                         callBackFunction: () {
                           Navigator.pop(context);
-                          phoneNumber = formatPhoneNumber(
-                            _phoneController.text,
-                          );
+                          phoneNumber = completePhoneNumber ?? '';
                           _payForEvent(
                             context,
                             widget.title,
@@ -387,7 +411,6 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
     super.dispose();
   }
 
@@ -552,7 +575,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                                                       context,
                                                                       error,
                                                                       stackTrace,
-                                                                    ) => CircleAvatar(
+                                                                    ) => ProfileAvatar(
                                                                       radius:
                                                                           30,
                                                                       backgroundColor:
@@ -570,7 +593,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                                                     ),
                                                               ),
                                                             )
-                                                            : CircleAvatar(
+                                                            : ProfileAvatar(
                                                               radius: 30,
                                                               backgroundColor:
                                                                   Colors

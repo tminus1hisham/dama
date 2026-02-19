@@ -16,12 +16,27 @@ class RegisterController extends GetxController {
   var fcmToken = ''.obs;
 
   var isLoading = false.obs;
+  
+  // Field-specific error messages
+  var emailError = ''.obs;
+  var phoneError = ''.obs;
+  var generalError = ''.obs;
 
   final AuthService _authService = AuthService();
+
+  void clearErrors() {
+    emailError.value = '';
+    phoneError.value = '';
+    generalError.value = '';
+  }
 
   void register(BuildContext context) async {
     print("Register controller called");
     print("FCM Token in controller: ${fcmToken.value}");
+    
+    // Clear previous errors
+    clearErrors();
+    
     isLoading.value = true;
 
     try {
@@ -40,37 +55,52 @@ class RegisterController extends GetxController {
       print("Registration result: $result");
 
       if (result != null) {
-        // Check if token was returned (complete registration)
-        if (result['token'] != null) {
-          Get.snackbar(
-            margin: EdgeInsets.only(top: 15, left: 15, right: 15),
-            "Success",
-            "You have created an account",
-            colorText: kWhite,
-            backgroundColor: kGreen.withOpacity(0.9),
-          );
-          Get.offAllNamed(AppRoutes.home);
-        } else {
-          // No token returned, OTP verification required
-          Get.snackbar(
-            margin: EdgeInsets.only(top: 15, left: 15, right: 15),
-            "OTP Sent",
-            "Please check your phone for the verification code",
-            colorText: kWhite,
-            backgroundColor: kBlue.withOpacity(0.9),
-          );
-          Get.offAllNamed(AppRoutes.otp);
+        // Store the user data temporarily for the profile setup flow
+        if (result['user'] != null) {
+          final user = result['user'];
+          // Store basic user data for personal details screen
+          firstName.value = user['firstName'] ?? '';
+          lastName.value = user['lastName'] ?? '';
+          phone.value = user['phone_number'] ?? '';
         }
+        
+        // Navigate to Personal Details to complete profile setup
+        Get.snackbar(
+          margin: EdgeInsets.only(top: 15, left: 15, right: 15),
+          "Success",
+          "Account created! Let's complete your profile",
+          colorText: kWhite,
+          backgroundColor: kGreen.withOpacity(0.9),
+        );
+        Get.offAllNamed(AppRoutes.personal_details);
       }
     } catch (e) {
       print("Registration error: $e");
-      Get.snackbar(
-        margin: EdgeInsets.only(top: 15, left: 15, right: 15),
-        "Registration Failed",
-        e.toString().replaceAll('Exception: ', ''),
-        colorText: kWhite,
-        backgroundColor: kRed.withOpacity(0.9),
-      );
+      
+      // Parse field-specific errors
+      final errorString = e.toString();
+      
+      if (errorString.contains('email_exists')) {
+        emailError.value = errorString.replaceAll('Exception: email_exists: ', '').trim();
+        if (emailError.value.isEmpty) {
+          emailError.value = 'This email is already registered';
+        }
+      } else if (errorString.contains('phone_exists')) {
+        phoneError.value = errorString.replaceAll('Exception: phone_exists: ', '').trim();
+        if (phoneError.value.isEmpty) {
+          phoneError.value = 'This phone number is already registered';
+        }
+      } else {
+        // General error
+        generalError.value = e.toString().replaceAll('Exception: ', '');
+        Get.snackbar(
+          margin: EdgeInsets.only(top: 15, left: 15, right: 15),
+          "Registration Failed",
+          generalError.value,
+          colorText: kWhite,
+          backgroundColor: kRed.withOpacity(0.9),
+        );
+      }
     } finally {
       isLoading.value = false;
     }

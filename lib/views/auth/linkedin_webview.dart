@@ -4,6 +4,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:dama/utils/constants.dart';
+import 'package:dama/routes/routes.dart';
+import 'package:dama/services/local_storage_service.dart';
 
 class LinkedInWebView extends StatefulWidget {
   final String url;
@@ -98,9 +100,53 @@ class _LinkedInWebViewState extends State<LinkedInWebView> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('[LinkedIn WebView] Success, calling onSuccess');
-        widget.onSuccess(data);
-        Get.back(); // Close the WebView
+        print('[LinkedIn WebView] Success, processing response');
+        
+        // Extract user data from the response
+        Map<String, dynamic>? userData;
+        if (data['user'] != null) {
+          if (data['user'] is String) {
+            userData = json.decode(data['user']);
+          } else if (data['user'] is Map) {
+            userData = Map<String, dynamic>.from(data['user']);
+          }
+        }
+        
+        // Extract userId - try 'userId' first, fallback to '_id' for compatibility
+        String? userId = userData?['userId'] ?? userData?['_id'];
+        
+        if (userId != null && userId.isNotEmpty) {
+          print('[LinkedIn WebView] Extracted userId: $userId');
+          
+          // Save LinkedIn data for registration form pre-population
+          Map<String, dynamic> linkedInUserData = {
+            'userId': userId,
+            'firstName': userData?['firstName'] ?? '',
+            'lastName': userData?['lastName'] ?? '',
+            'middleName': userData?['middleName'] ?? '',
+            'email': userData?['email'] ?? '',
+            'country': userData?['country'] ?? '',
+            'phone_number': userData?['phone_number'] ?? '',
+            'profile_picture': userData?['profile_picture'] ?? '',
+            'title': userData?['title'] ?? '',
+            'company': userData?['company'] ?? '',
+            'brief': userData?['brief'] ?? '',
+            'password_set': true,
+            'authType': 'linkedin',
+          };
+          
+          await StorageService.storeData(linkedInUserData);
+          await StorageService.storeData({'registration_source': 'linkedin'});
+          print('[LinkedIn WebView] Saved LinkedIn data for registration form');
+          
+          // Close the WebView and navigate to personal details to complete registration
+          Get.back();
+          Get.offAllNamed(AppRoutes.personal_details);
+        } else {
+          // Fallback: call the original onSuccess if userId not found
+          widget.onSuccess(data);
+          Get.back();
+        }
       } else {
         throw Exception(
           'Failed to exchange code: ${response.statusCode} - ${response.body}',

@@ -1,18 +1,15 @@
 import 'package:add_2_calendar/add_2_calendar.dart';
-import 'package:dama/controller/certificate_controller.dart';
 import 'package:dama/controller/user_progress_controller.dart';
-import 'package:dama/models/certificate_model.dart';
 import 'package:dama/models/session_model.dart';
 import 'package:dama/models/training_model.dart';
 import 'package:dama/providers/sessions_provider.dart';
-import 'package:dama/services/api_service.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/session_utils.dart';
 import 'package:dama/utils/theme_provider.dart';
-import 'package:dama/widgets/certificate_preview_sheet.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,11 +27,7 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
   bool isLoading = true;
   String errorMessage = '';
   String? currentUserId;
-  bool isCertificateEligible = false;
 
-  final CertificateController _certificateController = Get.put(
-    CertificateController(),
-  );
   final UserProgressController _progressController = Get.put(
     UserProgressController(),
   );
@@ -47,87 +40,13 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadSessions();
     });
-    _checkCertificateEligibility();
-    // If training is already completed, check and generate certificate
-    if (widget.training.status == 'completed') {
-      _checkAndGenerateCertificateOnCompletion();
-    }
+    // Note: Certificates are automatically generated server-side when a course completes
+    // and can be viewed from the "My Certificates" tab
   }
 
   Future<void> _loadUserId() async {
     currentUserId = await StorageService.getData('userId');
     setState(() {});
-  }
-
-  Future<void> _checkCertificateEligibility() async {
-    final eligible = await _certificateController.checkCertificateEligibility(
-      widget.training.id,
-    );
-    setState(() {
-      isCertificateEligible = eligible;
-    });
-
-    // Only auto-generate certificate if training is explicitly marked as completed
-    // and this is not being called after a session join/leave operation
-    // Auto-generation should only happen when training status changes to completed
-  }
-
-  Future<void> _checkAndGenerateCertificateOnCompletion() async {
-    // Only check eligibility and generate certificate when training is completed
-    if (widget.training.status == 'completed' && currentUserId != null) {
-      final eligible = await _certificateController.checkCertificateEligibility(
-        widget.training.id,
-      );
-      setState(() {
-        isCertificateEligible = eligible;
-      });
-
-      if (eligible) {
-        await _autoGenerateCertificate();
-      }
-    }
-  }
-
-  Future<void> _autoGenerateCertificate() async {
-    try {
-      // Check if certificate already exists to avoid duplicates
-      final existingCertificates = _certificateController.certificates;
-      final certificateExists = existingCertificates.any(
-        (cert) =>
-            cert.trainingId == widget.training.id &&
-            cert.userId == currentUserId,
-      );
-
-      if (!certificateExists) {
-        // Only generate certificate if training is marked as completed
-        // This method should only be called when training completion is confirmed
-        if (widget.training.status == 'completed') {
-          final certificate = await _certificateController.generateCertificate(
-            widget.training.id,
-            currentUserId!,
-          );
-
-          if (certificate != null) {
-            // Show a subtle notification that certificate was generated
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '🎉 Certificate generated for ${widget.training.title}!',
-                ),
-                duration: Duration(seconds: 3),
-                backgroundColor: Colors.green,
-              ),
-            );
-
-            // Refresh certificate eligibility to update UI
-            await _checkCertificateEligibility();
-          }
-        }
-      }
-    } catch (e) {
-      // Don't show error for auto-generation failures to avoid spam
-      print('Auto certificate generation failed: $e');
-    }
   }
 
   Future<void> _loadSessions() async {
@@ -143,14 +62,6 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
         errorMessage = '';
       });
 
-      // Recheck certificate eligibility after loading sessions
-      // in case training status has been updated
-      await _checkCertificateEligibility();
-
-      // If training is now completed, check and generate certificate
-      if (widget.training.status == 'completed') {
-        await _checkAndGenerateCertificateOnCompletion();
-      }
     } catch (e) {
       // On error, try loading from cache for offline support
       await sessionsProvider.loadSessionsFromCache();
@@ -162,10 +73,12 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
                 : '';
       });
 
-      // Still check certificate eligibility even with cached data
-      await _checkCertificateEligibility();
     }
   }
+
+  // Track locally joined sessions to ensure UI updates immediately
+  final Set<String> _locallyJoinedSessionIds = {};
+  final Set<String> _locallyLeftSessionIds = {};
 
   Future<void> _handleJoinLeave(TrainingSession session, bool isJoining) async {
     if (currentUserId == null) {
@@ -190,24 +103,40 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
               session.id,
             );
     if (success) {
+      // Update local tracking sets for immediate UI feedback
+      setState(() {
+        if (isJoining) {
+          _locallyJoinedSessionIds.add(session.id);
+          _locallyLeftSessionIds.remove(session.id);
+        } else {
+          _locallyJoinedSessionIds.remove(session.id);
+          _locallyLeftSessionIds.add(session.id);
+        }
+      });
+
       // Update local attendance via provider
       final currentSessions = sessionsProvider.sessions;
       final sessionIndex = currentSessions.indexWhere((s) => s.id == session.id);
       if (sessionIndex != -1) {
         final updatedSession = currentSessions[sessionIndex];
         if (isJoining) {
-          // Add attendance
-          updatedSession.attendance.add(
-            SessionAttendance(
-              sessionId: session.id,
-              userId: currentUserId!,
-              present: true,
-              checkInTime: DateTime.now(),
-              checkOutTime: null,
-              duration: null,
-              notes: 'Auto-checked via app',
-            ),
+          // Add attendance if not already present
+          final alreadyAttended = updatedSession.attendance.any(
+            (a) => a.userId == currentUserId,
           );
+          if (!alreadyAttended) {
+            updatedSession.attendance.add(
+              SessionAttendance(
+                sessionId: session.id,
+                userId: currentUserId!,
+                present: true,
+                checkInTime: DateTime.now(),
+                checkOutTime: null,
+                duration: null,
+                notes: 'Auto-checked via app',
+              ),
+            );
+          }
         } else {
           // Remove attendance
           updatedSession.attendance.removeWhere(
@@ -216,11 +145,12 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
         }
         sessionsProvider.updateSession(updatedSession);
       }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             isJoining
-                ? 'Successfully joined the session'
+                ? 'Successfully joined the session. You can now view meeting link and resources.'
                 : 'Successfully left the session',
           ),
         ),
@@ -236,6 +166,20 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
         ),
       );
     }
+  }
+
+  // Check if user has joined a session, considering local changes
+  bool _isUserJoinedWithLocal(TrainingSession session) {
+    // If user explicitly joined this session locally, return true
+    if (_locallyJoinedSessionIds.contains(session.id)) {
+      return true;
+    }
+    // If user explicitly left this session locally, return false
+    if (_locallyLeftSessionIds.contains(session.id)) {
+      return false;
+    }
+    // Otherwise, check the actual attendance data
+    return isUserJoined(session, currentUserId);
   }
 
   Widget _buildTrainingProgressIndicator(bool isDarkMode) {
@@ -305,9 +249,8 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
       return true;
     }
 
-    final hasUserAttended = session.attendance.any(
-      (a) => a.userId == currentUserId,
-    );
+    // Use local joined check for consistency with UI
+    final hasUserAttended = _isUserJoinedWithLocal(session);
 
     if (hasUserAttended) {
       return true; // User has already attended this session
@@ -427,129 +370,18 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
                               onReloadSessions: _loadSessions,
                               isSessionCompleted: _isSessionCompleted,
                               trainingStatus: widget.training.status,
-                              onCheckCertificateEligibility:
-                                  _checkCertificateEligibility,
+                              isUserJoinedCheck: _isUserJoinedWithLocal,
                             );
                           },
                         );
                       },
                     ),
           ),
-          // Certificate Buttons - Show when user is eligible
-          if (isCertificateEligible && currentUserId != null) ...[
-            Container(
-              padding: EdgeInsets.all(15),
-              color: isDarkMode ? kDarkCard : kWhite,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _viewCertificate,
-                      icon: Icon(Icons.visibility),
-                      label: Text("View Certificate"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kBlue,
-                        foregroundColor: kWhite,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  ElevatedButton.icon(
-                    onPressed: _downloadCertificate,
-                    icon: Icon(Icons.download),
-                    label: Text("Download"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: kWhite,
-                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  void _viewCertificate() async {
-    try {
-      print('=== VIEW CERTIFICATE DEBUG ===');
-      print('Training ID: ${widget.training.id}');
-      print('Training Status: ${widget.training.status}');
-      print('Current User ID: $currentUserId');
-      print('Is Certificate Eligible: $isCertificateEligible');
-
-      final certificate = await _certificateController.generateCertificate(
-        widget.training.id,
-        currentUserId!,
-      );
-      if (certificate != null) {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder:
-              (context) => CertificatePreviewSheet(
-                certificate: certificate,
-                onDownload: () => _downloadCertificate(),
-                onShare: () => _shareCertificate(certificate),
-              ),
-        );
-      } else {
-        print('Certificate generation returned null');
-        Get.snackbar(
-          'Error',
-          'Failed to generate certificate',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
-    } catch (e) {
-      print('Error in _viewCertificate: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to view certificate: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  void _downloadCertificate() async {
-    try {
-      // For now, we'll generate the certificate first to ensure it exists
-      final certificate = await _certificateController.generateCertificate(
-        widget.training.id,
-        currentUserId!,
-      );
-      if (certificate != null) {
-        await _certificateController.downloadCertificate(
-          certificate.certificateNumber,
-        );
-        Get.snackbar(
-          'Success',
-          'Certificate downloaded successfully',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to download certificate: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  void _shareCertificate(CertificateModel certificate) {
-    // TODO: Implement share functionality
-    Get.snackbar(
-      'Coming Soon',
-      'Certificate sharing will be available soon!',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  }
 }
 
 class TrainingSessionCard extends StatelessWidget {
@@ -564,7 +396,7 @@ class TrainingSessionCard extends StatelessWidget {
     required this.onReloadSessions,
     required this.isSessionCompleted,
     required this.trainingStatus,
-    required this.onCheckCertificateEligibility,
+    required this.isUserJoinedCheck,
   });
 
   final TrainingSession session;
@@ -577,7 +409,7 @@ class TrainingSessionCard extends StatelessWidget {
   final Future<void> Function() onReloadSessions;
   final bool Function(TrainingSession) isSessionCompleted;
   final String? trainingStatus;
-  final Future<void> Function() onCheckCertificateEligibility;
+  final bool Function(TrainingSession) isUserJoinedCheck;
 
   // Removed duplicate _isUserJoined, using utility instead
 
@@ -601,6 +433,13 @@ class TrainingSessionCard extends StatelessWidget {
       return 'Live';
     if (session.startTime.isAfter(DateTime.now())) return 'Scheduled';
     return 'Unknown';
+  }
+
+  // Check if user can join the session (15 minutes before start time)
+  bool _canJoinSession(TrainingSession session) {
+    final now = DateTime.now();
+    final joinWindowStart = session.startTime.subtract(Duration(minutes: 15));
+    return now.isAfter(joinWindowStart) && now.isBefore(session.endTime);
   }
 
   @override
@@ -722,7 +561,7 @@ class TrainingSessionCard extends StatelessWidget {
               ),
             ],
           ),
-          if (isUserJoined(session, currentUserId)) ...[
+          if (isUserJoinedCheck(session)) ...[
             if (session.meetingPlatform != null &&
                 session.meetingPlatform!.isNotEmpty)
               Text(
@@ -734,38 +573,103 @@ class TrainingSessionCard extends StatelessWidget {
               ),
             if (session.meetingLink != null &&
                 session.meetingLink!.isNotEmpty) ...[
-              SizedBox(height: 5),
-              GestureDetector(
-                onTap: () async {
-                  final url = session.meetingLink!;
-                  if (await canLaunchUrl(Uri.parse(url))) {
-                    await launchUrl(
-                      Uri.parse(url),
-                      mode: LaunchMode.inAppWebView,
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Could not launch $url')),
-                    );
-                  }
-                },
-                child: Row(
-                  children: [
-                    Icon(Icons.link, size: 16, color: kBlue),
-                    SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        'Join Meeting',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: kBlue,
-                          decoration: TextDecoration.underline,
-                        ),
+              SizedBox(height: 10),
+              if (_canJoinSession(session))
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      var url = session.meetingLink!;
+                      // Ensure URL has proper scheme
+                      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        url = 'https://$url';
+                      }
+                      final uri = Uri.parse(url);
+                      try {
+                        // Try external application mode first (better for meeting apps)
+                        final launched = await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                        if (!launched && context.mounted) {
+                          // Fallback to in-app webview
+                          final webViewLaunched = await launchUrl(
+                            uri,
+                            mode: LaunchMode.inAppWebView,
+                          );
+                          if (!webViewLaunched && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Could not launch $url'),
+                                action: SnackBarAction(
+                                  label: 'Copy Link',
+                                  onPressed: () {
+                                    Clipboard.setData(ClipboardData(text: url));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Link copied to clipboard')),
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error launching link: $e'),
+                              action: SnackBarAction(
+                                label: 'Copy Link',
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: url));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Link copied to clipboard')),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: Icon(Icons.video_call, color: kWhite),
+                    label: Text(
+                      'Enter Class',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: kWhite,
                       ),
                     ),
-                  ],
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: kWhite,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Available 15 minutes before start',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
             ],
             if (session.notes != null && session.notes!.isNotEmpty) ...[
               SizedBox(height: 5),
@@ -793,16 +697,58 @@ class TrainingSessionCard extends StatelessWidget {
                   padding: EdgeInsets.only(bottom: 5),
                   child: GestureDetector(
                     onTap: () async {
-                      final url = resource.url;
-                      if (await canLaunchUrl(Uri.parse(url))) {
-                        await launchUrl(
-                          Uri.parse(url),
-                          mode: LaunchMode.inAppWebView,
+                      var url = resource.url;
+                      // Ensure URL has proper scheme
+                      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        url = 'https://$url';
+                      }
+                      final uri = Uri.parse(url);
+                      try {
+                        // Try external application mode first
+                        final launched = await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
                         );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Could not launch $url')),
-                        );
+                        if (!launched && context.mounted) {
+                          // Fallback to in-app webview
+                          final webViewLaunched = await launchUrl(
+                            uri,
+                            mode: LaunchMode.inAppWebView,
+                          );
+                          if (!webViewLaunched && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Could not launch $url'),
+                                action: SnackBarAction(
+                                  label: 'Copy Link',
+                                  onPressed: () {
+                                    Clipboard.setData(ClipboardData(text: url));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Link copied to clipboard')),
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error launching link: $e'),
+                              action: SnackBarAction(
+                                label: 'Copy Link',
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: url));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Link copied to clipboard')),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        }
                       }
                     },
                     child: Row(
@@ -863,8 +809,6 @@ class TrainingSessionCard extends StatelessWidget {
                                 await onJoinLeave(session, !isJoined);
                                 // Refresh sessions to update attendance
                                 await onReloadSessions();
-                                // Check if this action completed the training and triggers certificate generation
-                                await onCheckCertificateEligibility();
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Error: $e')),
@@ -873,7 +817,7 @@ class TrainingSessionCard extends StatelessWidget {
                             },
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
-                          isUserJoined(session, currentUserId)
+                          isUserJoinedCheck(session)
                               ? Colors.red
                               : kBlue,
                       foregroundColor: kWhite,

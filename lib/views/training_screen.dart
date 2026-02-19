@@ -18,6 +18,8 @@ import 'package:dama/widgets/modals/success_bottomsheet.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 import 'package:provider/provider.dart';
 
 class TrainingScreen extends StatefulWidget {
@@ -30,7 +32,7 @@ class TrainingScreen extends StatefulWidget {
 }
 
 class _TrainingScreenState extends State<TrainingScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   final TrainingController _trainingController = Get.put(TrainingController());
   final UserTrainingController _userTrainingController =
       Get.find<UserTrainingController>();
@@ -40,12 +42,14 @@ class _TrainingScreenState extends State<TrainingScreen>
   String title = '';
   String bio = '';
   String memberId = '';
+  late TabController _tabController;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadData();
     _trainingController.fetchTrainings();
     _userTrainingController.fetchUserTrainings();
@@ -53,6 +57,7 @@ class _TrainingScreenState extends State<TrainingScreen>
 
   @override
   void dispose() {
+    _tabController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -133,125 +138,296 @@ class _TrainingScreenState extends State<TrainingScreen>
                         ),
                       ),
                     ),
+                    SizedBox(height: 20),
+                    Obx(() {
+                      int inProgress =
+                          _userTrainingController.userTrainings
+                              .where((t) {
+                                final status = (t.status ?? '').toLowerCase();
+                                final regStatus = (t.learningTracks.isNotEmpty
+                                    ? t.learningTracks.first.registrationStatus
+                                    : '')
+                                    .toLowerCase();
+                                return status == 'ongoing' || regStatus == 'ongoing';
+                              })
+                              .length;
+                      int completed =
+                          _userTrainingController.userTrainings
+                              .where((t) {
+                                final status = (t.status ?? '').toLowerCase();
+                                final progress = t.progress ?? 0;
+                                return status.contains('completed') || progress == 100;
+                              })
+                              .length;
+                      int total = _userTrainingController.userTrainings.length;
+                      return Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 15),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildStatCard(
+                              'In Progress',
+                              inProgress,
+                              Icons.play_arrow,
+                              isDarkMode,
+                            ),
+                            _buildStatCard(
+                              'Completed',
+                              completed,
+                              Icons.check_circle,
+                              isDarkMode,
+                            ),
+                            _buildStatCard('Total', total, Icons.list, isDarkMode),
+                          ],
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),
             ),
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 1500),
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 10, bottom: 80),
+            Container(
+              color: isDarkMode ? kDarkCard : kWhite,
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: kBlue,
+                labelColor: kBlue,
+                unselectedLabelColor: isDarkMode ? kWhite : kBlack,
+                tabs: [
+                  Tab(
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (kIsWeb)
-                          ProfileCard(
-                            isDarkMode: isDarkMode,
-                            imageUrl: imageUrl,
-                            firstName: firstName,
-                            lastName: lastName,
-                            title: title,
-                            bio: bio,
-                          ),
-                        if (kIsWeb) SizedBox(width: 10),
-                        Expanded(
-                          child: Obx(() {
-                            // Check if user trainings failed to load
-                            final userTrainingError =
-                                _userTrainingController
-                                    .errorMessage
-                                    .value
-                                    .isNotEmpty;
-
-                            if (_trainingController.isLoading.value) {
-                              return Center(child: customSpinner);
-                            }
-
-                            if (_trainingController
-                                .errorMessage
-                                .value
-                                .isNotEmpty) {
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      size: 48,
-                                      color: Colors.grey[400],
-                                    ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      "Failed to load trainings",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                    SizedBox(height: 16),
-                                    ElevatedButton(
-                                      onPressed:
-                                          () =>
-                                              _trainingController
-                                                  .refreshTrainings(),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: kBlue,
-                                        foregroundColor: kWhite,
-                                      ),
-                                      child: Text("Retry"),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-
-                            return RefreshIndicator(
-                              color: kWhite,
-                              backgroundColor: kBlue,
-                              onRefresh: () async {
-                                await _trainingController.refreshTrainings();
-                                await _userTrainingController
-                                    .refreshUserTrainings();
-                              },
-                              child: Center(
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.all(0),
-                                  itemCount:
-                                      _trainingController.trainings.length,
-                                  itemBuilder: (context, index) {
-                                    final training =
-                                        _trainingController.trainings[index];
-                                    return TrainingCard(
-                                      isDarkMode: isDarkMode,
-                                      training: training,
-                                      onJoinPressed: () {
-                                        _showTrainingDetails(
-                                          context,
-                                          training,
-                                          isDarkMode,
-                                        );
-                                      },
-                                      onRefreshPressed: _refreshUserTrainings,
-                                      onViewCoursePressed: _viewCourse,
-                                    );
-                                  },
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
+                        Icon(Icons.shopping_bag),
+                        SizedBox(width: 8),
+                        Text('Available Trainings'),
                       ],
                     ),
                   ),
-                ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.school),
+                        SizedBox(width: 8),
+                        Text('My Trainings'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Available Trainings Tab
+                  _buildAvailableTrainingsTab(isDarkMode, kIsWeb),
+                  // My Trainings Tab
+                  _buildMyTrainingsTab(isDarkMode, kIsWeb),
+                ],
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAvailableTrainingsTab(bool isDarkMode, bool kIsWeb) {
+    return Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 1500),
+                child: Padding(
+                  padding: EdgeInsets.only(top: 10, bottom: 80),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (kIsWeb)
+                        ProfileCard(
+                          isDarkMode: isDarkMode,
+                          imageUrl: imageUrl,
+                          firstName: firstName,
+                          lastName: lastName,
+                          title: title,
+                          bio: bio,
+                        ),
+                      if (kIsWeb) SizedBox(width: 10),
+                      Expanded(
+                        child: Obx(() {
+                          if (_trainingController.isLoading.value) {
+                            return Center(child: customSpinner);
+                          }
+
+                          if (_trainingController
+                              .errorMessage
+                              .value
+                              .isNotEmpty) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    size: 48,
+                                    color: Colors.grey[400],
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "Failed to load trainings",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed:
+                                        () =>
+                                            _trainingController
+                                                .refreshTrainings(),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: kBlue,
+                                      foregroundColor: kWhite,
+                                    ),
+                                    child: Text("Retry"),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return RefreshIndicator(
+                            color: kWhite,
+                            backgroundColor: kBlue,
+                            onRefresh: () async {
+                              await _trainingController.refreshTrainings();
+                              await _userTrainingController
+                                  .refreshUserTrainings();
+                            },
+                            child: Center(
+                              child: ListView.builder(
+                                padding: const EdgeInsets.all(0),
+                                itemCount:
+                                    _trainingController.trainings.length,
+                                itemBuilder: (context, index) {
+                                  final training =
+                                      _trainingController.trainings[index];
+                                  return TrainingCard(
+                                    isDarkMode: isDarkMode,
+                                    training: training,
+                                    onJoinPressed: () {
+                                      _showTrainingDetails(
+                                        context,
+                                        training,
+                                        isDarkMode,
+                                      );
+                                    },
+                                    onRefreshPressed: _refreshUserTrainings,
+                                    onViewCoursePressed: _viewCourse,
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+  }
+
+  Widget _buildMyTrainingsTab(bool isDarkMode, bool kIsWeb) {
+    return Obx(() {
+      if (_userTrainingController.isLoading.value) {
+        return Center(child: customSpinner);
+      }
+
+      if (_userTrainingController.errorMessage.value.isNotEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.grey[400],
+              ),
+              SizedBox(height: 16),
+              Text(
+                "Failed to load your trainings",
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => _userTrainingController.refreshUserTrainings(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kBlue,
+                  foregroundColor: kWhite,
+                ),
+                child: Text("Retry"),
+              ),
+            ],
+          ),
+        );
+      }
+
+      if (_userTrainingController.userTrainings.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.school_outlined,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+              SizedBox(height: 16),
+              Text(
+                "No trainings yet",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "Enroll in a training to get started",
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 1500),
+          child: RefreshIndicator(
+            color: kWhite,
+            backgroundColor: kBlue,
+            onRefresh: () async {
+              await _userTrainingController.refreshUserTrainings();
+            },
+            child: ListView.builder(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              itemCount: _userTrainingController.userTrainings.length,
+              itemBuilder: (context, index) {
+                final training = _userTrainingController.userTrainings[index];
+                return TrainingCard(
+                  isDarkMode: isDarkMode,
+                  training: training,
+                  onJoinPressed: () {
+                    _showTrainingDetails(context, training, isDarkMode);
+                  },
+                  onRefreshPressed: _refreshUserTrainings,
+                  onViewCoursePressed: _viewCourse,
+                );
+              },
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   void _showTrainingDetails(
@@ -269,6 +445,56 @@ class _TrainingScreenState extends State<TrainingScreen>
             isDarkMode: isDarkMode,
             onRefreshPressed: _refreshUserTrainings,
           ),
+    );
+  }
+
+  Widget _buildStatCard(
+    String label,
+    int count,
+    IconData icon,
+    bool isDarkMode,
+  ) {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.grey[800] : kWhite,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color:
+                isDarkMode
+                    ? Colors.grey[700]!
+                    : Colors.grey[200]!,
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 28,
+              color: kBlue,
+            ),
+            SizedBox(height: 8),
+            Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? kWhite : kBlack,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDarkMode ? kGrey : kGrey,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -498,8 +724,9 @@ class _TrainingDetailModalState extends State<TrainingDetailModal> {
   final GetUserProfileController _getUserProfileController = Get.put(
     GetUserProfileController(),
   );
-  final TextEditingController _phoneController = TextEditingController();
 
+  String? completePhoneNumber;
+  String? countryCode = '+254';
   String phoneNumber = '';
   String? fetchedPhoneNumber;
   String fetchedUserId = '';
@@ -519,31 +746,8 @@ class _TrainingDetailModalState extends State<TrainingDetailModal> {
 
   Future<void> _fetchPhoneNumberAndUser() async {
     fetchedPhoneNumber = await StorageService.getData("phoneNumber");
-    _phoneController.text = reformatPhoneNumber(fetchedPhoneNumber ?? '');
     fetchedUserId = await StorageService.getData('userId');
     await _getUserProfileController.fetchUserProfile(fetchedUserId);
-  }
-
-  String formatPhoneNumber(String input) {
-    input = input.trim();
-    if (input.startsWith('0') && input.length == 10) {
-      return '254${input.substring(1)}';
-    } else if (input.startsWith('254') && input.length == 12) {
-      return input;
-    } else {
-      throw FormatException("Invalid phone number format");
-    }
-  }
-
-  String reformatPhoneNumber(String input) {
-    input = input.trim();
-    if (input.startsWith('254') && input.length == 12) {
-      return '0${input.substring(3)}';
-    } else if (input.startsWith('0') && input.length == 10) {
-      return input;
-    } else {
-      return input;
-    }
   }
 
   void _showPhoneNumberModal() {
@@ -600,10 +804,55 @@ class _TrainingDetailModalState extends State<TrainingDetailModal> {
                   const SizedBox(height: 20),
                   Image.asset("images/mpesa.png", height: 50),
                   const SizedBox(height: 20),
-                  InputField(
-                    controller: _phoneController,
-                    hintText: "eg: 07XXXXXXXX",
-                    label: "Phone Number *",
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Phone Number *",
+                          style: TextStyle(
+                            color: widget.isDarkMode ? kWhite : kBlack,
+                            fontWeight: FontWeight.bold,
+                            fontSize: kNormalTextSize,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        IntlPhoneField(
+                          decoration: InputDecoration(
+                            hintText: "7*******",
+                            hintStyle: TextStyle(
+                              color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(color: kBlue, width: 1.0),
+                            ),
+                          ),
+                          style: TextStyle(
+                            color: widget.isDarkMode ? kWhite : kBlack,
+                          ),
+                          dropdownTextStyle: TextStyle(
+                            color: widget.isDarkMode ? kWhite : kBlack,
+                          ),
+                          dropdownIcon: Icon(
+                            Icons.arrow_drop_down,
+                            color: widget.isDarkMode ? kWhite : kBlack,
+                          ),
+                          initialCountryCode: 'KE',
+                          onChanged: (PhoneNumber phone) {
+                            completePhoneNumber = phone.completeNumber;
+                          },
+                          onCountryChanged: (country) {
+                            countryCode = '+${country.dialCode}';
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Padding(
@@ -613,9 +862,7 @@ class _TrainingDetailModalState extends State<TrainingDetailModal> {
                       child: CustomButton(
                         callBackFunction: () {
                           Navigator.pop(context);
-                          phoneNumber = formatPhoneNumber(
-                            _phoneController.text,
-                          );
+                          phoneNumber = completePhoneNumber ?? '';
                           _payForTraining();
                         },
                         label: "Confirm Payment",
@@ -685,7 +932,6 @@ class _TrainingDetailModalState extends State<TrainingDetailModal> {
   @override
   void dispose() {
     Get.find<UserTrainingController>().fetchUserTrainings();
-    _phoneController.dispose();
     super.dispose();
   }
 

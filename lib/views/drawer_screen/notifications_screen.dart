@@ -3,7 +3,6 @@ import 'package:dama/controller/get_event_by_id.dart';
 import 'package:dama/controller/get_news_by_id.dart';
 import 'package:dama/controller/notification_controller.dart';
 import 'package:dama/services/local_storage_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/views/selected_screens/selected_blog_screen.dart';
@@ -51,28 +50,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.initState();
     _fetchData();
     _loadData();
-    _showSwipeHint();
-  }
-
-  Future<void> _showSwipeHint() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasSeenHint = prefs.getBool('notification_swipe_hint_shown') ?? false;
-
-    if (!hasSeenHint && mounted) {
-      await Future.delayed(const Duration(milliseconds: 1500));
-      if (mounted) {
-        Get.snackbar(
-          '💡 Tip',
-          'Swipe right on a notification to delete it',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: kBlue.withOpacity(0.9),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 4),
-          margin: const EdgeInsets.all(10),
-        );
-        await prefs.setBool('notification_swipe_hint_shown', true);
-      }
-    }
   }
 
   void _loadData() async {
@@ -100,13 +77,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _handleNotificationTap(notification) async {
-    final type = notification.type;
-    final referenceId = notification.referenceId;
+    // Use helper getters that check both 'type' and 'data' fields
+    final type = notification.notificationType;
+    final referenceId = notification.refId;
+    
+    debugPrint('Notification tapped - Type: $type, RefID: $referenceId');
+    debugPrint('Notification data: ${notification.data}');
+    debugPrint('Notification raw type: ${notification.type}');
+    debugPrint('Notification raw referenceId: ${notification.referenceId}');
+    debugPrint('Notification ID: ${notification.id}');
+
+    // Show loading indicator
+    Get.dialog(
+      Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    // Mark as read if not already read
+    if (!notification.read && notification.id.isNotEmpty) {
+      await _notificationController.markAsRead(notification.id);
+    }
 
     try {
-      if (type == 'blog' && referenceId != null) {
+      if (type == 'blog' && referenceId != null && referenceId.isNotEmpty) {
         // Fetch blog and navigate
         await _blogController.fetchBlog(referenceId);
+        
+        // Close loading
+        Get.back();
+        
         if (_blogController.blog.value != null) {
           final blog = _blogController.blog.value!;
           Get.to(
@@ -125,11 +124,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           );
         } else {
-          _showErrorSnackbar('Could not load blog');
+          _showErrorSnackbar('Could not load blog content');
         }
-      } else if (type == 'news' && referenceId != null) {
+      } else if (type == 'news' && referenceId != null && referenceId.isNotEmpty) {
         // Fetch news and navigate
         await _newsController.fetchNews(referenceId);
+        
+        // Close loading
+        Get.back();
+        
         if (_newsController.news.value != null) {
           final news = _newsController.news.value!;
           Get.to(
@@ -147,11 +150,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           );
         } else {
-          _showErrorSnackbar('Could not load news');
+          _showErrorSnackbar('Could not load news content');
         }
-      } else if (type == 'event' && referenceId != null) {
+      } else if (type == 'event' && referenceId != null && referenceId.isNotEmpty) {
         // Fetch event and navigate
         await _eventController.fetchEvent(referenceId);
+        
+        // Close loading
+        Get.back();
+        
         if (_eventController.event.value != null) {
           final event = _eventController.event.value!;
           Get.to(
@@ -168,9 +175,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           );
         } else {
-          _showErrorSnackbar('Could not load event');
+          _showErrorSnackbar('Could not load event details');
         }
       } else {
+        // Close loading
+        Get.back();
+        
         // Fallback: show dialog for notifications without type/referenceId
         showDialog(
           context: context,
@@ -185,6 +195,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         );
       }
     } catch (e) {
+      // Close loading on error
+      Get.back();
       _showErrorSnackbar('Error: ${e.toString()}');
     }
   }
@@ -211,24 +223,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       );
     } else {
       _showErrorSnackbar('Failed to mark notifications as read');
-    }
-  }
-
-  Future<void> _deleteNotification(String notificationId) async {
-    final success = await _notificationController.deleteNotification(
-      notificationId,
-    );
-    if (success) {
-      Get.snackbar(
-        'Deleted',
-        'Notification removed',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.grey.withOpacity(0.9),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-      );
-    } else {
-      _showErrorSnackbar('Failed to delete notification');
     }
   }
 
@@ -336,82 +330,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     itemCount: reversedList.length,
                                     itemBuilder: (context, index) {
                                       final notification = reversedList[index];
-                                      return Dismissible(
-                                        key: Key(notification.id),
-                                        direction: DismissDirection.startToEnd,
-                                        background: Container(
-                                          alignment: Alignment.centerLeft,
-                                          padding: const EdgeInsets.only(
-                                            left: 20,
-                                          ),
-                                          margin: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.delete,
-                                            color: Colors.white,
-                                          ),
+                                      return Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 10,
                                         ),
-                                        confirmDismiss: (direction) async {
-                                          return await showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return AlertDialog(
-                                                title: const Text(
-                                                  'Delete Notification',
-                                                ),
-                                                content: const Text(
-                                                  'Are you sure you want to delete this notification?',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed:
-                                                        () => Navigator.of(
-                                                          context,
-                                                        ).pop(false),
-                                                    child: const Text('Cancel'),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed:
-                                                        () => Navigator.of(
-                                                          context,
-                                                        ).pop(true),
-                                                    child: const Text(
-                                                      'Delete',
-                                                      style: TextStyle(
-                                                        color: Colors.red,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        },
-                                        onDismissed: (direction) {
-                                          _deleteNotification(notification.id);
-                                        },
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                          ),
-                                          child: NotoficationCard(
-                                            title: notification.title,
-                                            body: notification.body,
-                                            date: '${notification.createdAt}',
-                                            isRead: notification.read,
-                                            onTap:
-                                                () => _handleNotificationTap(
-                                                  notification,
-                                                ),
-                                          ),
+                                        child: NotoficationCard(
+                                          title: notification.title,
+                                          body: notification.body,
+                                          date: '${notification.createdAt}',
+                                          isRead: notification.read,
+                                          onTap:
+                                              () => _handleNotificationTap(
+                                                notification,
+                                              ),
                                         ),
                                       );
                                     },

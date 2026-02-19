@@ -27,6 +27,7 @@ import 'package:dama/views/selected_screens/selected_news_screen.dart';
 import 'package:dama/views/selected_screens/selected_resource_screen.dart';
 import 'package:dama/widgets/cards/profile_card.dart';
 import 'package:dama/widgets/custom_appbar.dart';
+import 'package:dama/widgets/profile_avatar.dart';
 import 'package:dama/widgets/modals/alert_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -722,7 +723,7 @@ class _DashboardState extends State<Dashboard> {
                                           !_isProfileDropdownOpen;
                                     });
                                   },
-                                  child: CircleAvatar(
+                                  child: ProfileAvatar(
                                     radius: 18,
                                     backgroundImage:
                                         imageUrl.isNotEmpty
@@ -757,7 +758,7 @@ class _DashboardState extends State<Dashboard> {
                                       } else if (value == 2) {
                                         Navigator.pushNamed(
                                           context,
-                                          AppRoutes.trainning,
+                                          AppRoutes.trainings,
                                         );
                                       } else if (value == 3) {
                                         Navigator.pushNamed(
@@ -841,7 +842,7 @@ class _DashboardState extends State<Dashboard> {
                                             ),
                                           ),
                                         ],
-                                    child: CircleAvatar(
+                                    child: ProfileAvatar(
                                       radius: 18,
                                       backgroundImage:
                                           imageUrl.isNotEmpty
@@ -1233,7 +1234,7 @@ class _DashboardState extends State<Dashboard> {
               rating: averageRating,
               description: resource.description,
               viewUrl: resource.resourceLink,
-              isPaid: false,
+              isPaid: resource.price > 0,
               resourceID: resource.id,
             );
           },
@@ -1278,9 +1279,11 @@ class _DashboardState extends State<Dashboard> {
 
     return Drawer(
       backgroundColor: isDarkMode ? kBlack : kWhite,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
           Container(
             padding: EdgeInsets.only(top: 50, left: 15, bottom: 20),
             decoration: BoxDecoration(color: isDarkMode ? kBlack : kWhite),
@@ -1380,40 +1383,175 @@ class _DashboardState extends State<Dashboard> {
                 ),
                 SizedBox(height: 10),
                 if (hasMembership) ...[
+                  // Glass Grey Membership Card
                   Container(
-                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: kGreen.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: kGreen.withOpacity(0.3)),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.grey.withOpacity(0.3),
+                          Colors.grey.withOpacity(0.1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.grey.withOpacity(0.3),
+                        width: 1,
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.verified, color: kBlack, size: 20),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                membershipName,
-                                style: TextStyle(
-                                  color: isDarkMode ? kGreen : kBlack,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ACTIVE Status
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                  size: 18,
                                 ),
-                              ),
-                              if (membershipExiryDate.isNotEmpty) ...[
-                                SizedBox(height: 2),
+                                SizedBox(width: 8),
                                 Text(
-                                  'Expires: ${formatMembershipExpiry(membershipExiryDate)}',
-                                  style: TextStyle(color: kGrey, fontSize: 11),
+                                  'ACTIVE',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
                                 ),
                               ],
+                            ),
+                            SizedBox(height: 10),
+                            // Professional Member
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.workspace_premium,
+                                  color:
+                                      isDarkMode ? kWhite : Colors.grey[700],
+                                  size: 18,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    membershipName,
+                                    style: TextStyle(
+                                      color:
+                                          isDarkMode
+                                              ? kWhite
+                                              : Colors.grey[800],
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 6),
+                            // All premium benefits unlocked
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.lock_open,
+                                  color:
+                                      isDarkMode
+                                          ? kWhite.withOpacity(0.7)
+                                          : Colors.grey[600],
+                                  size: 16,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'All premium benefits unlocked',
+                                    style: TextStyle(
+                                      color:
+                                          isDarkMode
+                                              ? kWhite.withOpacity(0.7)
+                                              : Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (membershipExiryDate.isNotEmpty) ...[
+                              SizedBox(height: 4),
+                              Text(
+                                'Expires: ${formatMembershipExpiry(membershipExiryDate)}',
+                                style: TextStyle(
+                                  color: kGrey,
+                                  fontSize: 11,
+                                ),
+                              ),
                             ],
-                          ),
+                            SizedBox(height: 12),
+                            // Manage Plan Button
+                            InkWell(
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.pushNamed(context, AppRoutes.plans);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isDarkMode
+                                          ? Colors.grey[800]
+                                          : Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.settings,
+                                          color:
+                                              isDarkMode
+                                                  ? kWhite
+                                                  : Colors.grey[700],
+                                          size: 16,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Manage Plan',
+                                          style: TextStyle(
+                                            color:
+                                                isDarkMode
+                                                    ? kWhite
+                                                    : Colors.grey[800],
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      color:
+                                          isDarkMode
+                                              ? kWhite
+                                              : Colors.grey[700],
+                                      size: 14,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ] else ...[
@@ -1521,7 +1659,7 @@ class _DashboardState extends State<Dashboard> {
               'Training',
               style: TextStyle(color: isDarkMode ? kWhite : kBlack),
             ),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.trainning),
+            onTap: () => Navigator.pushNamed(context, AppRoutes.trainings),
           ),
           ListTile(
             leading: Icon(
@@ -1569,8 +1707,6 @@ class _DashboardState extends State<Dashboard> {
             },
           ),
 
-          Spacer(),
-
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Container(
@@ -1580,7 +1716,8 @@ class _DashboardState extends State<Dashboard> {
           ),
           SizedBox(height: 30),
           SizedBox(height: 30),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -5,9 +5,11 @@ import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/widgets/custom_spinner.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TodaySessionsScreen extends StatefulWidget {
   const TodaySessionsScreen({super.key});
@@ -188,6 +190,13 @@ class SessionCard extends StatelessWidget {
   final VoidCallback onJoinPressed;
   final VoidCallback onLeavePressed;
 
+  // Check if user can join the session (15 minutes before start time)
+  bool _canJoinSession() {
+    final now = DateTime.now();
+    final joinWindowStart = session.startTime.subtract(Duration(minutes: 15));
+    return now.isAfter(joinWindowStart) && now.isBefore(session.endTime);
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -275,27 +284,87 @@ class SessionCard extends StatelessWidget {
               ],
             ),
             if (session.meetingLink != null && session.meetingLink!.isNotEmpty) ...[
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.link,
-                    size: 16,
-                    color: isDarkMode ? kWhite : kGrey,
-                  ),
-                  SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      'Meeting Link Available',
+              SizedBox(height: 12),
+              if (_canJoinSession())
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      var url = session.meetingLink!;
+                      // Ensure URL has proper scheme
+                      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        url = 'https://$url';
+                      }
+                      final uri = Uri.parse(url);
+                      try {
+                        // Try external application mode first (better for meeting apps)
+                        final launched = await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                        if (!launched && context.mounted) {
+                          // Fallback to in-app webview
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.inAppWebView,
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Could not open meeting link'),
+                              action: SnackBarAction(
+                                label: 'Copy',
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: url));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Link copied')),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: Icon(Icons.video_call, color: kWhite),
+                    label: Text(
+                      'Enter Class',
                       style: TextStyle(
                         fontSize: 14,
-                        color: kBlue,
-                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.bold,
+                        color: kWhite,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: kWhite,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
-                ],
-              ),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Available 15 minutes before start',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ),
             ],
             SizedBox(height: 16),
             Row(

@@ -11,6 +11,7 @@ import 'package:dama/views/other_user_profile.dart';
 import 'package:dama/widgets/cards/profile_card.dart';
 import 'package:dama/widgets/modals/comment_bottomsheet.dart';
 import 'package:dama/widgets/modals/subscription_modal.dart';
+import 'package:dama/widgets/profile_avatar.dart';
 import 'package:dama/widgets/sources_references_section.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:flutter/material.dart';
@@ -368,7 +369,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                             ),
                                                           );
                                                         },
-                                                        child: CircleAvatar(
+                                                        child: ProfileAvatar(
                                                           radius: 25,
                                                           backgroundColor:
                                                               kLightGrey,

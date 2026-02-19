@@ -28,6 +28,11 @@ class _OtpScreenState extends State<OtpScreen> {
   );
 
   String? userId;
+  String _otpFlow = 'login'; // 'login' or 'registration' or 'professional_details'
+  String _pageTitle = 'OTP Verification';
+  String _pageSubtitle = 'We sent an OTP verification to the registered number';
+  String _buttonLabel = 'Verify Phone Number';
+  String _stepIndicator = ''; // Empty for login flow, 'Step 3 of 3' for profile setup
 
   @override
   void initState() {
@@ -43,8 +48,24 @@ class _OtpScreenState extends State<OtpScreen> {
 
   Future<void> _fetchData() async {
     String? fetchedUserId = await StorageService.getData('userId');
+    String? otpFlow = await StorageService.getData('otp_flow');
     setState(() {
       userId = fetchedUserId;
+      _otpFlow = otpFlow ?? 'login';
+      // Update text based on flow
+      if (_otpFlow == 'professional_details') {
+        _pageTitle = 'Verify Your Phone';
+        _pageSubtitle = 'Enter the OTP sent to your phone to complete your profile setup';
+        _buttonLabel = 'Verify & Continue';
+        _stepIndicator = 'Step 3 of 3';
+      } else if (_otpFlow == 'registration') {
+        _pageTitle = 'Verify Your Phone';
+        _pageSubtitle = 'Enter the OTP sent to your phone to complete registration';
+        _buttonLabel = 'Verify & Continue';
+        _stepIndicator = '';
+      } else {
+        _stepIndicator = '';
+      }
     });
   }
 
@@ -66,6 +87,21 @@ class _OtpScreenState extends State<OtpScreen> {
     _authController.userId.value = userId!;
 
     _authController.verifyOtp(context);
+  }
+
+  void _resendOtp() {
+    // Show info message about OTP resend
+    // NOTE: Backend doesn't have a dedicated resend OTP endpoint currently.
+    // For LinkedIn users in the professional_details flow, the OTP should be
+    // sent automatically or through alternative backend means.
+    Get.snackbar(
+      margin: EdgeInsets.only(top: 15, left: 15, right: 15),
+      "Info",
+      "If you haven't received the OTP, please check your SMS or try logging in again.",
+      colorText: kWhite,
+      backgroundColor: kBlue.withOpacity(0.9),
+      duration: Duration(seconds: 4),
+    );
   }
 
   @override
@@ -105,7 +141,18 @@ class _OtpScreenState extends State<OtpScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                  SizedBox(height: screenHeight * 0.1),
+                  SizedBox(height: screenHeight * 0.05),
+                  if (_stepIndicator.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                      child: Text(
+                        _stepIndicator,
+                        style: TextStyle(
+                          color: isDarkMode ? kWhite : kBlue,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Image.asset(
@@ -115,7 +162,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                   Center(
                     child: Text(
-                      "OTP Verification",
+                      _pageTitle,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -125,7 +172,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   SizedBox(height: 10),
                   Center(
                     child: Text(
-                      'We sent an OTP verification to the registered number',
+                      _pageSubtitle,
                       style: TextStyle(color: isDarkMode ? kWhite : kGrey),
                     ),
                   ),
@@ -183,7 +230,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     child: CustomButton(
                       backgroundColor: kBlue,
                       callBackFunction: _verifyOtp,
-                      label: "Verify Phone Number",
+                      label: _buttonLabel,
                     ),
                   ),
                   SizedBox(height: 10),
@@ -197,9 +244,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       children: [
                         Text("Didn't receive the OTP? ", style: TextStyle(color: isDarkMode ? kWhite : kBlack),),
                         GestureDetector(
-                          onTap: () {
-                            // Add resend OTP logic here
-                          },
+                          onTap: _resendOtp,
                           child: Text(
                             'Click Resend',
                             style: TextStyle(

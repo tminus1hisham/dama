@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 import '../models/chat_models.dart';
 import '../services/local_storage_service.dart';
+import '../widgets/profile_avatar.dart';
 
 class ChatScreen extends StatefulWidget {
   final String conversationId;
@@ -66,7 +67,7 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            CircleAvatar(
+            ProfileAvatar(
               backgroundImage: widget.otherUser.profilePicture != null
                   ? NetworkImage(widget.otherUser.profilePicture!)
                   : null,

@@ -15,6 +15,8 @@ class UpdateUserProfileController extends GetxController {
   var title = ''.obs;
   var company = ''.obs;
   var brief = ''.obs;
+  var password = ''.obs;
+  var passwordSet = false.obs;
 
   var isLoading = false.obs;
 
@@ -22,6 +24,11 @@ class UpdateUserProfileController extends GetxController {
 
   void updateUser() async {
     isLoading.value = true;
+
+    print('[UpdateProfile] Updating user profile');
+    print('[UpdateProfile] Nationality: ${nationality.value}');
+    print('[UpdateProfile] Phone: ${phoneNumber.value}');
+    print('[UpdateProfile] Password set: ${passwordSet.value}');
 
     try {
       final userModel = UserProfileModel(
@@ -35,9 +42,15 @@ class UpdateUserProfileController extends GetxController {
         title: title.value,
         company: company.value,
         brief: brief.value,
+        password: password.value.isNotEmpty ? password.value : null,
+        passwordSet: passwordSet.value,
       );
 
+      print('[UpdateProfile] Sending to API: ${userModel.toJson()}');
+
       final result = await _authService.updateUserProfile(userModel);
+      
+      print('[UpdateProfile] API result: $result');
 
       if (result) {
         Get.snackbar(

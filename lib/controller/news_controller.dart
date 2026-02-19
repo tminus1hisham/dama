@@ -480,13 +480,36 @@ class NewsController extends GetxController {
   Future<void> fetchPopularNews() async {
     try {
       debugPrint('Fetching popular news...');
-      final popular = await _apiService.getPopularNews(limit: 10);
+      final category = selectedCategory.value == 'All News' 
+          ? null 
+          : selectedCategory.value;
+      final popular = await _apiService.getPopularNews(limit: 10, category: category);
       debugPrint('Popular news fetched: ${popular.length} items');
-      popularNews.value = popular;
+      
+      // If API returns empty for a specific category, try fetching all and filter client-side
+      if (popular.isEmpty && category != null) {
+        debugPrint('API returned empty for category $category, fetching all and filtering client-side');
+        final allPopular = await _apiService.getPopularNews(limit: 50);
+        popularNews.value = allPopular;
+      } else {
+        popularNews.value = popular;
+      }
     } catch (e) {
       debugPrint('Error fetching popular news: $e');
-      popularNews.value = [];
+      // Fallback: compute from all news if API fails
+      _computeTrendingNews();
     }
+  }
+  
+  /// Get filtered popular news based on selected category
+  List<NewsModel> get filteredPopularNews {
+    final selected = selectedCategory.value.trim().toUpperCase();
+    if (selected == 'ALL NEWS') return popularNews;
+    
+    return popularNews.where((news) {
+      final newsCat = _getCategoryForNews(news);
+      return newsCat == selected;
+    }).toList();
   }
 
   Future<void> _fetchNewsProgressively() async {
@@ -576,7 +599,17 @@ class NewsController extends GetxController {
   }
 
   void _computeTrendingNews() {
-    final sorted = List<NewsModel>.from(_allNews);
+    final selected = selectedCategory.value.trim().toUpperCase();
+    
+    // Filter by category if not "All News"
+    final filtered = selected == 'ALL NEWS'
+        ? _allNews
+        : _allNews.where((news) {
+            final newsCat = _getCategoryForNews(news);
+            return newsCat == selected;
+          }).toList();
+    
+    final sorted = List<NewsModel>.from(filtered);
     sorted.sort((a, b) {
       final engagementA = a.likes.length + a.comments.length;
       final engagementB = b.likes.length + b.comments.length;
@@ -610,6 +643,10 @@ class NewsController extends GetxController {
   void selectCategory(String category) {
     if (selectedCategory.value == category) return;
     selectedCategory.value = category;
+    
+    // Refetch popular news for the new category
+    fetchPopularNews();
+    
     _applyFilter();
   }
 

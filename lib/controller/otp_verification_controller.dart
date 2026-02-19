@@ -21,14 +21,30 @@ class OtpVerificationController extends GetxController {
   }
 
   Future<void> _loadUserId() async {
+    print('=== OTP SCREEN - LOADING USER ID ===');
     final storedUserId = await StorageService.getData('userId');
+    final authType = await StorageService.getData('authType');
+    final phone = await StorageService.getData('phoneNumber');
+    
+    print('[OTP] Data from Storage:');
+    print('  userId: $storedUserId');
+    print('  authType: $authType');
+    print('  phoneNumber: $phone');
+    
     if (storedUserId != null) {
       userId.value = storedUserId;
-      debugPrint('[OTP] Loaded userId: $storedUserId');
+      print('[OTP] userId set in controller: ${userId.value}');
+    } else {
+      print('[OTP] WARNING: userId is null!');
     }
+    print('====================================');
   }
 
   void verifyOtp(BuildContext context) async {
+    print('=== OTP VERIFICATION STARTED ===');
+    print('[OTP] userId: ${userId.value}');
+    print('[OTP] otp: ${otp.value}');
+    
     isLoading.value = true;
 
     try {
@@ -36,12 +52,54 @@ class OtpVerificationController extends GetxController {
         userId: userId.value,
         otp: otp.value,
       );
+      
+      print('[OTP] Sending verification request...');
 
-      final result = await _otpVerificationService.verifyOtp(
-        otpVerificationModel,
-      );
+      // Check which flow this OTP is for
+      final otpFlow = await StorageService.getData('otp_flow');
+      
+      Map<String, dynamic>? result;
+      
+      if (otpFlow == 'registration' || otpFlow == 'professional_details') {
+        // Use registration-specific OTP verification for profile setup flows
+        result = await _otpVerificationService.verifyRegistrationOtp(
+          otpVerificationModel,
+        );
+      } else {
+        // Use login OTP verification
+        result = await _otpVerificationService.verifyOtp(
+          otpVerificationModel,
+        );
+      }
+      
       if (result != null) {
-        Get.offAllNamed(AppRoutes.home);
+        // Clear the OTP flow flag
+        await StorageService.removeData('otp_flow');
+        
+        if (otpFlow == 'professional_details') {
+          // Professional details flow - profile setup complete, go to home
+          Get.snackbar(
+            margin: EdgeInsets.only(top: 15, left: 15, right: 15),
+            "Success",
+            "Phone verified! Welcome to DAMA.",
+            colorText: kWhite,
+            backgroundColor: kGreen.withOpacity(0.9),
+          );
+          Get.offAllNamed(AppRoutes.home);
+        } else if (otpFlow == 'registration') {
+          // Registration flow - go to personal details to complete profile
+          Get.snackbar(
+            margin: EdgeInsets.only(top: 15, left: 15, right: 15),
+            "Success",
+            "Phone verified! Let's complete your profile",
+            colorText: kWhite,
+            backgroundColor: kGreen.withOpacity(0.9),
+          );
+          Get.offAllNamed(AppRoutes.personal_details);
+        } else {
+          // Login flow - go to home
+          Get.offAllNamed(AppRoutes.home);
+        }
       }
     } catch (e) {
       Get.snackbar(

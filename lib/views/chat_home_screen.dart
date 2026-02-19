@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 import '../models/chat_models.dart';
 import '../services/local_storage_service.dart';
+import '../widgets/profile_avatar.dart';
 import 'chat_screen.dart';
 
 class ChatHomeScreen extends StatefulWidget {
@@ -63,7 +64,7 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
               );
               
               return ListTile(
-                leading: CircleAvatar(
+                leading: ProfileAvatar(
                   // Add profile picture if available
                   child: Text(otherUserId.isNotEmpty ? otherUserId[0].toUpperCase() : '?'),
                 ),

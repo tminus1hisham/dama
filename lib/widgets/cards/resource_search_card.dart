@@ -45,11 +45,11 @@ class ResourceSearchCard extends StatelessWidget {
               builder:
                   (context) => SelectedResourceScreen(
                 resourceID: resourceId,
-                isPaid: false,
+                isPaid: price > 0,
                 title: title,
                 imageUrl: imageUrl ?? '',
                 description: description,
-                price: price,
+                price: price is int ? price : int.tryParse(price.toString()) ?? 0,
                 viewUrl: link,
                 date: createdAt,
                 rating: rating,

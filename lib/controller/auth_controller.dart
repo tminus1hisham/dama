@@ -313,8 +313,9 @@ class AuthController extends GetxController {
       // Keep completeUserData as LinkedIn data (already set above)
     }
 
-    // Store LinkedIn login method
+    // Store LinkedIn login method and authType
     await _storage.write(key: 'login_method', value: 'linkedin');
+    await StorageService.storeData({'authType': 'linkedin'});
 
     // Update reactive state BEFORE navigation
     print('Updating reactive state...');
@@ -354,7 +355,15 @@ class AuthController extends GetxController {
       'memberId': userData['memberId'] ?? '',
       'hasMembership': userData['hasMembership'] ?? false,
       'membershipExp': userData['membershipExp'] ?? '',
-      'membershipId': userData['membershipId'] ?? '',
+      'membershipId': (() {
+        final membershipIdRaw = userData['membershipId'];
+        if (membershipIdRaw is Map) {
+          return membershipIdRaw['_id'] ?? '';
+        }
+        return membershipIdRaw ?? '';
+      })(),
+      'membershipCertificate': userData['membershipCertificate'] ?? '',
+      'membershipCertificateDownload': userData['membershipCertificateDownload'] ?? '',
     });
 
     // Store user roles if available

@@ -11,11 +11,14 @@ class PaymentController extends GetxController {
   var phoneNumber = ''.obs;
 
   var isLoading = false.obs;
+  var errorMessage = ''.obs;
 
   final ApiService _paymentService = ApiService();
 
   Future<bool> pay(BuildContext context) async {
     isLoading.value = true;
+    errorMessage.value = '';
+    
     try {
       final paymentModel = PaymentModel(
         objectId: object_id.value,
@@ -24,30 +27,74 @@ class PaymentController extends GetxController {
         phoneNumber: phoneNumber.value,
       );
 
+      print("=== PAYMENT DEBUG ===");
+      print("Payment Request: objectId=${paymentModel.objectId}, model=${paymentModel.model}, amount=${paymentModel.amountToPay}, phone=${paymentModel.phoneNumber}");
+      
       final result = await _paymentService.pay(paymentModel);
-      print("HAPA");
-      print(result);
+      print("Payment API Response: $result");
 
-      if (result != null && result['status'] == 'Completed') {
-        return true;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("You cancelled or the payment did not go through"),
-            backgroundColor: kRed,
-          ),
-        );
+      if (result != null) {
+        // Check for explicit success indicators from M-Pesa
+        final responseCode = result['ResponseCode']?.toString();
+        final resultCode = result['ResultCode']?.toString();
+        final status = result['status']?.toString().toLowerCase() ?? '';
+        final message = result['message']?.toString() ?? '';
+        
+        // M-Pesa STK push initiated successfully
+        // Check multiple possible success indicators
+        final hasCheckoutId = result['CheckoutRequestID'] != null || 
+                              result['checkoutRequestID'] != null;
+        final isSuccessResponse = responseCode == '0' || 
+                                   (resultCode != null && int.tryParse(resultCode) == 0) ||
+                                   status == 'success' ||
+                                   status == 'completed' ||
+                                   message.toLowerCase().contains('success');
+        
+        if (isSuccessResponse || hasCheckoutId) {
+          // Show STK push initiated message
+          Get.snackbar(
+            'Payment Initiated',
+            "M-Pesa prompt sent to ${paymentModel.phoneNumber}! Check your phone to complete payment.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: kGreen,
+            colorText: Colors.white,
+            duration: Duration(seconds: 5),
+          );
+          return true;
+        } else if (status == 'pending' || status == 'processing') {
+          // Payment is being processed
+          Get.snackbar(
+            'Processing',
+            "Payment initiated. Please complete the payment on your phone.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: kYellow,
+            colorText: Colors.black,
+            duration: Duration(seconds: 4),
+          );
+          return true;
+        } else if (result['error'] != null || message.toLowerCase().contains('error')) {
+          // Explicit error from API
+          throw Exception(message.isNotEmpty ? message : result['error']?.toString() ?? 'Payment failed');
+        }
       }
+      
+      // Payment failed or returned null
+      throw Exception(result?['message'] ?? result?['error'] ?? "Payment could not be processed. Please try again.");
+      
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("An error occurred during payment"),
-          backgroundColor: kRed,
-        ),
+      print("Payment Error: $e");
+      errorMessage.value = e.toString();
+      Get.snackbar(
+        'Payment Failed',
+        "Payment failed: ${e.toString()}",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: kRed,
+        colorText: Colors.white,
+        duration: Duration(seconds: 4),
       );
+      return false;
     } finally {
       isLoading.value = false;
     }
-    return false;
   }
 }

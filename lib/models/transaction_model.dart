@@ -10,6 +10,7 @@ class TransactionModel {
   final UserModel user;
   final dynamic object; // Can be EventModel or ResourceModel
   final String onModel;
+  final String? rawObjectId; // Store ID when object is not populated
 
   TransactionModel({
     required this.id,
@@ -21,6 +22,7 @@ class TransactionModel {
     required this.user,
     this.object,
     required this.onModel,
+    this.rawObjectId,
   });
 
   // Getters for type-safe access
@@ -48,15 +50,20 @@ class TransactionModel {
 
       // Parse the object based on onModel type
       dynamic parsedObject;
+      String? rawObjectId;
       final objectData = json['object_id'];
       final onModel = json['onModel']?.toString() ?? 'Event';
 
       if (objectData != null && objectData is Map<String, dynamic>) {
+        // Object is populated with full data
         if (onModel == 'Event') {
           parsedObject = EventTransactionModel.fromJson(objectData);
         } else if (onModel == 'Resource') {
           parsedObject = ResourceTransactionModel.fromJson(objectData);
         }
+      } else if (objectData != null && objectData is String) {
+        // Object is just an ID string (not populated)
+        rawObjectId = objectData;
       }
 
       return TransactionModel(
@@ -76,6 +83,7 @@ class TransactionModel {
                 : UserModel.empty(),
         object: parsedObject,
         onModel: onModel,
+        rawObjectId: rawObjectId,
       );
     } catch (e, stackTrace) {
       developer.log('Error parsing TransactionModel: $e');

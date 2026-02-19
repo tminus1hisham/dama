@@ -35,10 +35,35 @@ class CertificateModel {
     
     // Extract userId - it could be a string or an object
     String userIdValue = '';
+    String userNameValue = '';
+    
     if (json['userId'] is String) {
       userIdValue = json['userId'];
     } else if (json['userId'] is Map<String, dynamic>) {
-      userIdValue = json['userId']['_id'] ?? '';
+      final userData = json['userId'] as Map<String, dynamic>;
+      userIdValue = userData['_id'] ?? '';
+      
+      // Build userName from firstName and lastName if available
+      final firstName = userData['firstName'] ?? '';
+      final lastName = userData['lastName'] ?? '';
+      if (firstName.isNotEmpty || lastName.isNotEmpty) {
+        userNameValue = '$firstName $lastName'.trim();
+      }
+    }
+    
+    // If userName is still empty, try metadata or json directly
+    if (userNameValue.isEmpty) {
+      userNameValue = metadata['userName'] ?? json['userName'] ?? '';
+    }
+    
+    // If still empty, try to get from user data in metadata
+    if (userNameValue.isEmpty && metadata['user'] is Map<String, dynamic>) {
+      final userData = metadata['user'] as Map<String, dynamic>;
+      final firstName = userData['firstName'] ?? '';
+      final lastName = userData['lastName'] ?? '';
+      if (firstName.isNotEmpty || lastName.isNotEmpty) {
+        userNameValue = '$firstName $lastName'.trim();
+      }
     }
     
     // Extract trainingId - it could be a string or an object
@@ -55,7 +80,7 @@ class CertificateModel {
       trainingId: trainingIdValue,
       trainingTitle: metadata['trainingTitle'] ?? json['trainingTitle'] ?? '',
       userId: userIdValue,
-      userName: metadata['userName'] ?? json['userName'] ?? '',
+      userName: userNameValue,
       issuerName: json['issuerName'] ?? 'DAMA KENYA',
       issueDate: DateTime.tryParse(json['issueDate'] ?? '') ?? DateTime.now(),
       completionDate:

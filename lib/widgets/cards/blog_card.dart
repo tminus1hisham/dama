@@ -1,6 +1,7 @@
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/utils/utils.dart';
+import 'package:dama/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -83,7 +84,7 @@ class blogCard extends StatelessWidget {
                       children: [
                         GestureDetector(
                           onTap: isAdminOrManager ? null : onProfileClicked,
-                          child: CircleAvatar(
+                          child: ProfileAvatar(
                             radius: 20,
                             backgroundColor:
                                 isDarkMode ? Color(0xFF2a3040) : kLightGrey,

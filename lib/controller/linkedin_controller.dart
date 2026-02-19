@@ -4,15 +4,11 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:dama/services/auth_service.dart';
 import 'package:dama/services/api_service.dart';
 import 'package:dama/services/deep_link_service.dart';
-import 'package:dama/controller/auth_controller.dart';
 import 'package:dama/routes/routes.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/foundation.dart';
-import 'package:dama/utils/constants.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:dama/services/local_storage_service.dart';
 
 class LinkedInController extends GetxController {
   final ApiService _apiService = Get.find();
@@ -245,22 +241,66 @@ class LinkedInController extends GetxController {
         throw Exception('Failed to parse user data as JSON: $e');
       }
 
-      // Validate response
+      // Validate response - check required fields
       if (decodedUser['email'] == null) {
         throw Exception('Email not provided by LinkedIn');
       }
 
-      // Save authentication data
-      await _saveAuthData(token, decodedUser);
+      // Extract userId from the callback response
+      // Try 'userId' first, fallback to '_id' for compatibility
+      String? userId = decodedUser['userId'] ?? decodedUser['_id'];
+      print('[LinkedInController] Extracted userId: $userId');
+      
+      if (userId == null || userId.isEmpty) {
+        throw Exception('User ID not found in LinkedIn callback response');
+      }
 
-      // Update auth controller
-      final authController = Get.find<AuthController>();
-      await authController.completeLinkedInLogin(token, decodedUser);
+      // Extract all user fields from LinkedIn callback for registration form
+      // Save LinkedIn data to pre-populate registration form
+      Map<String, dynamic> linkedInUserData = {
+        'userId': userId,
+        'firstName': decodedUser['firstName'] ?? '',
+        'lastName': decodedUser['lastName'] ?? '',
+        'middleName': decodedUser['middleName'] ?? '',
+        'email': decodedUser['email'] ?? '',
+        'country': decodedUser['country'] ?? '',
+        'phone_number': decodedUser['phone_number'] ?? '',
+        'profile_picture': decodedUser['profile_picture'] ?? '',
+        'title': decodedUser['title'] ?? '',
+        'company': decodedUser['company'] ?? '',
+        'brief': decodedUser['brief'] ?? '',
+        'password_set': true,
+        'authType': 'linkedin',
+      };
 
-      // Navigate to home
-      Get.offAllNamed(AppRoutes.home);
+      print('=== LINKEDIN DATA PREPARED ===');
+      print('linkedInUserData: $linkedInUserData');
+      print('==============================');
 
-      _showSnackbar('Success', 'LinkedIn login successful!', isError: false);
+      // Save authentication data with userId and token
+      print('[LinkedInController] Saving auth data...');
+      await _saveAuthData(token, decodedUser, userId: userId);
+      
+      // Update API service headers with the new token
+      _apiService.updateHeaders({'Authorization': 'Bearer $token'});
+      print('[LinkedInController] Updated API service headers');
+      
+      // Save LinkedIn data for registration form pre-population
+      print('[LinkedInController] Saving LinkedIn user data to StorageService...');
+      await StorageService.storeData(linkedInUserData);
+      print('[LinkedInController] LinkedIn data saved successfully');
+      
+      // Mark this as a LinkedIn registration flow
+      await StorageService.storeData({'authType': 'linkedin'});
+      await StorageService.storeData({'registration_source': 'linkedin'});
+
+      // Navigate to personal details screen to complete registration
+      Get.offAllNamed(AppRoutes.personal_details);
+      _showSnackbar(
+        'Welcome',
+        'Please complete your profile to continue',
+        isError: false,
+      );
     } catch (e) {
       print('Error in _processTokenResponse: $e');
       rethrow;
@@ -300,10 +340,31 @@ class LinkedInController extends GetxController {
     }
   }
 
-  Future<void> _saveAuthData(String token, dynamic userData) async {
+  Future<void> _saveAuthData(String token, dynamic userData, {String? userId}) async {
+    print('=== _saveAuthData STARTED ===');
+    print('Token length: ${token.length}');
+    print('UserId: $userId');
+    print('UserData: $userData');
+    
     await _storage.write(key: 'auth_token', value: token);
+    print('[LinkedInController] Saved auth_token to secure storage');
+    
     await _storage.write(key: 'user_data', value: json.encode(userData));
+    print('[LinkedInController] Saved user_data to secure storage');
+    
     await _storage.write(key: 'login_method', value: 'linkedin');
+    print('[LinkedInController] Saved login_method to secure storage');
+    
+    // Store access_token to local storage for API calls
+    await StorageService.storeData({'access_token': token});
+    print('[LinkedInController] Saved access_token to StorageService');
+    
+    // Store userId to local storage
+    if (userId != null && userId.isNotEmpty) {
+      await StorageService.storeData({'userId': userId});
+      print('[LinkedInController] Saved userId to StorageService: $userId');
+    }
+    print('=== _saveAuthData COMPLETED ===');
   }
 
   String _generateState() {

@@ -3,7 +3,6 @@ import 'package:dama/controller/user_training_controller.dart';
 import 'package:dama/models/certificate_model.dart';
 import 'package:dama/models/training_model.dart';
 import 'package:dama/services/api_service.dart';
-import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/views/course_sessions_screen.dart';
@@ -76,7 +75,7 @@ class _MyTrainingsScreenState extends State<MyTrainingsScreen>
                     children: [
                       Icon(Icons.school),
                       SizedBox(width: 8),
-                      Text('Trainings'),
+                      Text('My Trainings'),
                     ],
                   ),
                 ),
@@ -86,7 +85,7 @@ class _MyTrainingsScreenState extends State<MyTrainingsScreen>
                     children: [
                       Icon(Icons.verified),
                       SizedBox(width: 8),
-                      Text('Certificates'),
+                      Text('My Certificates'),
                     ],
                   ),
                 ),
@@ -125,11 +124,22 @@ class _MyTrainingsScreenState extends State<MyTrainingsScreen>
                 Obx(() {
                   int inProgress =
                       _trainingController.userTrainings
-                          .where((t) => t.status == 'in_progress')
+                          .where((t) {
+                            final status = (t.status ?? '').toLowerCase();
+                            final regStatus = (t.learningTracks.isNotEmpty
+                                ? t.learningTracks.first.registrationStatus
+                                : '')
+                                .toLowerCase();
+                            return status == 'ongoing' || regStatus == 'ongoing';
+                          })
                           .length;
                   int completed =
                       _trainingController.userTrainings
-                          .where((t) => t.status == 'completed')
+                          .where((t) {
+                            final status = (t.status ?? '').toLowerCase();
+                            final progress = t.progress ?? 0;
+                            return status.contains('completed') || progress == 100;
+                          })
                           .length;
                   int total = _trainingController.userTrainings.length;
                   return Padding(
@@ -253,10 +263,6 @@ class _MyTrainingsScreenState extends State<MyTrainingsScreen>
                       },
                       isLoading: isLoading,
                       certificates: _certificateController.certificates,
-                      onGenerateCertificate: () {
-                        if (isLoading) return;
-                        _generateCertificate(training);
-                      },
                       onViewCertificate: () => _viewCertificate(training),
                     );
                   },
@@ -297,37 +303,6 @@ class _MyTrainingsScreenState extends State<MyTrainingsScreen>
           backgroundColor: Colors.red,
         ),
       );
-    }
-  }
-
-  Future<void> _generateCertificate(TrainingModel training) async {
-    try {
-      setState(() {
-        _loadingStates[training.id] = true;
-      });
-
-      final certificate = await _certificateController.generateCertificate(
-        training.id,
-        await StorageService.getData('userId') ?? '',
-      );
-
-      if (certificate != null) {
-        // Refresh certificates to update the UI
-        await _certificateController.refreshCertificates();
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to generate certificate: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loadingStates[training.id] = false;
-        });
-      }
     }
   }
 
@@ -439,7 +414,6 @@ class MyTrainingCard extends StatelessWidget {
     required this.onViewDetails,
     required this.isLoading,
     required this.certificates,
-    this.onGenerateCertificate,
     this.onViewCertificate,
   });
 
@@ -448,7 +422,6 @@ class MyTrainingCard extends StatelessWidget {
   final VoidCallback onViewDetails;
   final bool isLoading;
   final List<CertificateModel> certificates;
-  final VoidCallback? onGenerateCertificate;
   final VoidCallback? onViewCertificate;
 
   double _calculateProgress() {
@@ -494,15 +467,10 @@ class MyTrainingCard extends StatelessWidget {
     return training.sessions.isNotEmpty;
   }
 
-  bool _hasCertificate() {
-    return certificates.any((cert) => cert.trainingId == training.id);
-  }
-
   @override
   Widget build(BuildContext context) {
     final progress = _calculateProgress();
     final isCompleted = progress >= 1.0;
-    final hasCertificate = _hasCertificate();
     final hasProgressData = _hasProgressData();
 
     return Card(
@@ -517,17 +485,42 @@ class MyTrainingCard extends StatelessWidget {
             Row(
               children: [
                 SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    backgroundColor:
-                        isDarkMode ? Colors.grey[700] : Colors.grey[300],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isCompleted ? Colors.green : kBlue,
-                    ),
-                    strokeWidth: 4,
-                  ),
+                  width: 50,
+                  height: 50,
+                  child: hasProgressData
+                      ? Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              value: progress,
+                              backgroundColor: isDarkMode
+                                  ? Colors.grey[700]
+                                  : Colors.grey[300],
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isCompleted ? Colors.green : kBlue,
+                              ),
+                              strokeWidth: 4,
+                            ),
+                            Text(
+                              '${(progress * 100).toStringAsFixed(0)}%',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode ? kWhite : kBlack,
+                              ),
+                            ),
+                          ],
+                        )
+                      : CircularProgressIndicator(
+                          value: progress,
+                          backgroundColor: isDarkMode
+                              ? Colors.grey[700]
+                              : Colors.grey[300],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isCompleted ? Colors.green : kBlue,
+                          ),
+                          strokeWidth: 4,
+                        ),
                 ),
                 SizedBox(width: 12),
                 Expanded(
@@ -704,24 +697,17 @@ class MyTrainingCard extends StatelessWidget {
               ],
             ),
             SizedBox(height: 16),
-            if (isCompleted && hasCertificate) ...[
+            if (isCompleted) ...[
               CustomButton(
                 callBackFunction: onViewCertificate ?? () {},
                 label: "View Certificate",
                 backgroundColor: Colors.green,
                 isLoading: isLoading,
               ),
-            ] else if (isCompleted && !hasCertificate) ...[
-              CustomButton(
-                callBackFunction: onGenerateCertificate ?? () {},
-                label: "Generate Certificate",
-                backgroundColor: Colors.green,
-                isLoading: isLoading,
-              ),
             ] else ...[
               CustomButton(
                 callBackFunction: onViewDetails,
-                label: "View Sessions",
+                label: "Start Learning",
                 backgroundColor: kBlue,
                 isLoading: isLoading,
               ),

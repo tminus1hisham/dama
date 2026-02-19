@@ -29,6 +29,9 @@ class BlogController extends GetxController {
   // Additional fields for compatibility
   bool _hasFetchedAllCategories = false;
   final _categoryBlogs = <BlogPostModel>[].obs;
+  
+  // Store all fetched blogs for trending computation
+  final _allBlogs = <BlogPostModel>[].obs;
 
   @override
   void onInit() {
@@ -102,10 +105,16 @@ class BlogController extends GetxController {
 
       // Update filtered blogs for backward compatibility
       filteredBlogs.addAll(blogs);
+      
+      // Store all blogs for trending computation
+      if (pageKey == 1) {
+        _allBlogs.clear();
+      }
+      _allBlogs.addAll(blogs);
 
-      // Compute trending if first page
-      if (pageKey == 1 && selectedCategory.value == 'All Blogs') {
-        _computeTrendingBlogs(blogs);
+      // Compute trending for selected category
+      if (pageKey == 1) {
+        _computeTrendingBlogs(_allBlogs.toList());
       }
     } catch (error) {
       if (!_isControllerDisposed) {
@@ -116,9 +125,20 @@ class BlogController extends GetxController {
     }
   }
 
-  /// Compute trending blogs (simplified, using current page)
+  /// Compute trending blogs filtered by selected category
   void _computeTrendingBlogs(List<BlogPostModel> blogs) {
-    final sorted = List<BlogPostModel>.from(blogs);
+    final selected = selectedCategory.value.trim().toUpperCase();
+    
+    // Filter by category if not "All Blogs"
+    final filtered = selected == 'ALL BLOGS'
+        ? blogs
+        : blogs.where((b) {
+            final blogCat = (b.category ?? '').trim().toUpperCase();
+            return blogCat == selected;
+          }).toList();
+    
+    // Sort by engagement (likes + comments)
+    final sorted = List<BlogPostModel>.from(filtered);
     sorted.sort((a, b) {
       final engagementA = a.likes.length + a.comments.length;
       final engagementB = b.likes.length + b.comments.length;
@@ -126,10 +146,21 @@ class BlogController extends GetxController {
     });
     trendingBlogs.assignAll(sorted.take(10).toList());
   }
+  
+  /// Recompute trending from all stored blogs
+  void _recomputeTrendingFromCache() {
+    if (_allBlogs.isNotEmpty) {
+      _computeTrendingBlogs(_allBlogs.toList());
+    }
+  }
 
   void selectCategory(String category) {
     if (selectedCategory.value == category) return;
     selectedCategory.value = category;
+    
+    // Recompute trending for the new category
+    _recomputeTrendingFromCache();
+    
     _applyFilter();
   }
 
@@ -140,6 +171,8 @@ class BlogController extends GetxController {
   Future<void> refreshBlogs() async {
     _hasFetchedAllCategories = false;
     _categoryBlogs.clear();
+    _allBlogs.clear();
+    trendingBlogs.clear();
     await _fetchBlogsForCategories();
   }
 

@@ -12,9 +12,9 @@ class SelectedResource extends StatelessWidget {
     required this.price,
     required this.onPressed,
     required this.description,
-    required this.onViewPressed,
     required this.isPaid,
     required this.onRatingUpdated,
+    required this.priceInt,
   });
 
   final double rating;
@@ -23,9 +23,9 @@ class SelectedResource extends StatelessWidget {
   final String price;
   final String description;
   final VoidCallback onPressed;
-  final VoidCallback onViewPressed;
   final bool isPaid;
   final VoidCallback onRatingUpdated;
+  final int priceInt;
 
   @override
   Widget build(BuildContext context) {
@@ -66,29 +66,30 @@ class SelectedResource extends StatelessWidget {
                           ),
                         ),
                 ),
-                // FREE badge
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: kGreen,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'FREE',
-                      style: TextStyle(
-                        color: kWhite,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                // FREE badge (only show for free resources)
+                if (priceInt == 0)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: kGreen,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'FREE',
+                        style: TextStyle(
+                          color: kWhite,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -188,25 +189,25 @@ class SelectedResource extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Read Now button
+            // Read Now / Purchase button
             Padding(
               padding: EdgeInsets.symmetric(horizontal: kSidePadding),
               child: ElevatedButton.icon(
-                onPressed: onViewPressed,
-                icon: const Icon(
-                  Icons.menu_book_rounded,
-                  color: kWhite,
+                onPressed: onPressed,
+                icon: Icon(
+                  (isPaid || priceInt == 0) ? Icons.menu_book_outlined : Icons.shopping_cart_outlined,
                 ),
-                label: const Text(
-                  'Read Now',
-                  style: TextStyle(
+                label: Text(
+                  (isPaid || priceInt == 0) ? 'Read Now' : 'Purchase - KES $price',
+                  style: const TextStyle(
                     color: kWhite,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: kBlue,
+                  backgroundColor: (isPaid || priceInt == 0) ? kBlue : kGreen,
+                  foregroundColor: kWhite,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

@@ -10,6 +10,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -20,14 +22,13 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _middleNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _phoneNumberController = TextEditingController();
 
-  final RegisterController registerController = Get.put(RegisterController());
+  final RegisterController registerController = Get.find<RegisterController>();
+  
+  String? completePhoneNumber;
+  String? countryCode = '+254';
 
   final GlobalKey<FormState> _registerKey = GlobalKey<FormState>();
 
@@ -53,20 +54,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  String normalizePhoneNumber(String input) {
-    String cleaned = input.trim().replaceAll(RegExp(r'\s+'), '');
-
-    if (cleaned.startsWith('0') && cleaned.length == 10) {
-      return '254${cleaned.substring(1)}';
-    } else if (cleaned.length == 9 && cleaned.startsWith('7')) {
-      return '254$cleaned';
-    } else if (cleaned.startsWith('254') && cleaned.length == 12) {
-      return cleaned;
-    }
-
-    return cleaned;
-  }
-
   void _register() async {
     print("Register button clicked");
     if (!_registerKey.currentState!.validate()) {
@@ -90,14 +77,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     }
 
-    registerController.firstName.value = _firstNameController.text;
-    registerController.middleName.value = _middleNameController.text;
-    registerController.lastName.value = _lastNameController.text;
+    registerController.firstName.value = '';
+    registerController.middleName.value = '';
+    registerController.lastName.value = '';
     registerController.email.value = _emailController.text;
     registerController.password.value = _passwordController.text;
-    registerController.phone.value = normalizePhoneNumber(
-      _phoneNumberController.text,
-    );
+    registerController.phone.value = completePhoneNumber ?? '';
     registerController.fcmToken.value = fcmToken;
     print("FCM Token: $fcmToken");
     print("Calling register controller");
@@ -106,12 +91,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _middleNameController.dispose();
-    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _phoneNumberController.dispose();
     super.dispose();
   }
 
@@ -128,233 +109,206 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             SafeArea(
               child: Center(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    double width = constraints.maxWidth;
-                    return SizedBox(
-                      width: width > 600 ? 500 : width * 1,
-                      child: Form(
-                        key: _registerKey,
+                child: Center(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      double width = constraints.maxWidth;
+
+                      return SizedBox(
+                        width: width > 600 ? 500 : width * 1,
                         child: ListView(
                           shrinkWrap: true,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                HeroThemeAwareLogo(
-                                  tag: "logo",
-                                  height: 100,
-                                  width: 150,
-                                ),
-                                SizedBox(height: screenHeight * 0.02),
-                                Center(
-                                  child: Text(
-                                    "Create Account",
-                                    style: TextStyle(
-                                      color: isDarkMode ? kWhite : kBlack,
-                                      fontSize: kBigTextSize,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                            Form(
+                              key: _registerKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  HeroThemeAwareLogo(
+                                    tag: "logo",
+                                    height: 80,
+                                    width: 120,
                                   ),
-                                ),
-                                Center(
-                                  child: Text(
-                                    "Stay updated in your professional world",
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: isDarkMode ? kWhite : kBlack,
-                                    ),
-                                  ),
-                                ),
-                                InputField(
-                                  controller: _firstNameController,
-                                  hintText: "John",
-                                  label: "First Name *",
-                                  isRequired: true,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return "This field is required";
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                InputField(
-                                  controller: _middleNameController,
-                                  hintText: "Doe",
-                                  label: "Middle Name",
-                                  isRequired: false,
-                                ),
-                                InputField(
-                                  controller: _lastNameController,
-                                  hintText: "Smith",
-                                  label: "Last Name *",
-                                  isRequired: true,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return "This field is required";
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: kSidePadding,
-                                    vertical: 5,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 5,
-                                          vertical: 5,
-                                        ),
-                                        child: Text(
-                                          "Phone Number *",
-                                          style: TextStyle(
-                                            color: isDarkMode ? kWhite : kBlack,
-                                          ),
-                                        ),
-                                      ),
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 14,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(color: Colors.grey),
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: DropdownButton<String>(
-                                              value: '+254',
-                                              items: [
-                                                DropdownMenuItem(
-                                                  value: '+254',
-                                                  child: Text('+254'),
-                                                ),
-                                              ],
-                                              onChanged: null,
-                                              underline: SizedBox(),
-                                              style: TextStyle(
-                                                color: isDarkMode ? kWhite : kBlack,
-                                              ),
-                                              dropdownColor: isDarkMode ? kDarkThemeBg : kWhite,
-                                            ),
-                                          ),
-                                          SizedBox(width: 10),
-                                          Expanded(
-                                            child: TextFormField(
-                                              controller: _phoneNumberController,
-                                              validator: (value) {
-                                                if (value == null || value.trim().isEmpty) {
-                                                  return "This field is required";
-                                                }
-                                                return null;
-                                              },
-                                              keyboardType: TextInputType.phone,
-                                              style: TextStyle(
-                                                color: isDarkMode ? kWhite : kBlack,
-                                              ),
-                                              cursorColor: isDarkMode ? kWhite : kBlue,
-                                              decoration: InputDecoration(
-                                                hintText: "7*******",
-                                                hintStyle: TextStyle(
-                                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                                                ),
-                                                border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(10.0),
-                                                  borderSide: BorderSide(color: Colors.grey),
-                                                ),
-                                                focusedBorder: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(10.0),
-                                                  borderSide: BorderSide(color: kBlue, width: 1.0),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                InputField(
-                                  controller: _emailController,
-                                  hintText: "example@gmail.com",
-                                  label: "Email *",
-                                  isRequired: true,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return "This field is required";
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                InputField(
-                                  controller: _passwordController,
-                                  hintText: "******",
-                                  label: "Password *",
-                                  password: true,
-                                  isRequired: true,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return "This field is required";
-                                    }
-                                    if (value.length < 6) {
-                                      return "Password must be at least 6 characters";
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 5,
-                                  ),
-                                  child: CustomButton(
-                                    callBackFunction: _register,
-                                    label: "Create Account",
-                                    backgroundColor: kBlue,
-                                    isLoading: registerController.isLoading.value,
-                                  ),
-                                ),
-                                SizedBox(height: screenHeight * 0.04),
-                                Center(
-                                  child: RichText(
-                                    text: TextSpan(
-                                      text: "Already have an account? ",
+                                  SizedBox(height: screenHeight * 0.02),
+                                  Center(
+                                    child: Text(
+                                      "Create Account",
                                       style: TextStyle(
                                         color: isDarkMode ? kWhite : kBlack,
-                                        fontSize: kNormalTextSize,
+                                        fontSize: kBigTextSize,
+                                        fontWeight: FontWeight.bold,
                                       ),
+                                    ),
+                                  ),
+                                  Center(
+                                    child: Text(
+                                      "Stay updated in your professional world",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: isDarkMode ? kWhite : kBlack,
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: kSidePadding,
+                                      vertical: 5,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        TextSpan(
-                                          text: 'Login',
-                                          style: TextStyle(
-                                            color: kBlue,
-                                            decoration:
-                                                TextDecoration.underline,
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 5,
+                                            vertical: 5,
                                           ),
-                                          recognizer:
-                                              TapGestureRecognizer()
-                                                ..onTap = () {
-                                                  Get.offAllNamed(
-                                                    AppRoutes.login,
-                                                  );
-                                                },
+                                          child: Text(
+                                            "Phone Number *",
+                                            style: TextStyle(
+                                              color: isDarkMode ? kWhite : kBlack,
+                                            ),
+                                          ),
+                                        ),
+                                        FormField<String>(
+                                          validator: (value) {
+                                            if (completePhoneNumber == null || completePhoneNumber!.isEmpty) {
+                                              return "Phone number is required";
+                                            }
+                                            return null;
+                                          },
+                                          builder: (FormFieldState<String> state) {
+                                            return Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                IntlPhoneField(
+                                                  decoration: InputDecoration(
+                                                    hintText: "7*******",
+                                                    hintStyle: TextStyle(
+                                                      color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                                                    ),
+                                                    errorText: state.errorText ?? (registerController.phoneError.value.isEmpty ? null : registerController.phoneError.value),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(10.0),
+                                                      borderSide: BorderSide(color: Colors.grey),
+                                                    ),
+                                                    focusedBorder: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(10.0),
+                                                      borderSide: BorderSide(color: kBlue, width: 1.0),
+                                                    ),
+                                                    errorBorder: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(10.0),
+                                                      borderSide: BorderSide(color: Colors.red, width: 1.0),
+                                                    ),
+                                                    focusedErrorBorder: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(10.0),
+                                                      borderSide: BorderSide(color: Colors.red, width: 1.0),
+                                                    ),
+                                                  ),
+                                                  style: TextStyle(
+                                                    color: isDarkMode ? kWhite : kBlack,
+                                                  ),
+                                                  dropdownTextStyle: TextStyle(
+                                                    color: isDarkMode ? kWhite : kBlack,
+                                                  ),
+                                                  dropdownIcon: Icon(
+                                                    Icons.arrow_drop_down,
+                                                    color: isDarkMode ? kWhite : kBlack,
+                                                  ),
+                                                  initialCountryCode: 'KE',
+                                                  disableLengthCheck: true,
+                                                  onChanged: (PhoneNumber phone) {
+                                                    completePhoneNumber = phone.completeNumber;
+                                                    state.didChange(phone.completeNumber);
+                                                  },
+                                                  onCountryChanged: (country) {
+                                                    countryCode = '+${country.dialCode}';
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),
                                   ),
-                                ),
-                              ],
+                                  InputField(
+                                    controller: _emailController,
+                                    hintText: "example@gmail.com",
+                                    label: "Email *",
+                                    isRequired: true,
+                                    errorText: registerController.emailError.value.isEmpty ? null : registerController.emailError.value,
+                                    validator: (value) {
+                                      if (value == null || value.trim().isEmpty) {
+                                        return "This field is required";
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  InputField(
+                                    controller: _passwordController,
+                                    hintText: "******",
+                                    label: "Password *",
+                                    password: true,
+                                    isRequired: true,
+                                    validator: (value) {
+                                      if (value == null || value.trim().isEmpty) {
+                                        return "This field is required";
+                                      }
+                                      if (value.length < 6) {
+                                        return "Password must be at least 6 characters";
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
+                                    child: CustomButton(
+                                      callBackFunction: _register,
+                                      label: "Create Account",
+                                      backgroundColor: kBlue,
+                                      isLoading: registerController.isLoading.value,
+                                    ),
+                                  ),
+                                  SizedBox(height: screenHeight * 0.04),
+                                  Center(
+                                    child: RichText(
+                                      text: TextSpan(
+                                        text: "Already have an account? ",
+                                        style: TextStyle(
+                                          color: isDarkMode ? kWhite : kBlack,
+                                          fontSize: kNormalTextSize,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: 'Login',
+                                            style: TextStyle(
+                                              color: kBlue,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
+                                            recognizer:
+                                                TapGestureRecognizer()
+                                                  ..onTap = () {
+                                                    Get.offAllNamed(
+                                                      AppRoutes.login,
+                                                    );
+                                                  },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

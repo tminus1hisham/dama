@@ -20,14 +20,20 @@ class PaymentController extends GetxController {
     errorMessage.value = '';
     
     try {
+      // Format phone number for M-Pesa: remove '+' if present
+      // M-Pesa API expects format like "254712345678" not "+254712345678"
+      String formattedPhone = phoneNumber.value.replaceFirst('+', '');
+      
       final paymentModel = PaymentModel(
         objectId: object_id.value,
         model: model.value,
         amountToPay: amountToPay.value,
-        phoneNumber: phoneNumber.value,
+        phoneNumber: formattedPhone,
       );
 
       print("=== PAYMENT DEBUG ===");
+      print("Original Phone: ${phoneNumber.value}");
+      print("Formatted Phone: ${paymentModel.phoneNumber}");
       print("Payment Request: objectId=${paymentModel.objectId}, model=${paymentModel.model}, amount=${paymentModel.amountToPay}, phone=${paymentModel.phoneNumber}");
       
       final result = await _paymentService.pay(paymentModel);
@@ -39,11 +45,32 @@ class PaymentController extends GetxController {
         final resultCode = result['ResultCode']?.toString();
         final status = result['status']?.toString().toLowerCase() ?? '';
         final message = result['message']?.toString() ?? '';
+        final transaction = result['transaction'];
+        
+        print("Payment Status: $status");
+        print("Payment Message: $message");
+        print("Transaction Data: $transaction");
+        
+        // Check if transaction failed (even though we got a response)
+        if (status == 'failed') {
+          // Transaction was initiated but failed - common M-Pesa issues
+          String errorDetail = message;
+          if (transaction != null && transaction['status'] == 'Failed') {
+            // Common M-Pesa failure reasons
+            errorDetail = "M-Pesa transaction failed. Possible reasons:\n"
+                "• Insufficient funds in your M-Pesa account\n"
+                "• Wrong PIN entered on your phone\n"
+                "• M-Pesa service temporarily unavailable\n"
+                "• Test environment - use Safaricom test credentials";
+          }
+          throw Exception(errorDetail);
+        }
         
         // M-Pesa STK push initiated successfully
         // Check multiple possible success indicators
         final hasCheckoutId = result['CheckoutRequestID'] != null || 
-                              result['checkoutRequestID'] != null;
+                              result['checkoutRequestID'] != null ||
+                              (transaction != null && transaction['checkoutRequestID'] != null);
         final isSuccessResponse = responseCode == '0' || 
                                    (resultCode != null && int.tryParse(resultCode) == 0) ||
                                    status == 'success' ||
@@ -54,11 +81,11 @@ class PaymentController extends GetxController {
           // Show STK push initiated message
           Get.snackbar(
             'Payment Initiated',
-            "M-Pesa prompt sent to ${paymentModel.phoneNumber}! Check your phone to complete payment.",
+            "M-Pesa prompt sent to ${phoneNumber.value}! Check your phone to enter your PIN and complete payment.",
             snackPosition: SnackPosition.BOTTOM,
             backgroundColor: kGreen,
             colorText: Colors.white,
-            duration: Duration(seconds: 5),
+            duration: Duration(seconds: 8),
           );
           return true;
         } else if (status == 'pending' || status == 'processing') {
@@ -69,7 +96,7 @@ class PaymentController extends GetxController {
             snackPosition: SnackPosition.BOTTOM,
             backgroundColor: kYellow,
             colorText: Colors.black,
-            duration: Duration(seconds: 4),
+            duration: Duration(seconds: 6),
           );
           return true;
         } else if (result['error'] != null || message.toLowerCase().contains('error')) {

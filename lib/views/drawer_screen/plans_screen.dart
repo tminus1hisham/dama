@@ -1442,6 +1442,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                 hintStyle: TextStyle(
                                   color: isDark ? Colors.grey[400] : Colors.grey[700],
                                 ),
+                                counterText: '',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10.0),
                                   borderSide: BorderSide(color: Colors.grey),
@@ -1451,6 +1452,19 @@ class _PlansScreenState extends State<PlansScreen> {
                                   borderSide: BorderSide(color: kBlue, width: 1.0),
                                 ),
                               ),
+                              disableLengthCheck: true,
+                              validator: (PhoneNumber? phone) {
+                                if (phone == null || phone.number.isEmpty) {
+                                  return 'Please enter a phone number';
+                                }
+                                if (phone.number.length != 9) {
+                                  return 'Phone number must be exactly 9 digits';
+                                }
+                                if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                                  return 'Phone number must contain only digits';
+                                }
+                                return null;
+                              },
                               style: TextStyle(
                                 color: isDark ? kWhite : kBlack,
                               ),

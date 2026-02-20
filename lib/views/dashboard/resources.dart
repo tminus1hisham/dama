@@ -37,7 +37,10 @@ class _ResourcesState extends State<Resources>
   String title = '';
   String bio = '';
   String memberId = '';
-
+  
+  // Sorting options
+  String _sortBy = 'newest'; // newest, oldest, price_low, price_high, rating
+  
   // Scroll controller for pagination
   final ScrollController _allResourcesScrollController = ScrollController();
   final ScrollController _myResourcesScrollController = ScrollController();

@@ -64,13 +64,15 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
       PageRouteBuilder(
         pageBuilder:
             (context, animation, secondaryAnimation) => SelectedBlogScreen(
-              roles: blog.author!.roles,
+              roles: blog.author?.roles ?? [],
               blogId: blog.id,
-              authorId: blog.author!.id,
-              profileImageUrl: blog.author!.profilePicture,
+              authorId: blog.author?.id ?? '',
+              profileImageUrl: blog.author?.profilePicture ?? '',
               title: blog.title,
               imageUrl: blog.imageUrl,
-              author: '${blog.author!.firstName} ${blog.author!.lastName}',
+              author: blog.author != null 
+                  ? '${blog.author!.firstName} ${blog.author!.lastName}'
+                  : 'Unknown Author',
               createdAt: blog.createdAt,
               description: blog.description,
               comments: blog.comments,
@@ -135,6 +137,7 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
 
   // Format category name for display (e.g., "ENTERTAINMENT" -> "Entertainment")
   String _formatCategoryName(String category) {
+    if (category.isEmpty) return 'Uncategorized';
     if (category.toLowerCase() == 'all blogs') return 'All Blogs';
     return category[0].toUpperCase() + category.substring(1).toLowerCase();
   }
@@ -444,8 +447,9 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                               blog.comments.length;
 
                           return blogCard(
-                            roles: blog.author!.roles,
+                            roles: blog.author?.roles ?? [],
                             onProfileClicked: () {
+                              if (blog.author == null) return;
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
@@ -478,9 +482,10 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                             likes: likeCount.toString(),
                             commentNumber: '$commentCount',
                             onPressed: () => _navigateToBlog(blog),
-                            profileImageUrl: blog.author!.profilePicture,
-                            fullName:
-                                '${blog.author!.firstName} ${blog.author!.lastName}',
+                            profileImageUrl: blog.author?.profilePicture ?? '',
+                            fullName: blog.author != null
+                                ? '${blog.author!.firstName} ${blog.author!.lastName}'
+                                : 'Unknown Author',
                             blog: blog.description,
                             heading: blog.title,
                             imageUrl: _utils.cleanUrl(blog.imageUrl),

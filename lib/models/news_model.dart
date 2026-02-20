@@ -65,6 +65,24 @@ class NewsModel {
     return '';
   }
 
+  static String _parseCategory(dynamic categoryData) {
+    if (categoryData == null) return '';
+    
+    if (categoryData is List && categoryData.isNotEmpty) {
+      // Handle categories array like ["Education"]
+      final first = categoryData.first;
+      return first?.toString() ?? '';
+    } else if (categoryData is String) {
+      // Handle single category string
+      return categoryData;
+    } else if (categoryData is Map) {
+      // Handle category object like {"name": "Education"}
+      return categoryData['name']?.toString() ?? 
+             categoryData['title']?.toString() ?? '';
+    }
+    return categoryData.toString();
+  }
+
     factory NewsModel.fromJson(Map<String, dynamic> json) {
     try {
       return NewsModel(
@@ -138,7 +156,7 @@ class NewsModel {
                 .whereType<SourceReference>()
                 .toList()
             : [],
-        category: json['category']?.toString(),
+        category: _parseCategory(json['categories'] ?? json['category']),
       );
     } catch (e) {
       print('Error parsing NewsModel: \u001b[31m$e\u001b[0m, data: $json');

@@ -92,7 +92,7 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
       context,
       listen: false,
     );
-    final success =
+    final result =
         isJoining
             ? await _progressController.joinSession(
               widget.training.id,
@@ -102,6 +102,8 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
               widget.training.id,
               session.id,
             );
+    final success = result['success'] == true;
+    final message = result['message'];
     if (success) {
       // Update local tracking sets for immediate UI feedback
       setState(() {
@@ -159,10 +161,11 @@ class _CourseSessionsScreenState extends State<CourseSessionsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            isJoining
+            message ?? (isJoining
                 ? 'Failed to join the session'
-                : 'Failed to leave the session',
+                : 'Failed to leave the session'),
           ),
+          backgroundColor: Colors.red,
         ),
       );
     }

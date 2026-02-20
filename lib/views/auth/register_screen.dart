@@ -174,6 +174,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             if (completePhoneNumber == null || completePhoneNumber!.isEmpty) {
                                               return "Phone number is required";
                                             }
+                                            // Extract the phone number without country code
+                                            final phoneNumber = completePhoneNumber!.replaceAll(RegExp(r'^\+\d{1,3}'), '');
+                                            if (phoneNumber.length != 9) {
+                                              return "Phone number must be exactly 9 digits";
+                                            }
+                                            if (!RegExp(r'^[0-9]+$').hasMatch(phoneNumber)) {
+                                              return "Phone number must contain only digits";
+                                            }
                                             return null;
                                           },
                                           builder: (FormFieldState<String> state) {

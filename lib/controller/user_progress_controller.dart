@@ -150,32 +150,32 @@ class UserProgressController extends GetxController {
     await fetchTrainingProgress();
   }
 
-  Future<bool> joinSession(String trainingId, String sessionId) async {
+  Future<Map<String, dynamic>> joinSession(String trainingId, String sessionId) async {
     try {
-      final success = await _apiService.joinSession(trainingId, sessionId);
-      if (success) {
+      final result = await _apiService.joinSession(trainingId, sessionId);
+      if (result['success'] == true) {
         // Refresh today's sessions and training progress to update status
         await fetchTodaySessions();
         await fetchTrainingProgress(); // Refresh progress after joining
       }
-      return success;
+      return result;
     } catch (e) {
       errorMessage.value = e.toString();
-      return false;
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
-  Future<bool> leaveSession(String trainingId, String sessionId) async {
+  Future<Map<String, dynamic>> leaveSession(String trainingId, String sessionId) async {
     try {
-      final success = await _apiService.leaveSession(trainingId, sessionId);
-      if (success) {
+      final result = await _apiService.leaveSession(trainingId, sessionId);
+      if (result['success'] == true) {
         // Refresh today's sessions to update status
         await fetchTodaySessions();
       }
-      return success;
+      return result;
     } catch (e) {
       errorMessage.value = e.toString();
-      return false;
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 }

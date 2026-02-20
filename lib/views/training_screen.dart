@@ -824,6 +824,7 @@ class _TrainingDetailModalState extends State<TrainingDetailModal> {
                             hintStyle: TextStyle(
                               color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
                             ),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10.0),
                               borderSide: BorderSide(color: Colors.grey),
@@ -833,6 +834,18 @@ class _TrainingDetailModalState extends State<TrainingDetailModal> {
                               borderSide: BorderSide(color: kBlue, width: 1.0),
                             ),
                           ),
+                          validator: (PhoneNumber? phone) {
+                            if (phone == null || phone.number.isEmpty) {
+                              return 'Please enter a phone number';
+                            }
+                            if (phone.number.length != 9) {
+                              return 'Phone number must be exactly 9 digits';
+                            }
+                            if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                              return 'Phone number must contain only digits';
+                            }
+                            return null;
+                          },
                           style: TextStyle(
                             color: widget.isDarkMode ? kWhite : kBlack,
                           ),
@@ -844,6 +857,7 @@ class _TrainingDetailModalState extends State<TrainingDetailModal> {
                             color: widget.isDarkMode ? kWhite : kBlack,
                           ),
                           initialCountryCode: 'KE',
+                          disableLengthCheck: true,
                           onChanged: (PhoneNumber phone) {
                             completePhoneNumber = phone.completeNumber;
                           },

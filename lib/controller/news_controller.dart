@@ -347,8 +347,12 @@ class NewsController extends GetxController {
     final token = await StorageService.getData('access_token');
     if (token != null && token.isNotEmpty) {
       fetchCategories();
+      // Fetch news first, then popular news will have data to work with
+      if (_allNews.isEmpty && filteredNews.isEmpty) {
+        await _fetchNewsProgressively(); // Load all news progressively
+      }
+      // Now fetch popular news after news data is available
       fetchPopularNews();
-      _fetchNewsProgressively(); // Load all news progressively like blogs
     }
   }
 
@@ -496,8 +500,19 @@ class NewsController extends GetxController {
       }
     } catch (e) {
       debugPrint('Error fetching popular news: $e');
-      // Fallback: compute from all news if API fails
-      _computeTrendingNews();
+      // Fallback: Use trending news as popular news if API fails
+      // This ensures popular news is not empty when API fails
+      if (trendingNews.isNotEmpty) {
+        popularNews.value = trendingNews;
+        debugPrint('Using trending news as fallback for popular news: ${trendingNews.length} items');
+      } else if (_allNews.isNotEmpty) {
+        // If trending is also empty, compute from all news
+        _computeTrendingNews();
+        popularNews.value = trendingNews;
+        debugPrint('Computed trending as fallback for popular news: ${trendingNews.length} items');
+      } else {
+        debugPrint('No news available for popular news fallback');
+      }
     }
   }
   
@@ -519,13 +534,20 @@ class NewsController extends GetxController {
       return;
     }
     _isFetching = true;
+    _cancelBackgroundFetch = true; // Cancel any existing background fetch
+    await Future.delayed(Duration(milliseconds: 100)); // Let background fetch clean up
+    _cancelBackgroundFetch = false;
+    
     try {
       isLoadingNews.value = true;
       _allNews.clear();
+      _firstPageNews = [];
+      pagingController.value = PagingState(nextPageKey: 1, itemList: []);
+      
       // Fetch first page and show immediately
       final firstPageNews = await _apiService.getNews(page: 1, limit: 10);
       _allNews.addAll(firstPageNews);
-      _firstPageNews = firstPageNews;
+      _firstPageNews = List.from(firstPageNews);
       _computeTrendingNews();
       _updateCategoryCounts(); // Update category counts
       _applyFilter();
@@ -644,10 +666,14 @@ class NewsController extends GetxController {
     if (selectedCategory.value == category) return;
     selectedCategory.value = category;
     
-    // Refetch popular news for the new category
-    fetchPopularNews();
-    
+    // Apply filter to update filtered news for new category
     _applyFilter();
+    
+    // Recompute trending news for the new category
+    _computeTrendingNews();
+    
+    // Then fetch/refetch popular news for the new category
+    fetchPopularNews();
   }
 
   Future<void> refreshNews() async {
@@ -658,5 +684,7 @@ class NewsController extends GetxController {
     pagingController.value = PagingState(nextPageKey: 1, itemList: []);
     _cancelBackgroundFetch = false;
     await _fetchNewsProgressively();
+    // Refresh popular news after refreshing all news
+    fetchPopularNews();
   }
 }

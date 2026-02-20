@@ -327,10 +327,9 @@ class ApiService {
       {int limit = 10, String? category}) async {
     try {
       final accessToken = await StorageService.getData("access_token");
+      // Note: Category filtering is done client-side since API doesn't support it
       final queryParameters = {
         'limit': limit.toString(),
-        if (category != null && category.isNotEmpty && category != 'All News')
-          'category': category.toLowerCase(),
       };
       final uri = Uri.parse(
         '$BASE_URL/news/get/popular',
@@ -1703,7 +1702,7 @@ class ApiService {
     }
   }
 
-  Future<bool> joinSession(String trainingId, String sessionId) async {
+  Future<Map<String, dynamic>> joinSession(String trainingId, String sessionId) async {
     try {
       final accessToken = await StorageService.getData("access_token");
       final response = await http.post(
@@ -1716,8 +1715,11 @@ class ApiService {
         },
       );
 
+      debugPrint('Join Session Response: ${response.statusCode}');
+      debugPrint('Join Session Body: ${response.body}');
+
       if (response.statusCode == 200) {
-        return true;
+        return {'success': true, 'message': 'Successfully joined session'};
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         // Try to refresh token first
         final refreshed = await _refreshToken();
@@ -1732,20 +1734,31 @@ class ApiService {
               'Authorization': _headers['Authorization'] ?? '',
             },
           );
-          return retryResponse.statusCode == 200;
+          if (retryResponse.statusCode == 200) {
+            return {'success': true, 'message': 'Successfully joined session'};
+          } else {
+            return {'success': false, 'message': 'Authentication failed. Please log in again.'};
+          }
         }
         HandleUnauthorizedService.showUnauthorizedDialog();
-        return false;
+        return {'success': false, 'message': 'Session expired. Please log in again.'};
       } else {
-        return false;
+        // Try to parse error message from response
+        try {
+          final errorData = json.decode(response.body);
+          final errorMessage = errorData['message'] ?? errorData['error'] ?? 'Failed to join session';
+          return {'success': false, 'message': errorMessage};
+        } catch (_) {
+          return {'success': false, 'message': 'Failed to join session (Error ${response.statusCode})'};
+        }
       }
     } catch (e) {
       debugPrint('Error joining session: $e');
-      return false;
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
-  Future<bool> leaveSession(String trainingId, String sessionId) async {
+  Future<Map<String, dynamic>> leaveSession(String trainingId, String sessionId) async {
     try {
       final accessToken = await StorageService.getData("access_token");
       final response = await http.post(
@@ -1758,8 +1771,11 @@ class ApiService {
         },
       );
 
+      debugPrint('Leave Session Response: ${response.statusCode}');
+      debugPrint('Leave Session Body: ${response.body}');
+
       if (response.statusCode == 200) {
-        return true;
+        return {'success': true, 'message': 'Successfully left session'};
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         // Try to refresh token first
         final refreshed = await _refreshToken();
@@ -1774,16 +1790,27 @@ class ApiService {
               'Authorization': _headers['Authorization'] ?? '',
             },
           );
-          return retryResponse.statusCode == 200;
+          if (retryResponse.statusCode == 200) {
+            return {'success': true, 'message': 'Successfully left session'};
+          } else {
+            return {'success': false, 'message': 'Authentication failed. Please log in again.'};
+          }
         }
         HandleUnauthorizedService.showUnauthorizedDialog();
-        return false;
+        return {'success': false, 'message': 'Session expired. Please log in again.'};
       } else {
-        return false;
+        // Try to parse error message from response
+        try {
+          final errorData = json.decode(response.body);
+          final errorMessage = errorData['message'] ?? errorData['error'] ?? 'Failed to leave session';
+          return {'success': false, 'message': errorMessage};
+        } catch (_) {
+          return {'success': false, 'message': 'Failed to leave session (Error ${response.statusCode})'};
+        }
       }
     } catch (e) {
       debugPrint('Error leaving session: $e');
-      return false;
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 

@@ -62,6 +62,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   );
 
   late final GlobalKey<ScaffoldState> _scaffoldKey;
+  final GlobalKey<FormState> _paymentFormKey = GlobalKey<FormState>();
 
   String? completePhoneNumber;
   String? countryCode = '+254';
@@ -127,92 +128,111 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
       ),
       backgroundColor: isDark ? kDarkThemeBg : kWhite,
       builder: (context) {
-        return SafeArea(
-          bottom: true,
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 10),
-                  Image.asset("images/mpesa.png", height: 50),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Phone Number *",
-                          style: TextStyle(
-                            color: isDark ? kWhite : kBlack,
-                            fontWeight: FontWeight.bold,
-                            fontSize: kNormalTextSize,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        IntlPhoneField(
-                          decoration: InputDecoration(
-                            hintText: "7*******",
-                            hintStyle: TextStyle(
-                              color: isDark ? Colors.grey[400] : Colors.grey[700],
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              borderSide: BorderSide(color: Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              borderSide: BorderSide(color: kBlue, width: 1.0),
+        return Form(
+          key: _paymentFormKey,
+          child: SafeArea(
+            bottom: true,
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 10),
+                    Image.asset("images/mpesa.png", height: 50),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Phone Number *",
+                            style: TextStyle(
+                              color: isDark ? kWhite : kBlack,
+                              fontWeight: FontWeight.bold,
+                              fontSize: kNormalTextSize,
                             ),
                           ),
-                          style: TextStyle(
-                            color: isDark ? kWhite : kBlack,
+                          SizedBox(height: 8),
+                          IntlPhoneField(
+                            decoration: InputDecoration(
+                              hintText: "7*******",
+                              hintStyle: TextStyle(
+                                color: isDark ? Colors.grey[400] : Colors.grey[700],
+                              ),
+                              counterText: '',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                                borderSide: BorderSide(color: Colors.grey),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                                borderSide: BorderSide(color: kBlue, width: 1.0),
+                              ),
+                            ),
+                            disableLengthCheck: true,
+                            validator: (PhoneNumber? phone) {
+                              if (phone == null || phone.number.isEmpty) {
+                                return 'Please enter a phone number';
+                              }
+                              if (phone.number.length != 9) {
+                                return 'Phone number must be exactly 9 digits';
+                              }
+                              if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                                return 'Phone number must contain only digits';
+                              }
+                              return null;
+                            },
+                            style: TextStyle(
+                              color: isDark ? kWhite : kBlack,
+                            ),
+                            dropdownTextStyle: TextStyle(
+                              color: isDark ? kWhite : kBlack,
+                            ),
+                            dropdownIcon: Icon(
+                              Icons.arrow_drop_down,
+                              color: isDark ? kWhite : kBlack,
+                            ),
+                            initialCountryCode: 'KE',
+                            onChanged: (PhoneNumber phone) {
+                              completePhoneNumber = phone.completeNumber;
+                            },
+                            onCountryChanged: (country) {
+                              countryCode = '+${country.dialCode}';
+                            },
                           ),
-                          dropdownTextStyle: TextStyle(
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                          dropdownIcon: Icon(
-                            Icons.arrow_drop_down,
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                          initialCountryCode: 'KE',
-                          onChanged: (PhoneNumber phone) {
-                            completePhoneNumber = phone.completeNumber;
-                          },
-                          onCountryChanged: (country) {
-                            countryCode = '+${country.dialCode}';
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: CustomButton(
-                        callBackFunction: () {
-                          Navigator.pop(context);
-                          phoneNumber = completePhoneNumber ?? '';
-                          _payForEvent(
-                            context,
-                            widget.title,
-                            widget.date.toLocal().toString().split(' ')[0],
-                            widget.location,
-                            isDark,
-                          );
-                        },
-                        label: "Confirm Payment",
-                        backgroundColor: kBlue,
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: CustomButton(
+                          callBackFunction: () {
+                            if (_paymentFormKey.currentState!.validate()) {
+                              phoneNumber = completePhoneNumber ?? '';
+                              Navigator.pop(context);
+                              _payForEvent(
+                                context,
+                                widget.title,
+                                widget.date.toLocal().toString().split(' ')[0],
+                                widget.location,
+                                isDark,
+                              );
+                            }
+                          },
+                          label: "Confirm Payment",
+                          backgroundColor: kBlue,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
           ),

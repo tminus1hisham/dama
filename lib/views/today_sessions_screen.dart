@@ -152,24 +152,28 @@ class _TodaySessionsScreenState extends State<TodaySessionsScreen> {
   }
 
   void _joinSession(TrainingSession session) async {
-    final success = await _progressController.joinSession(session.trainingId, session.id);
-    if (success && mounted) {
+    final result = await _progressController.joinSession(session.trainingId, session.id);
+    final success = result['success'] == true;
+    final message = result['message'];
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Successfully joined ${session.title}'),
-          backgroundColor: Colors.green,
+          content: Text(success ? 'Successfully joined ${session.title}' : (message ?? 'Failed to join ${session.title}')),
+          backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
     }
   }
 
   void _leaveSession(TrainingSession session) async {
-    final success = await _progressController.leaveSession(session.trainingId, session.id);
-    if (success && mounted) {
+    final result = await _progressController.leaveSession(session.trainingId, session.id);
+    final success = result['success'] == true;
+    final message = result['message'];
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Left ${session.title}'),
-          backgroundColor: Colors.orange,
+          content: Text(success ? 'Left ${session.title}' : (message ?? 'Failed to leave ${session.title}')),
+          backgroundColor: success ? Colors.orange : Colors.red,
         ),
       );
     }

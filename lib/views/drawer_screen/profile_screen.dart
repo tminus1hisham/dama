@@ -801,6 +801,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showEditContactDialog() {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     bool isDarkMode = themeProvider.isDark;
+    final GlobalKey<FormState> _contactFormKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -844,98 +845,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 content: SingleChildScrollView(
-                  child: SizedBox(
-                    width: double.maxFinite,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(height: 8),
-                        TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          style: TextStyle(
-                            color: isDarkMode ? kWhite : kBlack,
-                            fontSize: 16,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: "Email Address",
-                            labelStyle: TextStyle(
-                              color: isDarkMode ? kWhite : kGrey,
+                  child: Form(
+                    key: _contactFormKey,
+                    child: SizedBox(
+                      width: double.maxFinite,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(height: 8),
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            style: TextStyle(
+                              color: isDarkMode ? kWhite : kBlack,
+                              fontSize: 16,
                             ),
-                            hintText: "Enter your email address",
-                            hintStyle: TextStyle(
-                              color:
-                                  isDarkMode
-                                      ? kWhite.withOpacity(0.5)
-                                      : kGrey.withOpacity(0.7),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color:
-                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                            decoration: InputDecoration(
+                              labelText: "Email Address",
+                              labelStyle: TextStyle(
+                                color: isDarkMode ? kWhite : kGrey,
                               ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
+                              hintText: "Enter your email address",
+                              hintStyle: TextStyle(
                                 color:
-                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                                    isDarkMode
+                                        ? kWhite.withOpacity(0.5)
+                                        : kGrey.withOpacity(0.7),
                               ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color:
+                                      isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color:
+                                      isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: kBlue, width: 2),
+                              ),
+                              filled: true,
+                              fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
+                              contentPadding: EdgeInsets.all(16),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: kBlue, width: 2),
-                            ),
-                            filled: true,
-                            fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
-                            contentPadding: EdgeInsets.all(16),
                           ),
-                        ),
-                        SizedBox(height: 16),
-                        TextField(
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          style: TextStyle(
-                            color: isDarkMode ? kWhite : kBlack,
-                            fontSize: 16,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: "Phone Number",
-                            labelStyle: TextStyle(
-                              color: isDarkMode ? kWhite : kGrey,
+                          SizedBox(height: 16),
+                          TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            style: TextStyle(
+                              color: isDarkMode ? kWhite : kBlack,
+                              fontSize: 16,
                             ),
-                            hintText: "Enter your phone number",
-                            hintStyle: TextStyle(
-                              color:
-                                  isDarkMode
-                                      ? kWhite.withOpacity(0.5)
-                                      : kGrey.withOpacity(0.7),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
+                            decoration: InputDecoration(
+                              labelText: "Phone Number",
+                              labelStyle: TextStyle(
+                                color: isDarkMode ? kWhite : kGrey,
+                              ),
+                              hintText: "Enter your phone number (9 digits)",
+                              hintStyle: TextStyle(
                                 color:
-                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                                    isDarkMode
+                                        ? kWhite.withOpacity(0.5)
+                                        : kGrey.withOpacity(0.7),
                               ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color:
-                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color:
+                                      isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                                ),
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color:
+                                      isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: kBlue, width: 2),
+                              ),
+                              filled: true,
+                              fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
+                              contentPadding: EdgeInsets.all(16),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: kBlue, width: 2),
-                            ),
-                            filled: true,
-                            fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
-                            contentPadding: EdgeInsets.all(16),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return "Phone number is required";
+                              }
+                              // Remove any non-digit characters for validation
+                              final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+                              if (digitsOnly.length != 9) {
+                                return "Phone number must be exactly 9 digits";
+                              }
+                              if (!RegExp(r'^[0-9]+$').hasMatch(digitsOnly)) {
+                                return "Phone number must contain only digits";
+                              }
+                              return null;
+                            },
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -973,8 +991,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           height: 48,
                           child: ElevatedButton(
                             onPressed: () {
-                              _submitContactDetails();
-                              Navigator.pop(context);
+                              if (_contactFormKey.currentState!.validate()) {
+                                _submitContactDetails();
+                                Navigator.pop(context);
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: kBlue,

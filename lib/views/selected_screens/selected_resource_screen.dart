@@ -58,6 +58,10 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
   final PaymentController _paymentController = Get.put(PaymentController());
   final RatingController _ratingController = Get.put(RatingController());
   late final GlobalKey<ScaffoldState> _resourceKey;
+  final GlobalKey<FormState> _paymentFormKey = GlobalKey<FormState>();
+  
+  // Flag to prevent multiple modal shows
+  bool _hasShownPaymentModal = false;
 
   String? completePhoneNumber;
   String? countryCode = '+254';
@@ -164,6 +168,10 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
   }
 
   void _showPhoneNumberModal(bool isDark, title, price) {
+    // Prevent showing multiple modals
+    if (_hasShownPaymentModal) return;
+    _hasShownPaymentModal = true;
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -172,101 +180,114 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
       ),
       backgroundColor: isDark ? kDarkThemeBg : kWhite,
       builder: (context) {
-        return SafeArea(
-          bottom: true,
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(height: 10),
-                  Image.asset("images/mpesa.png", height: 50),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 15),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Phone Number *",
-                          style: TextStyle(
-                            color: isDark ? kWhite : kBlack,
-                            fontWeight: FontWeight.bold,
-                            fontSize: kNormalTextSize,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        IntlPhoneField(
-                          decoration: InputDecoration(
-                            hintText: "7*******",
-                            hintStyle: TextStyle(
-                              color: isDark ? Colors.grey[400] : Colors.grey[700],
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              borderSide: BorderSide(color: Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              borderSide: BorderSide(color: kBlue, width: 1.0),
+        return Form(
+          key: _paymentFormKey,
+          child: SafeArea(
+            bottom: true,
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: 10),
+                    Image.asset("images/mpesa.png", height: 50),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 15),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Phone Number *",
+                            style: TextStyle(
+                              color: isDark ? kWhite : kBlack,
+                              fontWeight: FontWeight.bold,
+                              fontSize: kNormalTextSize,
                             ),
                           ),
-                          style: TextStyle(
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                          dropdownTextStyle: TextStyle(
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                          dropdownIcon: Icon(
-                            Icons.arrow_drop_down,
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                          initialCountryCode: 'KE',
-                          onChanged: (PhoneNumber phone) {
-                            completePhoneNumber = phone.completeNumber;
-                          },
-                          onCountryChanged: (country) {
-                            countryCode = '+${country.dialCode}';
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 15),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: CustomButton(
-                        callBackFunction: () {
-                          if (completePhoneNumber != null && completePhoneNumber!.isNotEmpty) {
-                            phoneNumber = completePhoneNumber!;
-                            Navigator.pop(context);
-                            _payForResource(context, title, price, isDark);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Please enter a valid phone number"),
-                                backgroundColor: Colors.red,
+                          SizedBox(height: 8),
+                          IntlPhoneField(
+                            decoration: InputDecoration(
+                              hintText: "7*******",
+                              hintStyle: TextStyle(
+                                color: isDark ? Colors.grey[400] : Colors.grey[700],
                               ),
-                            );
-                          }
-                        },
-                        label: "Confirm Payment",
-                        backgroundColor: kBlue,
+                              counterText: '',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                                borderSide: BorderSide(color: Colors.grey),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                                borderSide: BorderSide(color: kBlue, width: 1.0),
+                              ),
+                            ),
+                            disableLengthCheck: true,
+                            validator: (PhoneNumber? phone) {
+                              if (phone == null || phone.number.isEmpty) {
+                                return 'Please enter a phone number';
+                              }
+                              if (phone.number.length != 9) {
+                                return 'Phone number must be exactly 9 digits';
+                              }
+                              if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                                return 'Phone number must contain only digits';
+                              }
+                              return null;
+                            },
+                            style: TextStyle(
+                              color: isDark ? kWhite : kBlack,
+                            ),
+                            dropdownTextStyle: TextStyle(
+                              color: isDark ? kWhite : kBlack,
+                            ),
+                            dropdownIcon: Icon(
+                              Icons.arrow_drop_down,
+                              color: isDark ? kWhite : kBlack,
+                            ),
+                            initialCountryCode: 'KE',
+                            onChanged: (PhoneNumber phone) {
+                              completePhoneNumber = phone.completeNumber;
+                            },
+                            onCountryChanged: (country) {
+                              countryCode = '+${country.dialCode}';
+                            },
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    SizedBox(height: 20),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 15),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: CustomButton(
+                          callBackFunction: () {
+                            if (_paymentFormKey.currentState!.validate()) {
+                              phoneNumber = completePhoneNumber ?? '';
+                              Navigator.pop(context);
+                              _payForResource(context, title, price, isDark);
+                            }
+                          },
+                          label: "Confirm Payment",
+                          backgroundColor: kBlue,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
           ),
         );
       },
-    );
+    ).then((_) {
+      // Reset flag when modal is closed
+      _hasShownPaymentModal = false;
+    });
   }
 
   @override
@@ -282,7 +303,8 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
     super.didChangeDependencies();
     // If caller requested automatic payment flow, show the payment modal
     // after purchase check is complete (called in initState via _fetchPhoneNumberAndUser)
-    if (widget.autoShowPayment && _hasCheckedPurchase) {
+    // Use flag to prevent multiple calls
+    if (widget.autoShowPayment && _hasCheckedPurchase && !_hasShownPaymentModal) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         if (!mounted) return;

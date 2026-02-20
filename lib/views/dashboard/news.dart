@@ -77,7 +77,10 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
     _loadData();
-    _newsController.refreshNews();
+    // Only refresh if no data exists yet
+    if (_newsController.filteredNews.isEmpty) {
+      _newsController.refreshNews();
+    }
     // Trending news is now computed automatically in the controller
   }
 

@@ -10,7 +10,7 @@ class LikeController extends GetxController {
   final likedStatus = <String, bool>{}.obs;
   final likeCount = <String, int>{}.obs;
 
-  void initializeLikeStatus(String blogId, List<dynamic> likes) async {
+  void initializeLikeStatus(String blogId, List<dynamic>? likes) async {
     final userId = await StorageService.getData('userId');
     if (userId == null || likes == null || likes.isEmpty) {
       likedStatus[blogId] = false;
@@ -18,7 +18,35 @@ class LikeController extends GetxController {
       return;
     }
 
-    final isLiked = likes.any((like) => like['user_Id']['_id'] == userId);
+    // Handle different like formats:
+    // 1. List of user ID strings: ["userId1", "userId2"]
+    // 2. List of objects: [{"userId": "..."}, {"user_Id": {"_id": "..."}}]
+    final isLiked = likes.any((like) {
+      if (like == null) return false;
+      
+      // Format 1: String user ID
+      if (like is String) {
+        return like == userId;
+      }
+      
+      // Format 2: Object with userId
+      if (like is Map<String, dynamic>) {
+        // Check various possible formats
+        final likeUserId = like['userId'] ?? 
+                          like['user_id'] ?? 
+                          like['userId'] ??
+                          like['_id'];
+        if (likeUserId == userId) return true;
+        
+        // Check nested user_Id._id format
+        final nestedUser = like['user_Id'];
+        if (nestedUser is Map<String, dynamic>) {
+          return nestedUser['_id'] == userId;
+        }
+      }
+      
+      return false;
+    });
 
     likedStatus[blogId] = isLiked;
     likeCount[blogId] = likes.length;
@@ -41,7 +69,7 @@ class LikeController extends GetxController {
         "Error",
         "Failed to like post",
         colorText: kWhite,
-        backgroundColor: kRed.withOpacity(0.9),
+        backgroundColor: kRed.withValues(alpha: 0.9),
       );
     }
   }

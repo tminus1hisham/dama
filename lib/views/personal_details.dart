@@ -588,13 +588,21 @@ class _PersonalDetailsState extends State<PersonalDetails> {
               Expanded(
                 child: InputField(
                   controller: _phoneNumberController,
-                  hintText: "Phone number",
+                  hintText: "7*******",
                   label: "",
                   isRequired: true,
                   keyboardType: TextInputType.phone,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return "Phone number is required";
+                    }
+                    // Remove any non-digit characters for validation
+                    final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+                    if (digitsOnly.length != 9) {
+                      return "Phone number must be exactly 9 digits";
+                    }
+                    if (!RegExp(r'^[0-9]+$').hasMatch(digitsOnly)) {
+                      return "Phone number must contain only digits";
                     }
                     return null;
                   },

@@ -69,7 +69,6 @@ class _SubscriptionBottomSheetWidget extends StatelessWidget {
         return false;
       },
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.65,
         decoration: BoxDecoration(
           color: isDarkMode ? kDarkThemeBg : kWhite,
           borderRadius: const BorderRadius.only(
@@ -97,78 +96,77 @@ class _SubscriptionBottomSheetWidget extends StatelessWidget {
               ),
             ),
 
-            // Main content
+            // Main content - Scrollable
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 32),
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 32),
 
-                    // Premium Icon with gradient background
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [kBlue, kBlue.withOpacity(0.7)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: kBlue.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                      // Premium Icon with gradient background
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [kBlue, kBlue.withOpacity(0.7)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                        ],
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: kBlue.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.workspace_premium,
+                          size: 50,
+                          color: kWhite,
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.workspace_premium,
-                        size: 50,
-                        color: kWhite,
-                      ),
-                    ),
 
-                    const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                    // Title
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? kWhite : kBlack,
-                        letterSpacing: -0.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Subtitle
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        subtitle,
+                      // Title
+                      Text(
+                        title,
                         style: TextStyle(
-                          fontSize: 16,
-                          color: isDarkMode ? kWhite.withOpacity(0.7) : kGrey,
-                          fontWeight: FontWeight.w400,
-                          height: 1.4,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? kWhite : kBlack,
+                          letterSpacing: -0.5,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                    ),
 
-                    // Spacer to push buttons to bottom
-                    const Spacer(),
+                      const SizedBox(height: 16),
 
-                    // Action Buttons
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 32),
-                      child: Column(
+                      // Subtitle
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDarkMode ? kWhite.withOpacity(0.7) : kGrey,
+                            fontWeight: FontWeight.w400,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+
+                      const SizedBox(height: 48),
+
+                      // Action Buttons
+                      Column(
                         children: [
                           // Primary Button
                           Container(
@@ -246,8 +244,10 @@ class _SubscriptionBottomSheetWidget extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 32),
+                    ],
+                  ),
                 ),
               ),
             ),

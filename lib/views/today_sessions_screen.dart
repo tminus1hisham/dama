@@ -194,11 +194,14 @@ class SessionCard extends StatelessWidget {
   final VoidCallback onJoinPressed;
   final VoidCallback onLeavePressed;
 
-  // Check if user can join the session (15 minutes before start time)
+  // Check if user can join the session (10 minutes before start time - matching backend)
   bool _canJoinSession() {
     final now = DateTime.now();
-    final joinWindowStart = session.startTime.subtract(Duration(minutes: 15));
-    return now.isAfter(joinWindowStart) && now.isBefore(session.endTime);
+    // Convert to local time to handle timezone differences between server and client
+    final sessionStartLocal = session.startTime.toLocal();
+    final sessionEndLocal = session.endTime.toLocal();
+    final joinWindowStart = sessionStartLocal.subtract(Duration(minutes: 10));
+    return now.isAfter(joinWindowStart) && now.isBefore(sessionEndLocal);
   }
 
   @override
@@ -361,7 +364,7 @@ class SessionCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      'Available 15 minutes before start',
+                      'Available 10 minutes before start',
                       style: TextStyle(
                         fontSize: 14,
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[600],

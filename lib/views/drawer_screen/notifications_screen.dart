@@ -2,12 +2,16 @@ import 'package:dama/controller/get_blog_by_id.dart';
 import 'package:dama/controller/get_event_by_id.dart';
 import 'package:dama/controller/get_news_by_id.dart';
 import 'package:dama/controller/notification_controller.dart';
+import 'package:dama/controller/training_controller.dart';
+import 'package:dama/models/training_model.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
+import 'package:dama/views/my_trainings_screen.dart';
 import 'package:dama/views/selected_screens/selected_blog_screen.dart';
 import 'package:dama/views/selected_screens/selected_event_screen.dart';
 import 'package:dama/views/selected_screens/selected_news_screen.dart';
+import 'package:dama/views/training_detail_screen.dart';
 import 'package:dama/widgets/cards/notification_card.dart';
 import 'package:dama/widgets/cards/profile_card.dart';
 import 'package:dama/widgets/shimmer/transaction_shimmer.dart';
@@ -23,19 +27,53 @@ class NotificationsScreen extends StatefulWidget {
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  final NotificationController _notificationController = Get.put(
-    NotificationController(),
-  );
-  final FetchBlogByIdController _blogController = Get.put(
-    FetchBlogByIdController(),
-  );
-  final FetchNewsByIdController _newsController = Get.put(
-    FetchNewsByIdController(),
-  );
-  final FetchEventByIdController _eventController = Get.put(
-    FetchEventByIdController(),
-  );
+class _NotificationsScreenState extends State<NotificationsScreen>
+    with TickerProviderStateMixin {
+  final NotificationController _notificationController =
+      Get.find<NotificationController>();
+  late final FetchBlogByIdController _blogController;
+  late final FetchNewsByIdController _newsController;
+  late final FetchEventByIdController _eventController;
+  final TrainingController _trainingController = Get.find<TrainingController>();
+  late TabController _tabController;
+  int _selectedTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _selectedTabIndex = _tabController.index;
+      });
+    });
+    // Initialize controllers safely with Get.find() or create if missing
+    try {
+      _blogController = Get.find<FetchBlogByIdController>();
+    } catch (e) {
+      _blogController = Get.put(FetchBlogByIdController());
+    }
+    try {
+      _newsController = Get.find<FetchNewsByIdController>();
+    } catch (e) {
+      _newsController = Get.put(FetchNewsByIdController());
+    }
+    try {
+      _eventController = Get.find<FetchEventByIdController>();
+    } catch (e) {
+      _eventController = Get.put(FetchEventByIdController());
+    }
+    _fetchData();
+    _loadData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+
 
   bool _isLoading = false;
   String imageUrl = '';
@@ -44,13 +82,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   String title = '';
   String bio = '';
   String memberId = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchData();
-    _loadData();
-  }
 
   void _loadData() async {
     final url = await StorageService.getData('profile_picture');
@@ -77,38 +108,61 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _handleNotificationTap(notification) async {
-    // Use helper getters that check both 'type' and 'data' fields
+    debugPrint('=== NOTIFICATION TAP HANDLER STARTED ===');
+
     final type = notification.notificationType;
+    // Use refId getter instead of referenceId property for better ID extraction
     final referenceId = notification.refId;
-    
-    debugPrint('Notification tapped - Type: $type, RefID: $referenceId');
-    debugPrint('Notification data: ${notification.data}');
-    debugPrint('Notification raw type: ${notification.type}');
-    debugPrint('Notification raw referenceId: ${notification.referenceId}');
-    debugPrint('Notification ID: ${notification.id}');
 
-    // Show loading indicator
-    Get.dialog(
-      Center(child: CircularProgressIndicator()),
-      barrierDismissible: false,
-    );
+    debugPrint('Notification Details:');
+    debugPrint('  - ID: ${notification.id}');
+    debugPrint('  - Title: ${notification.title}');
+    debugPrint('  - Detected Type: $type');
+    debugPrint('  - Reference ID (refId): $referenceId');
+    debugPrint('  - Raw referenceId property: ${notification.referenceId}');
+    debugPrint('  - Data map: ${notification.data}');
 
-    // Mark as read if not already read
+    // Mark as read and wait for it to complete
     if (!notification.read && notification.id.isNotEmpty) {
-      await _notificationController.markAsRead(notification.id);
+      debugPrint('Marking notification ${notification.id} as read...');
+      final success = await _notificationController.markAsRead(notification.id);
+      debugPrint('Mark as read result: $success');
+    }
+
+    // Only show loading dialog for types that need an API call
+    final needsApiCall =
+        (type == 'blog' || type == 'news' || type == 'event') &&
+        referenceId != null &&
+        referenceId.isNotEmpty;
+
+    debugPrint('  - Needs API call: $needsApiCall');
+
+    if (needsApiCall) {
+      debugPrint('  - Showing loading dialog...');
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
     }
 
     try {
       if (type == 'blog' && referenceId != null && referenceId.isNotEmpty) {
-        // Fetch blog and navigate
+        debugPrint('  - Branch: Blog notification');
+        debugPrint('  - Fetching blog with ID: $referenceId');
+
         await _blogController.fetchBlog(referenceId);
-        
-        // Close loading
-        Get.back();
-        
+
+        debugPrint('  - Blog fetch completed');
+        debugPrint('  - Blog value: ${_blogController.blog.value}');
+
         if (_blogController.blog.value != null) {
           final blog = _blogController.blog.value!;
-          Get.to(
+          debugPrint(
+            '  - Navigating to SelectedBlogScreen with blog ID: ${blog.id}',
+          );
+          Get.back(); // Dismiss loading dialog if visible
+
+          Get.off(
             () => SelectedBlogScreen(
               blogId: blog.id,
               title: blog.title,
@@ -123,19 +177,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               roles: blog.author?.roles ?? [],
             ),
           );
+          debugPrint('  - Navigation complete');
         } else {
+          Get.back(); // Dismiss loading dialog
+          debugPrint('  - ERROR: Blog value is null after fetch');
           _showErrorSnackbar('Could not load blog content');
         }
-      } else if (type == 'news' && referenceId != null && referenceId.isNotEmpty) {
-        // Fetch news and navigate
+      } else if (type == 'news' &&
+          referenceId != null &&
+          referenceId.isNotEmpty) {
+        debugPrint('  - Branch: News notification');
+        debugPrint('  - Fetching news with ID: $referenceId');
+
         await _newsController.fetchNews(referenceId);
-        
-        // Close loading
-        Get.back();
-        
+
+        debugPrint('  - News fetch completed');
+        debugPrint('  - News value: ${_newsController.news.value}');
+
         if (_newsController.news.value != null) {
           final news = _newsController.news.value!;
-          Get.to(
+          debugPrint(
+            '  - Navigating to SelectedNewsScreen with news ID: ${news.id}',
+          );
+          Get.back(); // Dismiss loading dialog if visible
+
+          Get.off(
             () => SelectedNewsScreen(
               newsId: news.id,
               title: news.title,
@@ -149,19 +215,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               roles: news.author.roles,
             ),
           );
+          debugPrint('  - Navigation complete');
         } else {
+          Get.back(); // Dismiss loading dialog
+          debugPrint('  - ERROR: News value is null after fetch');
           _showErrorSnackbar('Could not load news content');
         }
-      } else if (type == 'event' && referenceId != null && referenceId.isNotEmpty) {
-        // Fetch event and navigate
+      } else if (type == 'event' &&
+          referenceId != null &&
+          referenceId.isNotEmpty) {
+        debugPrint('  - Branch: Event notification');
+        debugPrint('  - Fetching event with ID: $referenceId');
+
         await _eventController.fetchEvent(referenceId);
-        
-        // Close loading
-        Get.back();
-        
+
+        debugPrint('  - Event fetch completed');
+        debugPrint('  - Event value: ${_eventController.event.value}');
+
         if (_eventController.event.value != null) {
           final event = _eventController.event.value!;
-          Get.to(
+          debugPrint(
+            '  - Navigating to SelectedEventScreen with event ID: ${event.id}',
+          );
+          Get.back(); // Dismiss loading dialog if visible
+
+          Get.off(
             () => SelectedEventScreen(
               eventID: event.id,
               title: event.eventTitle,
@@ -174,31 +252,214 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               isPaid: event.price > 0,
             ),
           );
+          debugPrint('  - Navigation complete');
         } else {
+          Get.back(); // Dismiss loading dialog
+          debugPrint('  - ERROR: Event value is null after fetch');
           _showErrorSnackbar('Could not load event details');
         }
-      } else {
-        // Close loading
-        Get.back();
-        
-        // Fallback: show dialog for notifications without type/referenceId
-        showDialog(
-          context: context,
-          barrierDismissible: true,
-          builder: (BuildContext context) {
-            return NotificationDetailModal(
-              title: notification.title,
-              body: notification.body,
-              date: '${notification.createdAt}',
-            );
-          },
+      } else if (type == 'training_completed' &&
+          referenceId != null &&
+          referenceId.isNotEmpty) {
+        debugPrint('  - Branch: Training completed notification');
+        debugPrint('  - Looking for training with ID: $referenceId');
+
+        // Try to find training in already-loaded list
+        var training = _trainingController.trainings.firstWhereOrNull(
+          (t) => t.id == referenceId,
         );
+
+        if (training != null) {
+          debugPrint('  - Training found in cache');
+          debugPrint(
+            '  - Navigating to TrainingDetailScreen with training ID: ${training.id}',
+          );
+          Get.off(() => TrainingDetailScreen(training: training!));
+          debugPrint('  - Navigation complete');
+        } else {
+          // Training not in cache - fetch all trainings
+          debugPrint(
+            '  - Training not found in cache, fetching all trainings...',
+          );
+
+          Get.dialog(
+            const Center(child: CircularProgressIndicator()),
+            barrierDismissible: false,
+          );
+
+          try {
+            await _trainingController.fetchTrainings();
+
+            // Try again after fetch
+            training = _trainingController.trainings.firstWhereOrNull(
+              (t) => t.id == referenceId,
+            );
+
+            Get.back(); // Dismiss loading dialog
+
+            if (training != null) {
+              debugPrint('  - Training found after fetch');
+              debugPrint(
+                '  - Navigating to TrainingDetailScreen with training ID: ${training.id}',
+              );
+              Get.off(() => TrainingDetailScreen(training: training!));
+              debugPrint('  - Navigation complete');
+            } else {
+              debugPrint('  - Training still not found after fetch');
+              // Navigate to TrainingDetailScreen with empty training (shows error state)
+              Get.off(() => TrainingDetailScreen(
+                training: TrainingModel(
+                  id: '',
+                  title: '',
+                  description: '',
+                  learningTracks: [],
+                  targetAudience: [],
+                  learningOutcomes: [],
+                  courseOutline: [],
+                  sessions: [],
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                  category: '',
+                  status: '',
+                  trainer: null,
+                ),
+              ));
+            }
+          } catch (e) {
+            Get.back(); // Dismiss loading dialog
+            debugPrint('  - Error fetching trainings: $e');
+            // Navigate to TrainingDetailScreen with empty training (shows error state)
+            Get.off(() => TrainingDetailScreen(
+              training: TrainingModel(
+                id: '',
+                title: '',
+                description: '',
+                learningTracks: [],
+                targetAudience: [],
+                learningOutcomes: [],
+                courseOutline: [],
+                sessions: [],
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+                category: '',
+                status: '',
+                trainer: null,
+              ),
+            ));
+          }
+        }
+      } else if (type == 'virtual' &&
+          referenceId != null &&
+          referenceId.isNotEmpty) {
+        debugPrint('  - Branch: Virtual session notification');
+        debugPrint('  - Training/Session ID: $referenceId');
+
+        // Try to find training in already-loaded list
+        var training = _trainingController.trainings.firstWhereOrNull(
+          (t) => t.id == referenceId,
+        );
+
+        if (training != null) {
+          debugPrint('  - Training found in cache');
+          debugPrint(
+            '  - Navigating to TrainingDetailScreen with training ID: ${training.id}',
+          );
+          Get.off(() => TrainingDetailScreen(training: training!));
+          debugPrint('  - Navigation complete');
+        } else {
+          // Training not in cache - fetch all trainings
+          debugPrint(
+            '  - Training not found in cache, fetching all trainings...',
+          );
+
+          Get.dialog(
+            const Center(child: CircularProgressIndicator()),
+            barrierDismissible: false,
+          );
+
+          try {
+            await _trainingController.fetchTrainings();
+
+            // Try again after fetch
+            training = _trainingController.trainings.firstWhereOrNull(
+              (t) => t.id == referenceId,
+            );
+
+            Get.back(); // Dismiss loading dialog
+
+            if (training != null) {
+              debugPrint('  - Training found after fetch');
+              debugPrint(
+                '  - Navigating to TrainingDetailScreen with training ID: ${training.id}',
+              );
+              Get.off(() => TrainingDetailScreen(training: training!));
+              debugPrint('  - Navigation complete');
+            } else {
+              debugPrint('  - Training still not found after fetch');
+              // Navigate to TrainingDetailScreen with empty training (shows error state)
+              Get.off(() => TrainingDetailScreen(
+                training: TrainingModel(
+                  id: '',
+                  title: '',
+                  description: '',
+                  learningTracks: [],
+                  targetAudience: [],
+                  learningOutcomes: [],
+                  courseOutline: [],
+                  sessions: [],
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                  category: '',
+                  status: '',
+                  trainer: null,
+                ),
+              ));
+            }
+          } catch (e) {
+            Get.back(); // Dismiss loading dialog
+            debugPrint('  - Error fetching trainings: $e');
+            // Navigate to TrainingDetailScreen with empty training (shows error state)
+            Get.off(() => TrainingDetailScreen(
+              training: TrainingModel(
+                id: '',
+                title: '',
+                description: '',
+                learningTracks: [],
+                targetAudience: [],
+                learningOutcomes: [],
+                courseOutline: [],
+                sessions: [],
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+                category: '',
+                status: '',
+                trainer: null,
+              ),
+            ));
+          }
+        }
+      } else {
+        // Truly generic notifications
+        debugPrint(
+          '  - Branch: ${type ?? 'unknown'} notification',
+        );
+        _showErrorSnackbar('Cannot navigate - notification type not supported');
       }
-    } catch (e) {
-      // Close loading on error
-      Get.back();
+    } catch (e, stackTrace) {
+      debugPrint('  - EXCEPTION: $e');
+      debugPrint('  - Stack trace: $stackTrace');
+
+      if (needsApiCall) {
+        try {
+          Get.back();
+        } catch (e) {
+          debugPrint('  - Could not dismiss dialog: $e');
+        }
+      }
       _showErrorSnackbar('Error: ${e.toString()}');
     }
+
+    debugPrint('=== NOTIFICATION TAP HANDLER COMPLETED ===');
   }
 
   void _showErrorSnackbar(String message) {
@@ -209,6 +470,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: Colors.red.withOpacity(0.9),
       colorText: Colors.white,
     );
+  }
+
+  void _navigateToTrainingsWithError(String message) {
+    Get.off(() => MyTrainingsScreen());
+    Future.delayed(const Duration(milliseconds: 500), () {
+      Get.dialog(
+        AlertDialog(
+          title: const Text('Training Not Found'),
+          content: const Text('The training you\'re looking for doesn\'t exist.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Get.back(); // Close dialog
+              },
+              child: const Text('Back to Trainings'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Future<void> _markAllAsRead() async {
@@ -255,12 +536,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 }),
               ],
             ),
+            // ✅ Tabs for All and Unread
+            Container(
+              color: isDarkMode ? kDarkCard : kWhite,
+              child: TabBar(
+                controller: _tabController,
+                labelColor: kBlue,
+                unselectedLabelColor: isDarkMode ? kGrey : Colors.grey[600],
+                indicatorColor: kBlue,
+                indicatorWeight: 3,
+                tabs: const [
+                  Tab(text: 'All'),
+                  Tab(text: 'Unread'),
+                ],
+              ),
+            ),
             Expanded(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 1250),
+                  constraints: const BoxConstraints(maxWidth: 1250),
                   child: Padding(
-                    padding: EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.only(top: 10),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -273,11 +569,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             title: title,
                             bio: bio,
                           ),
-                        if (kIsWeb) SizedBox(width: 10),
+                        if (kIsWeb) const SizedBox(width: 10),
                         Expanded(
                           child: Center(
                             child: Container(
-                              constraints: BoxConstraints(maxWidth: 900),
+                              constraints: const BoxConstraints(maxWidth: 900),
                               child: RefreshIndicator(
                                 color: kWhite,
                                 backgroundColor: kBlue,
@@ -295,55 +591,82 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     );
                                   }
 
-                                  if (_notificationController
-                                      .notificationList
-                                      .isEmpty) {
-                                    return Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                  // ✅ Filter notifications based on selected tab
+                                  final filteredNotifications = _selectedTabIndex == 0
+                                      ? _notificationController
+                                          .notificationList
+                                      : _notificationController
+                                          .notificationList
+                                          .where((n) => !n.read)
+                                          .toList();
+
+                                  if (filteredNotifications.isEmpty) {
+                                    return ListView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
                                       children: [
-                                        Icon(
-                                          Icons.notifications_none,
-                                          size: 48,
-                                          color: Colors.grey[400],
+                                        SizedBox(
+                                          height:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.height *
+                                              0.3,
                                         ),
-                                        SizedBox(height: 16),
-                                        Text(
-                                          "No notifications available",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.grey[600],
-                                          ),
+                                        Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.notifications_none,
+                                              size: 48,
+                                              color: Colors.grey[400],
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              _selectedTabIndex == 0
+                                                  ? "No notifications available"
+                                                  : "No unread notifications",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     );
                                   }
 
-                                  final reversedList =
-                                      _notificationController
-                                          .notificationList
-                                          .reversed
-                                          .toList();
-
                                   return ListView.builder(
                                     padding: EdgeInsets.zero,
-                                    itemCount: reversedList.length,
+                                    itemCount: filteredNotifications.length,
                                     itemBuilder: (context, index) {
-                                      final notification = reversedList[index];
+                                      final notification = filteredNotifications[index];
                                       return Padding(
-                                        padding: EdgeInsets.symmetric(
+                                        padding: const EdgeInsets.symmetric(
                                           horizontal: 10,
                                         ),
-                                        child: NotoficationCard(
-                                          title: notification.title,
-                                          body: notification.body,
-                                          date: '${notification.createdAt}',
-                                          isRead: notification.read,
-                                          onTap:
-                                              () => _handleNotificationTap(
-                                                notification,
-                                              ),
-                                        ),
+                                        child: Obx(() {
+                                          final updatedNotification =
+                                              _notificationController
+                                                  .notificationList
+                                                  .firstWhere(
+                                                    (n) =>
+                                                        n.id == notification.id,
+                                                    orElse: () => notification,
+                                                  );
+                                          return NotoficationCard(
+                                            title: updatedNotification.title,
+                                            body: updatedNotification.body,
+                                            date:
+                                                '${updatedNotification.createdAt}',
+                                            isRead: updatedNotification.read,
+                                            onTap:
+                                                () => _handleNotificationTap(
+                                                  updatedNotification,
+                                                ),
+                                          );
+                                        }),
                                       );
                                     },
                                   );

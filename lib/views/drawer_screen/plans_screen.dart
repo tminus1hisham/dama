@@ -1,47 +1,19 @@
-import 'dart:io';
-
-import 'package:dama/controller/article_count_controller.dart';
-import 'package:dama/controller/auth_controller.dart';
-import 'package:dama/controller/payment_controller.dart';
 import 'package:dama/controller/plans_controller.dart';
-import 'package:dama/services/api_service.dart';
+import 'package:dama/controller/payment_controller.dart';
+import 'package:dama/models/plans_model.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
-import 'package:dama/utils/utils.dart';
 import 'package:dama/views/pdf_viewer.dart';
 import 'package:dama/widgets/buttons/custom_button.dart';
-import 'package:dama/widgets/cards/plans_card.dart';
-import 'package:dama/widgets/custom_spinner.dart';
-import 'package:dama/widgets/inputs/custom_input.dart';
-import 'package:dama/widgets/shimmer/plan_card_shimmer.dart';
+import 'package:dama/widgets/modals/success_bottomsheet.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-// Plan detail data for view details popup
-class PlanDetailData {
-  final String title;
-  final String amount;
-  final List<String> features;
-  final List<String> benefits;
-  final String? status;
-
-  PlanDetailData({
-    required this.title,
-    required this.amount,
-    required this.features,
-    required this.benefits,
-    this.status,
-  });
-}
 
 class PlansScreen extends StatefulWidget {
   const PlansScreen({super.key});
@@ -51,1283 +23,1264 @@ class PlansScreen extends StatefulWidget {
 }
 
 class _PlansScreenState extends State<PlansScreen> {
-  final PlansController _plansController = Get.put(PlansController());
-  final PaymentController _paymentController = Get.put(PaymentController());
-  final ArticleCountController _articleCountController = Get.put(
-    ArticleCountController(),
-  );
-
-  final Utils _utils = Utils();
-  
+  late PlansController _plansController;
+  String? fetchedPhoneNumber;
   String? completePhoneNumber;
-  String? countryCode = '+254';
-  late final GlobalKey<ScaffoldState> _planKey;
-
-  // Use nullable boolean to track loading state
-  final Rx<bool?> membershipExpired = Rx<bool?>(null);
-  
-  // Track membership certificate availability
-  final RxBool hasMembershipCertificate = false.obs;
-  final RxString memberId = ''.obs;
-  final RxString membershipCertificateUrl = ''.obs;
-  final RxString membershipCertificateDownloadUrl = ''.obs;
+  String phoneNumber = '';
+  String countryCode = '+254';
 
   @override
   void initState() {
     super.initState();
-    _planKey = GlobalKey();
-    // Check membership expiration first, before plans are loaded
-    _checkUserPlanStatus();
-    // Check membership certificate availability
-    _checkMembershipCertificateStatus();
-  }
-  
-  // Check if user has a membership certificate - first from local storage, then API
-  Future<void> _checkMembershipCertificateStatus() async {
-    try {
-      // First, try to load from local storage (set during login)
-      final localHasMembership = await StorageService.getData('hasMembership');
-      final localMemberId = await StorageService.getData('memberId');
-      final localMembershipExp = await StorageService.getData('membershipExp');
-      final localCertUrl = await StorageService.getData('membershipCertificate');
-      final localCertDownloadUrl = await StorageService.getData('membershipCertificateDownload');
-      
-      print('[PlansScreen] Local storage - hasMembership: $localHasMembership, certUrl: $localCertUrl, certDownloadUrl: $localCertDownloadUrl');
-      
-      // Check if membership is still valid (not expired)
-      bool isMembershipValid = localHasMembership == true;
-      if (isMembershipValid && localMembershipExp != null && localMembershipExp.toString().isNotEmpty) {
-        try {
-          final expiryDate = DateTime.parse(localMembershipExp.toString());
-          if (expiryDate.isBefore(DateTime.now())) {
-            isMembershipValid = false;
-          }
-        } catch (e) {
-          // If parsing fails, assume membership is valid
-        }
-      }
-      
-      // Update state from local storage
-      hasMembershipCertificate.value = isMembershipValid;
-      memberId.value = localMemberId?.toString() ?? '';
-      membershipCertificateUrl.value = localCertUrl?.toString() ?? '';
-      membershipCertificateDownloadUrl.value = localCertDownloadUrl?.toString() ?? '';
-      
-      // If we have certificate URLs from local storage, we're done
-      if (localCertUrl != null && localCertUrl.toString().isNotEmpty) {
-        print('[PlansScreen] Using certificate URLs from local storage');
-        return;
-      }
-      
-      // Otherwise, fetch from API
-      final userId = await StorageService.getData('userId');
-      if (userId == null) {
-        hasMembershipCertificate.value = false;
-        return;
-      }
-      
-      print('[PlansScreen] Fetching certificate data from API...');
-      final apiService = ApiService();
-      final profileData = await apiService.fetchUserProfile(userId.toString());
-      
-      if (profileData != null && profileData['user'] != null) {
-        final user = profileData['user'];
-        final hasMembership = user['hasMembership'] ?? false;
-        final storedMemberId = user['memberId'] ?? '';
-        final membershipExp = user['membershipExp'];
-        
-        // Extract certificate URLs from the API response
-        final certUrl = user['membershipCertificate'] ?? '';
-        final certDownloadUrl = user['membershipCertificateDownload'] ?? '';
-        
-        print('[PlansScreen] API returned - certUrl: $certUrl, certDownloadUrl: $certDownloadUrl');
-        
-        // Check if membership is still valid (not expired)
-        bool isMembershipValid = hasMembership;
-        if (hasMembership && membershipExp != null) {
-          try {
-            final expiryDate = DateTime.parse(membershipExp);
-            if (expiryDate.isBefore(DateTime.now())) {
-              isMembershipValid = false;
-            }
-          } catch (e) {
-            // If parsing fails, assume membership is valid
-          }
-        }
-        
-        hasMembershipCertificate.value = isMembershipValid;
-        memberId.value = storedMemberId.toString();
-        membershipCertificateUrl.value = certUrl.toString();
-        membershipCertificateDownloadUrl.value = certDownloadUrl.toString();
-        
-        // Update local storage with latest data
-        await StorageService.storeData({
-          'hasMembership': isMembershipValid,
-          'memberId': storedMemberId,
-          'membershipExp': membershipExp ?? '',
-          'membershipCertificate': certUrl.toString(),
-          'membershipCertificateDownload': certDownloadUrl.toString(),
-        });
-      }
-    } catch (e) {
-      print('[PlansScreen] Error checking certificate status: $e');
-      // On error, try to use whatever we have in local storage
-      try {
-        final localHasMembership = await StorageService.getData('hasMembership');
-        final localMemberId = await StorageService.getData('memberId');
-        final localCertUrl = await StorageService.getData('membershipCertificate');
-        final localCertDownloadUrl = await StorageService.getData('membershipCertificateDownload');
-        
-        hasMembershipCertificate.value = localHasMembership == true;
-        memberId.value = localMemberId?.toString() ?? '';
-        membershipCertificateUrl.value = localCertUrl?.toString() ?? '';
-        membershipCertificateDownloadUrl.value = localCertDownloadUrl?.toString() ?? '';
-      } catch (_) {
-        hasMembershipCertificate.value = false;
-      }
-    }
-  }
-  
-  // Show membership certificate dialog
-  void _showMembershipCertificateDialog(BuildContext context, bool isDarkMode) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.all(16),
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: 400,
-              maxHeight: MediaQuery.of(context).size.height * 0.7,
-            ),
-            decoration: BoxDecoration(
-              color: isDarkMode ? kDarkCard : kWhite,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Container(
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                    border: Border(
-                      bottom: BorderSide(
-                        color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Membership Certificate',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: Icon(
-                          Icons.close,
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Certificate Content
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        // Certificate Icon
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [kBlue, kBlue.withOpacity(0.7)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.card_membership,
-                            size: 50,
-                            color: kWhite,
-                          ),
-                        ),
-                        SizedBox(height: 24),
-                        
-                        // Certificate Title
-                        Text(
-                          'DAMA Kenya',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? Colors.white : Colors.black87,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          'Professional Membership Certificate',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 24),
-                        
-                        // Member ID
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Member ID',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                memberId.value.isNotEmpty ? memberId.value : 'N/A',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 24),
-                        
-                        // Membership Status
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.green.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 18,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Active Member',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                
-                // Action Buttons
-                Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      // View Certificate Button - Opens PDF viewer
-                      CustomButton(
-                        callBackFunction: () {
-                          Navigator.of(context).pop();
-                          _viewMembershipCertificate();
-                        },
-                        label: "View Certificate",
-                        backgroundColor: kBlue,
-                      ),
-                      SizedBox(height: 12),
-                      // Download/Share Certificate Button
-                      CustomButton(
-                        callBackFunction: () {
-                          Navigator.of(context).pop();
-                          _downloadMembershipCertificate();
-                        },
-                        label: "Download & Share",
-                        backgroundColor: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
-                        textColor: isDarkMode ? Colors.white : Colors.black87,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-  
-  // Download membership certificate
-  void _downloadMembershipCertificate() async {
-    // Prefer download URL, fallback to view URL converted to download
-    String downloadUrl = membershipCertificateDownloadUrl.value;
-    if (downloadUrl.isEmpty && membershipCertificateUrl.value.contains('/verify/')) {
-      // Convert verify URL to download URL
-      downloadUrl = membershipCertificateUrl.value.replaceAll('/verify/', '/download/');
-    }
-    
-    if (downloadUrl.isEmpty) {
-      Get.snackbar(
-        'Not Available',
-        'Certificate download is not available at the moment.',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-    
-    // Show loading indicator
-    Get.dialog(
-      Center(child: CircularProgressIndicator()),
-      barrierDismissible: false,
-    );
-    
-    try {
-      print('[PlansScreen] Downloading certificate from: $downloadUrl');
-      
-      // Download the PDF file
-      final response = await http.get(Uri.parse(downloadUrl));
-      
-      // Close loading dialog
-      Get.back();
-      
-      if (response.statusCode == 200) {
-        // Get app documents directory
-        final dir = await getApplicationDocumentsDirectory();
-        final fileName = 'DAMA_Membership_Certificate_${memberId.value}.pdf';
-        final file = File('${dir.path}/$fileName');
-        
-        // Save the file
-        await file.writeAsBytes(response.bodyBytes);
-        print('[PlansScreen] Certificate saved to: ${file.path}');
-        
-        // Share the file
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: 'My DAMA Kenya Membership Certificate',
-        );
-      } else {
-        // If download fails, fallback to browser
-        print('[PlansScreen] Download failed with status ${response.statusCode}, falling back to browser');
-        final uri = Uri.parse(downloadUrl);
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      // Close loading dialog
-      Get.back();
-      
-      print('[PlansScreen] Error downloading certificate: $e');
-      
-      // Fallback to browser
-      try {
-        final uri = Uri.parse(downloadUrl);
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } catch (_) {
-        Get.snackbar(
-          'Error',
-          'Failed to download certificate: $e',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
-    }
-  }
-  
-  // View membership certificate - opens directly in PDF viewer
-  void _viewMembershipCertificate() async {
-    // Use download URL for viewing the actual PDF
-    final certUrl = membershipCertificateDownloadUrl.value.isNotEmpty 
-        ? membershipCertificateDownloadUrl.value 
-        : membershipCertificateUrl.value;
-    
-    print('[PlansScreen] View Certificate clicked, URL: $certUrl');
-    
-    if (certUrl.isEmpty) {
-      Get.snackbar(
-        'Not Available',
-        'Certificate is not available at the moment.',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-    
-    // For URLs containing '/verify/' - these are API endpoints that return JSON
-    // We should use the download URL instead, but if we only have verify URL,
-    // construct the download URL from it
-    String viewUrl = certUrl;
-    if (certUrl.contains('/verify/')) {
-      // Convert verify URL to download URL
-      viewUrl = certUrl.replaceAll('/verify/', '/download/');
-      print('[PlansScreen] Converted verify URL to download URL: $viewUrl');
-    }
-    
-    // Open certificate directly in app (PDF viewer will handle HTML fallback)
-    print('[PlansScreen] Opening certificate directly in app: $viewUrl');
-    _openCertificateInApp(viewUrl);
-  }
-  
-  void _showCertificateOptionsDialog(String viewUrl) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isDarkMode = themeProvider.isDark;
-    
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: isDarkMode ? kDarkThemeBg : kWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.card_membership, color: kBlue),
-              SizedBox(width: 12),
-              Text(
-                'Membership Certificate',
-                style: TextStyle(
-                  color: isDarkMode ? kWhite : kBlack,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Choose how you want to access your certificate:',
-                style: TextStyle(
-                  color: isDarkMode ? kWhite.withOpacity(0.9) : kGrey,
-                  fontSize: 14,
-                ),
-              ),
-              SizedBox(height: 16),
-              // Option 1: Download (Browser)
-              _buildCertificateOption(
-                context: context,
-                icon: Icons.download,
-                title: 'Download Certificate',
-                subtitle: 'Save as PDF to your device',
-                isPrimary: true,
-                onTap: () {
-                  Navigator.pop(context);
-                  _openCertificateInBrowser(viewUrl);
-                },
-              ),
-              SizedBox(height: 12),
-              // Option 2: View in App
-              _buildCertificateOption(
-                context: context,
-                icon: Icons.visibility,
-                title: 'View in App',
-                subtitle: 'Preview before downloading',
-                isPrimary: false,
-                isDarkMode: isDarkMode,
-                onTap: () {
-                  Navigator.pop(context);
-                  _openCertificateInApp(viewUrl);
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: kGrey),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+    _plansController = Get.find<PlansController>();
+    _plansController.fetchPlans();
+    _fetchPhoneNumber();
   }
 
-  Widget _buildCertificateOption({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    bool isPrimary = false,
-    bool? isDarkMode,
-  }) {
-    final darkMode = isDarkMode ?? false;
-    
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isPrimary 
-              ? kBlue.withOpacity(0.1) 
-              : (darkMode ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.1)),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isPrimary ? kBlue.withOpacity(0.3) : Colors.transparent,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: isPrimary ? kBlue : (darkMode ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2)),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: isPrimary ? Colors.white : (darkMode ? Colors.white : Colors.grey[700]),
-                size: 24,
-              ),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: darkMode ? Colors.white : Colors.black87,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: darkMode ? Colors.white.withOpacity(0.6) : Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: darkMode ? Colors.white.withOpacity(0.4) : Colors.grey[400],
-              size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _fetchPhoneNumber() async {
+    fetchedPhoneNumber = await StorageService.getData("phoneNumber");
+    setState(() {});
   }
 
-  void _openCertificateInApp(String viewUrl) async {
-    print('[PlansScreen] Opening certificate in app: $viewUrl');
-    
-    // Show loading while we verify the URL is accessible
-    Get.dialog(
-      Center(child: CircularProgressIndicator()),
-      barrierDismissible: false,
-    );
-    
-    try {
-      // Quick check to verify URL is accessible
-      final accessToken = await StorageService.getData("access_token");
-      final response = await http.head(
-        Uri.parse(viewUrl),
-        headers: accessToken != null && accessToken.isNotEmpty
-            ? {'Authorization': 'Bearer $accessToken'}
-            : {},
-      ).timeout(Duration(seconds: 5));
-      
-      // Close loading dialog
-      Get.back();
-      
-      print('[PlansScreen] URL check status: ${response.statusCode}');
-      
-      if (response.statusCode == 200 || response.statusCode == 405) {
-        // 405 means HEAD not allowed but URL exists, still try to open
-        // Navigate to PDF viewer
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PDFViewerPage(
-              pdfUrl: viewUrl,
-              title: 'Membership Certificate',
-            ),
-          ),
-        );
-      } else {
-        print('[PlansScreen] URL not accessible, opening in browser');
-        _openCertificateInBrowser(viewUrl);
-      }
-    } catch (e) {
-      // Close loading dialog
-      Get.back();
-      
-      print('[PlansScreen] URL check failed: $e');
-      // If check fails, still try to open PDF viewer - it has its own error handling
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PDFViewerPage(
-            pdfUrl: viewUrl,
-            title: 'Membership Certificate',
-          ),
-        ),
-      );
-    }
+  // Get tier display icon
+  IconData _getTierIcon(String tierName) {
+    final lower = tierName.toLowerCase();
+    if (lower.contains('student')) return FontAwesomeIcons.graduationCap;
+    if (lower.contains('professional')) return FontAwesomeIcons.briefcase;
+    if (lower.contains('corporate')) return FontAwesomeIcons.building;
+    return FontAwesomeIcons.crown;
   }
 
-  void _openCertificateInBrowser(String url) async {
-    try {
-      print('[PlansScreen] Opening certificate in browser/download: $url');
-      
-      // Show loading indicator
-      Get.dialog(
-        Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text(
-                'Opening browser...',
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-        ),
-        barrierDismissible: false,
-      );
-      
-      final uri = Uri.parse(url);
-      final launched = await launchUrl(
-        uri, 
-        mode: LaunchMode.externalApplication,
-      );
-      
-      // Close loading dialog
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-      
-      if (launched) {
-        // Show success message
-        Get.snackbar(
-          'Browser Opened',
-          'Your certificate is being downloaded. Check your downloads folder.',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          duration: Duration(seconds: 4),
-        );
-      } else {
-        // Try fallback
-        final fallbackLaunched = await launchUrl(
-          uri,
-          mode: LaunchMode.platformDefault,
-        );
-        if (!fallbackLaunched) {
-          Get.snackbar(
-            'Error',
-            'Could not open certificate link. Please check if you have a browser installed.',
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM,
-          );
-        }
-      }
-    } catch (e) {
-      // Close loading dialog if still open
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-      print('[PlansScreen] Error launching certificate URL: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to open certificate: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  // Check membership expiration and wait for it to complete
-  Future<void> _checkUserPlanStatus() async {
-    try {
-      bool canRead =
-          await _articleCountController.checkArticleLimitBeforeReading();
-      membershipExpired.value = !canRead;
-    } catch (e) {
-      membershipExpired.value = true;
-    }
-  }
-
-  // Define plan tiers for upgrade/downgrade logic
-  int _getPlanTier(String planType) {
-    switch (planType.toLowerCase()) {
-      case "student":
-        return 1;
-      case "professional":
-        return 2;
-      case "corporate":
-        return 3;
-      default:
-        return 0;
-    }
-  }
-
-  String _getButtonText(String planType) {
-    if (!_plansController.hasActivePlan.value) {
-      return "Activate";
-    }
-
-    String currentPlan = _plansController.currentUserPlan.value;
-    String planTypeLower = planType.toLowerCase();
-
-    if (currentPlan == planTypeLower) {
-      return "Active";
-    }
-
-    int currentTier = _getPlanTier(currentPlan);
-    int targetTier = _getPlanTier(planTypeLower);
-
-    if (targetTier > currentTier) {
-      return "Upgrade";
-    } else if (targetTier < currentTier) {
-      return "Downgrade";
-    } else {
-      return "Activate";
-    }
-  }
-
-  bool _isButtonEnabled(String planType) {
-    if (membershipExpired.value == null) {
-      return false;
-    }
-
-    if (membershipExpired.value == true) {
-      return true;
-    }
-
-    if (!_plansController.hasActivePlan.value) {
-      return true;
-    }
-
-    String currentPlan = _plansController.currentUserPlan.value;
-    String planTypeLower = planType.toLowerCase();
-
-    return currentPlan != planTypeLower;
-  }
-
-  Color _getButtonColor(String planType, String buttonText) {
-    switch (buttonText) {
-      case "Active":
-        return kGreen;
-      case "Upgrade":
-        return Colors.orange;
-      case "Downgrade":
-        return kGrey;
-      default:
-        // For "Activate", use plan-specific color
-        return _getPlanColor(planType);
-    }
-  }
-
-  Color _getPlanColor(String planType) {
-    switch (planType.toLowerCase()) {
-      case "student":
-        return kBlue;
-      case "professional":
-        return kYellow;
-      case "corporate":
-        return kOrange;
-      default:
-        return kBlue;
-    }
-  }
-
-  // Get plan detail data for view details popup
-  PlanDetailData _getPlanDetailData(String planType) {
-    final lower = planType.toLowerCase();
+  // Get tier colors - matching React metallic tier colors
+  Map<String, Color> _getTierColors(String tierName) {
+    final lower = tierName.toLowerCase();
     
     if (lower.contains('student')) {
-      return PlanDetailData(
-        title: 'Student',
-        amount: '6,000',
-        features: ['Latest News Updates'],
-        benefits: ['Latest News Updates'],
-      );
+      return {
+        'primary': const Color(0xFF703804),      // Bronze
+        'accent': const Color(0xFFFF9B17),
+        'gradientStart': const Color(0xFFFFB366),
+        'gradientEnd': const Color(0xFFE8C04D),
+        'badgeBg': const Color(0xFF703804),
+      };
     } else if (lower.contains('professional')) {
-      return PlanDetailData(
-        title: 'Professional',
-        amount: '12,000',
-        features: [
-          'Exclusive Member Area Access',
-          'Training & Resources',
-          'Event Discounts',
-          'Networking Opportunities',
-          'Job Platform & Forum Access',
-        ],
-        benefits: [
-          'Exclusive Member Area Access',
-          'Training & Resources',
-          'Event Discounts',
-          'Networking Opportunities',
-          'Job Platform & Forum Access',
-        ],
-        status: 'Current Plan',
-      );
+      return {
+        'primary': const Color(0xFF6B6E6F),      // Silver
+        'accent': const Color(0xFF64748B),
+        'gradientStart': const Color(0xFF9CA3AF),
+        'gradientEnd': const Color(0xFF6B7280),
+        'badgeBg': const Color(0xFF6B6E6F),
+      };
     } else if (lower.contains('corporate')) {
-      return PlanDetailData(
-        title: 'Corporate',
-        amount: '60,000',
-        features: [
-          'Company Certification',
-          'High Visibility',
-          'Event Perks',
-          'Premium Training',
-          'Exclusive Networking',
-        ],
-        benefits: [
-          'Company Certification',
-          'High Visibility',
-          'Event Perks',
-          'Premium Training',
-          'Exclusive Networking',
-        ],
-      );
-    } else {
-      return PlanDetailData(
-        title: planType,
-        amount: '0',
-        features: [],
-        benefits: [],
-      );
+      return {
+        'primary': const Color(0xFFE5B80B),      // Gold
+        'accent': const Color(0xFFCA8A04),
+        'gradientStart': const Color(0xFFFCD34D),
+        'gradientEnd': const Color(0xFFF59E0B),
+        'badgeBg': const Color(0xFFE5B80B),
+      };
+    } else if (lower.contains('institution')) {
+      return {
+        'primary': const Color(0xFF7C3AED),      // Platinum/Violet
+        'accent': const Color(0xA855F7),
+        'gradientStart': const Color(0xFFC4B5FD),
+        'gradientEnd': const Color(0xFFD8B4FE),
+        'badgeBg': const Color(0xFF7C3AED),
+      };
     }
+    
+    return {
+      'primary': kBlue,
+      'accent': const Color(0xFF64748B),
+      'gradientStart': const Color(0xFF93C5FD),
+      'gradientEnd': const Color(0xFF60A5FA),
+      'badgeBg': kBlue,
+    };
   }
 
-  // Build the "Not Available" disabled button with lock icon
-  Widget _buildNotAvailableButton() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            FontAwesomeIcons.lock,
-            size: 14,
-            color: Colors.grey,
+  // Get button text
+  String _getButtonText(String planType) {
+    final lower = planType.toLowerCase();
+    if (lower.contains('student')) return "Not Available";
+    if (lower.contains('professional')) return "Current Plan";
+    if (lower.contains('corporate')) return "Upgrade";
+    return "View Details";
+  }
+
+  // Check if button should be disabled
+  bool _isButtonDisabled(String planType) {
+    final lower = planType.toLowerCase();
+    return lower.contains('student');
+  }
+
+  // Get button color
+  Color _getButtonColor(String planType, String buttonText) {
+    return _getTierColors(planType)['primary'] ?? kBlue;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDark;
+
+    return SafeArea(
+      bottom: true,
+      child: Obx(
+        () => Scaffold(
+          backgroundColor: isDarkMode ? kDarkThemeBg : kBGColor,
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              _buildHeader(isDarkMode),
+              
+              // Plans List
+              Expanded(
+                child: _buildPlansList(isDarkMode),
+              ),
+            ],
           ),
-          SizedBox(width: 8),
-          Text(
-            "Not Available",
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  // Build the "View Certificate" button for membership certificate
-  Widget _buildViewCertificateButton(BuildContext context, bool hasCertificate, bool isDarkMode) {
-    if (!hasCertificate) {
-      // User doesn't have membership - show disabled button
-      return Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              FontAwesomeIcons.lock,
-              size: 14,
-              color: Colors.grey,
+  // Header Widget
+  Widget _buildHeader(bool isDarkMode) {
+    return Container(
+      color: isDarkMode ? kBlack : kWhite,
+      padding: const EdgeInsets.symmetric(horizontal: kSidePadding, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Back Button
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Icon(
+              Icons.arrow_back_ios,
+              color: isDarkMode ? kWhite : kBlack,
             ),
-            SizedBox(width: 8),
-            Text(
-              "No Certificate Available",
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+          ),
+          const SizedBox(height: 16),
+          
+          // Header Content
+          Row(
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: kBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  FontAwesomeIcons.crown,
+                  color: kBlue,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // Title & Subtitle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Membership Plans',
+                      style: TextStyle(
+                        fontSize: kBigTextSize + 2,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? kWhite : kBlack,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Upgrade your DAMA experience',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: kGrey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          // Plans count badge
+          if (!_plansController.isLoading.value && _plansController.plansList.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: kBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: kBlue.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      FontAwesomeIcons.star,
+                      size: 12,
+                      color: kBlue,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${_plansController.plansList.length} Active Plan${_plansController.plansList.length != 1 ? 's' : ''}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: kBlue,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-      );
-    }
-    
-    // User has membership - show active button that opens certificate directly
-    return CustomButton(
-      callBackFunction: () {
-        _viewMembershipCertificate();
-      },
-      label: "View Certificate",
-      backgroundColor: kBlue,
+        ],
+      ),
     );
   }
 
-  void _showPlanDetailsPopup(BuildContext context, String planType, bool isDarkMode) {
-    final planData = _getPlanDetailData(planType);
-    final planLower = planType.toLowerCase();
-    
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.all(16),
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: 400,
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
-            ),
-            decoration: BoxDecoration(
-              color: isDarkMode ? kDarkCard : kWhite,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: Offset(0, 10),
+  // Plans List Widget
+  Widget _buildPlansList(bool isDarkMode) {
+    return Obx(() {
+      // Loading State
+      if (_plansController.isLoading.value) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                'Loading plans...',
+                style: TextStyle(color: kGrey),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Empty State
+      if (_plansController.plansList.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                FontAwesomeIcons.crown,
+                size: 48,
+                color: kGrey.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No plans available',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode ? kWhite : kBlack,
                 ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Membership plans will appear here',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: kGrey,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Plans Grid
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 350,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            mainAxisExtent: 520, // Constrains card height to prevent overflow
+          ),
+          itemCount: _plansController.plansList.length,
+          itemBuilder: (context, index) {
+            final plan = _plansController.plansList[index];
+            return _buildPlanCard(context, plan, isDarkMode);
+          },
+        ),
+      );
+    });
+  }
+
+  // Plan Card Widget - Updated with metallic tier styling
+  Widget _buildPlanCard(BuildContext context, PlanModel plan, bool isDarkMode) {
+    final tierColors = _getTierColors(plan.membership);
+    final tierIcon = _getTierIcon(plan.membership);
+    final isCurrentPlan = _plansController.hasActivePlan.value &&
+        _plansController.currentUserPlan.value.toLowerCase() ==
+            plan.membership.toLowerCase();
+    final isCorporate = plan.membership.toLowerCase().contains('corporate');
+
+    // Get gradient colors based on tier and dark mode
+    LinearGradient _getCardGradient() {
+      final lower = plan.membership.toLowerCase();
+      if (lower.contains('student')) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDarkMode
+              ? [
+                  const Color(0xFF3D2414).withValues(alpha: 0.4),
+                  const Color(0xFF331D0A).withValues(alpha: 0.5),
+                ]
+              : [
+                  const Color(0xFFFFD699),
+                  const Color(0xFFFFB366),
+                ],
+        );
+      } else if (lower.contains('professional')) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDarkMode
+              ? [
+                  const Color(0xFF3A4047).withValues(alpha: 0.4),
+                  const Color(0xFF262B32).withValues(alpha: 0.5),
+                ]
+              : [
+                  const Color(0xFFCDD5E0),
+                  const Color(0xFFB8C1D0),
+                ],
+        );
+      } else if (lower.contains('corporate')) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDarkMode
+              ? [
+                  const Color(0xFF665533).withValues(alpha: 0.5),
+                  const Color(0xFF4D3D26).withValues(alpha: 0.6),
+                ]
+              : [
+                  const Color(0xFFFEE2A0),
+                  const Color(0xFFFFD580),
+                ],
+        );
+      } else if (lower.contains('institution')) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDarkMode
+              ? [
+                  const Color(0xFF4C2672).withValues(alpha: 0.4),
+                  const Color(0xFF2D1652).withValues(alpha: 0.5),
+                ]
+              : [
+                  const Color(0xFFE5D4FF),
+                  const Color(0xFFD9B8FF),
+                ],
+        );
+      }
+      // Default
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: isDarkMode
+            ? [
+                const Color(0xFF1E2A3A).withValues(alpha: 0.5),
+                const Color(0xFF0F1A2A).withValues(alpha: 0.6),
+              ]
+            : [
+                const Color(0xFFC7D9F7),
+                const Color(0xFFA8C8F7),
               ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Container(
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                    border: Border(
-                      bottom: BorderSide(
-                        color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        planData.title,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: Icon(
-                          Icons.close,
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: _getCardGradient(),
+        border: Border.all(
+          color: isCurrentPlan 
+              ? tierColors['primary']! 
+              : kGrey.withValues(alpha: 0.2),
+          width: isCurrentPlan ? 2 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: tierColors['primary']!.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Gradient overlay (metallic shine)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.05),
+                    Colors.transparent,
+                  ],
                 ),
-                
-                // Content
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Price
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              "Ksh ",
-                              style: TextStyle(
-                                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                fontSize: 16,
-                              ),
+              ),
+            ),
+          ),
+
+          // Gradient top accent bar
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 4,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+                gradient: LinearGradient(
+                  colors: [
+                    tierColors['gradientStart']!,
+                    tierColors['primary']!,
+                    tierColors['gradientEnd']!,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Main content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                // Category Badge & Popular Badge
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tierColors['primary']!.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: tierColors['primary']!.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            tierIcon,
+                            size: 12,
+                            color: tierColors['primary'],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            plan.membership.toLowerCase(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: tierColors['primary'],
+                              letterSpacing: 0.5,
                             ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isCorporate && !isCurrentPlan)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.amber.withValues(alpha: 0.3),
+                              Colors.orange.withValues(alpha: 0.3),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.orange.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(
+                              Icons.star_rounded,
+                              size: 12,
+                              color: Colors.orange,
+                            ),
+                            SizedBox(width: 4),
                             Text(
-                              planData.amount,
+                              'Popular',
                               style: TextStyle(
-                                color: isDarkMode ? Colors.white : Colors.black87,
-                                fontSize: 28,
+                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              "/year",
-                              style: TextStyle(
-                                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                fontSize: 14,
+                                color: Colors.orange,
                               ),
                             ),
                           ],
                         ),
-                        
-                        SizedBox(height: 24),
-                        
-                        // Features Included
-                        Text(
-                          "Features Included",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isDarkMode ? Colors.white : Colors.black87,
+                      ),
+                    if (isCurrentPlan)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tierColors['primary']!.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: tierColors['primary']!.withValues(alpha: 0.5),
                           ),
                         ),
-                        SizedBox(height: 12),
-                        ...planData.features.map((feature) => Padding(
-                          padding: EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 18,
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  feature,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )).toList(),
-                        
-                        SizedBox(height: 24),
-                        
-                        // Benefits
-                        Text(
-                          "Benefits",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isDarkMode ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        ...planData.benefits.map((benefit) => Padding(
-                          padding: EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 18,
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  benefit,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )).toList(),
-                        
-                        // Status badge (if applicable)
-                        if (planData.status != null) ...[
-                          SizedBox(height: 20),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: planData.status == 'Current Plan' 
-                                ? Colors.green.withOpacity(0.1) 
-                                : Colors.orange.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: planData.status == 'Current Plan' 
-                                  ? Colors.green.withOpacity(0.3) 
-                                  : Colors.orange.withOpacity(0.3),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 12,
+                              color: tierColors['primary'],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Your Plan',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: tierColors['primary'],
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                // Plan Name
+                Text(
+                  plan.membership,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? kWhite : kBlack,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Price - always show actual price
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      'Ksh ${_formatPrice(_getCorrectPrice(plan))}',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: isCorporate ? kWhite : tierColors['primary'],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '/year',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isCorporate ? kWhite.withValues(alpha: 0.7) : kGrey,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Divider
+                Divider(
+                  color: kGrey.withValues(alpha: 0.2),
+                  height: 1,
+                ),
+                const SizedBox(height: 10),
+
+                // Features List
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // All features shown
+                        ...plan.included.map((feature) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
                             child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Icon(
-                                  planData.status == 'Current Plan' 
-                                    ? Icons.check_circle 
-                                    : Icons.upgrade,
-                                  color: planData.status == 'Current Plan' 
-                                    ? Colors.green 
-                                    : Colors.orange,
-                                  size: 18,
+                                  Icons.check_circle_rounded,
+                                  size: 16,
+                                  color: kGreen,
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    feature,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDarkMode ? kWhite : kBlack,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Divider
+                Divider(
+                  color: kGrey.withValues(alpha: 0.2),
+                  height: 1,
+                ),
+                const SizedBox(height: 8),
+
+                // Action Buttons
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (isCurrentPlan)
+                      // Current Plan State
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  tierColors['primary']!.withValues(alpha: 0.2),
+                              foregroundColor: tierColors['primary'],
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                side: BorderSide(
+                                  color: tierColors['primary']!
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: null,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle_rounded,
+                                    size: 16, color: tierColors['primary']),
+                                const SizedBox(width: 6),
                                 Text(
-                                  planData.status!,
+                                  'Active',
                                   style: TextStyle(
-                                    color: planData.status == 'Current Plan' 
-                                      ? Colors.green 
-                                      : Colors.orange,
                                     fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: tierColors['primary'],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                        
-                        // Action buttons based on plan type
-                        SizedBox(height: 24),
-                        
-                        // Student plan: Not Available button
-                        if (planLower.contains('student')) ...[
-                          _buildNotAvailableButton(),
-                        ],
-                        
-                        // Corporate plan: Upgrade button
-                        if (planLower.contains('corporate')) ...[
-                          CustomButton(
-                            callBackFunction: () {
-                              Navigator.of(context).pop();
-                              // Find the corporate plan and show payment bottom sheet
-                              final corporatePlan = _plansController.plansList.firstWhereOrNull(
-                                (p) => p.membership.toLowerCase().contains('corporate'),
-                              );
-                              if (corporatePlan != null) {
-                                final icon = FontAwesomeIcons.building;
-                                _showFullMessageBottomSheet(
-                                  context,
-                                  corporatePlan.membership,
-                                  isDarkMode,
-                                  corporatePlan.price,
-                                  icon,
-                                  corporatePlan.id,
-                                  corporatePlan.type,
-                                );
-                              }
-                            },
-                            label: "Upgrade",
-                            backgroundColor: Colors.orange,
+                          const SizedBox(height: 8),
+                          // View Certificate button for Professional plan
+                          if (plan.membership.toLowerCase().contains('professional'))
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: tierColors['primary'],
+                                  side: BorderSide(
+                                    color: tierColors['primary']!
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  debugPrint('Opening membership certificate');
+                                  final certUrl = await StorageService.getData('membershipCertificateDownload');
+                                  final url = certUrl?.toString().trim() ?? '';
+                                  if (url.isNotEmpty) {
+                                    Get.to(() => PDFViewerPage(
+                                      pdfUrl: url,
+                                      title: 'Membership Certificate',
+                                    ));
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Certificate not available yet'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.card_membership_rounded,
+                                        size: 14,
+                                        color: tierColors['primary']),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'View Certificate',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                        color: tierColors['primary'],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: kBlue,
+                              side: const BorderSide(color: kBlue),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () =>
+                                _showPlanDetailsModal(context, plan, isDarkMode),
+                            child: const Text(
+                              'View Details',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                         ],
-                      ],
-                    ),
-                  ),
+                      )
+                    else if (isCorporate)
+                      // Corporate/Upgrade Plan
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: tierColors['primary'],
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              debugPrint('Card Upgrade tapped for: ${plan.membership}');
+                              _showPaymentModal(context, plan, isDarkMode);
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.trending_up_rounded, size: 16),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Upgrade',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: kGrey,
+                              side: BorderSide(
+                                color: kGrey.withValues(alpha: 0.3),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () =>
+                                _showPlanDetailsModal(context, plan, isDarkMode),
+                            child: const Text(
+                              'View Details',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      // Student/Other Plans - Not Available
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF204987),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                              disabledBackgroundColor: const Color(0xFF204987),
+                              disabledForegroundColor: Colors.white,
+                            ),
+                            onPressed: null,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.lock_rounded, size: 16, color: Colors.white),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Not Available',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: kGrey,
+                              side: BorderSide(
+                                color: kGrey.withValues(alpha: 0.3),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () =>
+                                _showPlanDetailsModal(context, plan, isDarkMode),
+                            child: const Text(
+                              'View Details',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Plan Details Modal - Enhanced with full features and styling matching React
+  void _showPlanDetailsModal(BuildContext context, PlanModel plan, bool isDarkMode) {
+    final tierColors = _getTierColors(plan.membership);
+    final tierIcon = _getTierIcon(plan.membership);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDarkMode ? kDarkCard : kWhite,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: kGrey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              
+              // Content - Flexible allows shrinking if content is small
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header with close button
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: tierColors['primary']!.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: tierColors['primary']!
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Icon(
+                              tierIcon,
+                              color: tierColors['primary'],
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  plan.membership,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDarkMode ? kWhite : kBlack,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: isDarkMode ? kWhite : kBlack,
+                              size: 24,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Price Box
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: tierColors['primary']!.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: tierColors['primary']!.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Price',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: kGrey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  'KES ${_formatPrice(_getCorrectPrice(plan))}',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: tierColors['primary'],
+                                  ),
+                                ),
+                                Text(
+                                  '/year',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: kGrey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Features Section
+                      Text(
+                        'Features Included',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? kWhite : kBlack,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: plan.included.map((feature) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 18,
+                                  color: kGreen,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    feature,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDarkMode ? kWhite : kBlack,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Benefits Section
+                      if (plan.benefits.isNotEmpty)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Key Benefits',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode ? kWhite : kBlack,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: plan.benefits.map((benefit) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.star_rounded,
+                                        size: 18,
+                                        color: tierColors['primary'],
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          benefit,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: isDarkMode ? kWhite : kBlack,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // CTA Button - Fixed at bottom
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isButtonDisabled(plan.membership)
+                            ? const Color(0xFF204987)
+                            : plan.membership.toLowerCase().contains('professional')
+                                ? const Color(0xFF0A161A)
+                                : plan.membership.toLowerCase().contains('corporate')
+                                    ? const Color(0xFF377DF4)
+                                    : tierColors['primary'],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: _isButtonDisabled(plan.membership) ? 0 : 2,
+                        disabledBackgroundColor: const Color(0xFF204987),
+                        disabledForegroundColor: Colors.white,
+                      ),
+                      onPressed: _isButtonDisabled(plan.membership)
+                          ? null
+                          : () {
+                              final isCorporate = plan.membership.toLowerCase().contains('corporate');
+                              final isProfessional = plan.membership.toLowerCase().contains('professional');
+                              
+                              if (isCorporate) {
+                                // Show payment modal for Corporate plan
+                                Navigator.pop(context);
+                                debugPrint('Showing payment modal for: ${plan.membership}');
+                                _showPaymentModal(context, plan, isDarkMode);
+                              } else if (isProfessional) {
+                                // Current plan - just close modal
+                                Navigator.pop(context);
+                                debugPrint('Current plan: ${plan.membership}');
+                              } else {
+                                // Other plans - just close modal
+                                Navigator.pop(context);
+                                debugPrint('Joining plan: ${plan.membership}');
+                              }
+                            },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_isButtonDisabled(plan.membership))
+                            const Icon(Icons.lock_rounded, size: 18, color: Colors.white),
+                          if (_isButtonDisabled(plan.membership))
+                            const SizedBox(width: 6),
+                          if (!_isButtonDisabled(plan.membership))
+                            Icon(
+                              plan.membership.toLowerCase().contains('professional')
+                                  ? Icons.check_circle_rounded
+                                  : FontAwesomeIcons.crown,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          if (!_isButtonDisabled(plan.membership))
+                            const SizedBox(width: 6),
+                          Text(
+                            _getButtonText(plan.membership),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  void _showFullMessageBottomSheet(
-    BuildContext context,
-    String membership,
-    bool isDark,
-    int amount,
-    IconData icon,
-    String planID,
-    String plan,
-  ) {
-    // Check if button should be enabled before showing bottom sheet
-    if (!_isButtonEnabled(membership)) {
-      Get.snackbar(
-        'Info',
-        'This is your current active plan',
-        backgroundColor: Colors.blue,
-        colorText: Colors.white,
-      );
-      return;
+  // Correct prices for each plan type
+  static const Map<String, int> _correctPrices = {
+    'student': 6000,
+    'professional': 12000,
+    'corporate': 60000,
+    'institution': 100000,
+  };
+
+  /// Get correct price for a plan
+  int _getCorrectPrice(PlanModel plan) {
+    return _correctPrices[plan.membership.toLowerCase()] ?? plan.price;
+  }
+
+  /// Format price with thousands separator
+  String _formatPrice(int price) {
+    return NumberFormat('#,###').format(price);
+  }
+
+  /// Show payment modal for Corporate plan upgrade
+  void _showPaymentModal(BuildContext _, PlanModel plan, bool isDarkMode) {
+    debugPrint('_showPaymentModal called for: ${plan.membership}');
+    final correctPrice = _getCorrectPrice(plan);
+    
+    // Use the State's context instead of passed context
+    final ctx = this.context;
+    
+    // Pre-populate phone number from storage
+    String initialPhoneNumber = '';
+    if (fetchedPhoneNumber != null && fetchedPhoneNumber!.isNotEmpty) {
+      // Extract just the number part (without country code)
+      if (fetchedPhoneNumber!.startsWith('+254')) {
+        initialPhoneNumber = fetchedPhoneNumber!.substring(4);
+      } else if (fetchedPhoneNumber!.startsWith('254')) {
+        initialPhoneNumber = fetchedPhoneNumber!.substring(3);
+      } else {
+        initialPhoneNumber = fetchedPhoneNumber!;
+      }
     }
-
-    showModalBottomSheet(
-      backgroundColor: isDark ? kDarkThemeBg : kWhite,
-      context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-      ),
-      builder: (BuildContext context) {
+    
+    bool isProcessing = false;
+    
+    debugPrint('About to show modal, context mounted: ${ctx.mounted}');
+    
+    try {
+      showModalBottomSheet(
+        context: ctx,
+        isScrollControlled: true,
+        isDismissible: true,
+        enableDrag: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        backgroundColor: isDarkMode ? kDarkThemeBg : kWhite,
+        builder: (modalContext) {
+        debugPrint('Modal builder called');
         return StatefulBuilder(
-          builder: (context, setState) {
-            String buttonText = _getButtonText(membership);
-            Color buttonColor = _getButtonColor(membership, buttonText);
-
+          builder: (context, setModalState) {
+            debugPrint('StatefulBuilder called');
             return SafeArea(
               bottom: true,
               child: Padding(
@@ -1337,119 +1290,58 @@ class _PlansScreenState extends State<PlansScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          margin: EdgeInsets.only(bottom: 20),
-                          decoration: BoxDecoration(
-                            color: kBGColor,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Upgrade to ${plan.membership}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? kWhite : kBlack,
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-                        child: Align(
-                          alignment: Alignment.topLeft,
-                          child: Icon(
-                            membership.toLowerCase() == "student"
-                                ? FontAwesomeIcons.graduationCap
-                                : membership.toLowerCase() == "professional"
-                                ? FontAwesomeIcons.briefcase
-                                : FontAwesomeIcons.building,
-                            size: 30,
-                            color: kBlue,
-                          ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Amount: KES ${_formatPrice(correctPrice)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: kBlue,
                         ),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
+                      Image.asset("images/mpesa.png", height: 50),
+                      const SizedBox(height: 20),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-                        child: Text(
-                          membership,
-                          style: TextStyle(
-                            fontSize: kBigTextSize,
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                        ),
-                      ),
-
-                      // Show current plan status using controller observables
-                      Obx(() {
-                        if (_plansController.hasActivePlan.value &&
-                            membershipExpired.value != true) {
-                          return Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: kSidePadding,
-                            ),
-                            child: Container(
-                              margin: EdgeInsets.only(top: 10),
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.blue.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Text(
-                                'Current Plan: ${_plansController.currentUserPlan.value.toUpperCase()}',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                        return SizedBox.shrink();
-                      }),
-
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-                        child: Row(
-                          children: [
-                            Icon(FontAwesomeIcons.lock, color: kGrey, size: 15),
-                            SizedBox(width: 10),
-                            Text(
-                              "Payments are secure & encrypted",
-                              style: TextStyle(color: kGrey),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               "Phone Number *",
                               style: TextStyle(
-                                color: isDark ? kWhite : kBlack,
+                                color: isDarkMode ? kWhite : kBlack,
                                 fontWeight: FontWeight.bold,
                                 fontSize: kNormalTextSize,
                               ),
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             IntlPhoneField(
+                              initialValue: initialPhoneNumber,
+                              enabled: !isProcessing,
                               decoration: InputDecoration(
                                 hintText: "7*******",
                                 hintStyle: TextStyle(
-                                  color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
                                 ),
                                 counterText: '',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: BorderSide(color: Colors.grey),
+                                  borderSide: const BorderSide(color: Colors.grey),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: BorderSide(color: kBlue, width: 1.0),
+                                  borderSide: const BorderSide(color: kBlue, width: 1.0),
                                 ),
                               ),
                               disableLengthCheck: true,
@@ -1466,14 +1358,14 @@ class _PlansScreenState extends State<PlansScreen> {
                                 return null;
                               },
                               style: TextStyle(
-                                color: isDark ? kWhite : kBlack,
+                                color: isDarkMode ? kWhite : kBlack,
                               ),
                               dropdownTextStyle: TextStyle(
-                                color: isDark ? kWhite : kBlack,
+                                color: isDarkMode ? kWhite : kBlack,
                               ),
                               dropdownIcon: Icon(
                                 Icons.arrow_drop_down,
-                                color: isDark ? kWhite : kBlack,
+                                color: isDarkMode ? kWhite : kBlack,
                               ),
                               initialCountryCode: 'KE',
                               onChanged: (PhoneNumber phone) {
@@ -1486,432 +1378,161 @@ class _PlansScreenState extends State<PlansScreen> {
                           ],
                         ),
                       ),
-                      SizedBox(height: 15),
+                      const SizedBox(height: 20),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-                        child: Text(
-                          'Breakdown',
-                          style: TextStyle(
-                            fontSize: kBigTextSize,
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  "KES $amount",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: isDark ? kWhite : kBlack,
-                                  ),
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: isProcessing
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: kBlue.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                SizedBox(width: 5),
-                                Text("/year", style: TextStyle(color: kGrey)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-                        child: Container(height: 1, color: kGrey),
-                      ),
-                      SizedBox(height: 10),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Total",
-                              style: TextStyle(
-                                color: isDark ? kWhite : kBlack,
-                                fontSize: kBigTextSize,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              "KES $amount",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: kBigTextSize,
-                                color: isDark ? kWhite : kBlue,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-                        child: CustomButton(
-                          callBackFunction:
-                              buttonText == "Active"
-                                  ? null
-                                  : () {
-                                    if (completePhoneNumber != null && completePhoneNumber!.isNotEmpty) {
-                                      _payForPlan(
-                                        context,
-                                        amount,
-                                        planID,
-                                        completePhoneNumber!,
-                                        plan,
-                                        isDark,
-                                      );
-                                      Navigator.pop(context);
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: kWhite,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Processing Payment...',
+                                      style: TextStyle(
+                                        color: kWhite,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : CustomButton(
+                                callBackFunction: () async {
+                                  if (completePhoneNumber != null &&
+                                      completePhoneNumber!.length >= 10) {
+                                    phoneNumber = completePhoneNumber!;
+                                    
+                                    setModalState(() {
+                                      isProcessing = true;
+                                    });
+                                    
+                                    final result = await _processPayment(plan);
+                                    
+                                    setModalState(() {
+                                      isProcessing = false;
+                                    });
+                                    
+                                    if (result['success'] == true) {
+                                      if (modalContext.mounted) {
+                                        Navigator.pop(modalContext);
+                                      }
+                                      if (context.mounted) {
+                                        showSuccessBottomSheet(
+                                          context,
+                                          plan.membership,
+                                          'Payment initiated',
+                                          'KES ${_formatPrice(correctPrice)}',
+                                          isDarkMode,
+                                        );
+                                      }
                                     } else {
+                                      // Show error above the modal using GetX
                                       Get.snackbar(
-                                        'Error',
-                                        'Please enter a phone number',
+                                        'Payment Error',
+                                        result['error'] ?? 'Payment failed. Please try again.',
+                                        snackPosition: SnackPosition.TOP,
                                         backgroundColor: Colors.red,
                                         colorText: Colors.white,
+                                        duration: const Duration(seconds: 4),
+                                        margin: const EdgeInsets.all(10),
                                       );
                                     }
-                                  },
-                          label: "Confirm $buttonText",
-                          backgroundColor:
-                              buttonText == "Active"
-                                  ? buttonColor.withOpacity(0.6)
-                                  : buttonColor,
+                                  } else {
+                                    Get.snackbar(
+                                      'Invalid Phone',
+                                      'Please enter a valid phone number',
+                                      snackPosition: SnackPosition.TOP,
+                                      backgroundColor: Colors.red,
+                                      colorText: Colors.white,
+                                      duration: const Duration(seconds: 3),
+                                      margin: const EdgeInsets.all(10),
+                                    );
+                                  }
+                                },
+                                label: "Confirm Payment",
+                                backgroundColor: kBlue,
+                              ),
                         ),
                       ),
-                      SizedBox(height: 30),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
             );
-          },
+          }
         );
       },
     );
-  }
-
-  Future<void> _payForPlan(
-    BuildContext context,
-    price,
-    planID,
-    phoneNumber,
-    plan,
-    isDark,
-  ) async {
-    _paymentController.amountToPay.value = price;
-    _paymentController.model.value = 'Plan';
-    _paymentController.object_id.value = planID;
-    _paymentController.phoneNumber.value = phoneNumber;
-
-    final result = await _paymentController.pay(context);
-
-    // Refresh both controller and local membership status
-    await _plansController.refreshPlanStatus();
-    await _checkUserPlanStatus();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _planKey.currentContext;
-      if (context != null && context.mounted) {
-        showSuccessPlanPurchase(context, plan, price, isDark);
-      } else {
-        ScaffoldMessenger.of(
-          _planKey.currentContext!,
-        ).showSnackBar(SnackBar(content: Text('Payment successful!')));
-      }
-    });
-  }
-
-  void showSuccessPlanPurchase(
-    BuildContext context,
-    String? plan,
-    int price,
-    bool isDark,
-  ) {
-    if (!context.mounted) {
-      return;
+    debugPrint('Modal shown successfully');
+    } catch (e, stackTrace) {
+      debugPrint('Error showing payment modal: $e');
+      debugPrint('Stack trace: $stackTrace');
     }
-
-    showModalBottomSheet(
-      backgroundColor: isDark ? kBlack : kWhite,
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder:
-          (context) => SafeArea(
-            bottom: true,
-            child: Padding(
-              padding: EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 100),
-                  SizedBox(height: 20),
-                  Text(
-                    'Subscription Confirmed',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? kWhite : kBlack,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    "Thank you for subscribing to the $plan plan.",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? kWhite : kBlack,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 24),
-                  Text(
-                    'KES: $price',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? kWhite : kBlack,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 30),
-                ],
-              ),
-            ),
-          ),
-    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    bool isDarkMode = themeProvider.isDark;
-
-    return SafeArea(
-      bottom: true,
-      child: Obx(
-        () => Stack(
-          children: [
-            Scaffold(
-              key: _planKey,
-              backgroundColor: isDarkMode ? kDarkThemeBg : kBGColor,
-              body: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    color: isDarkMode ? kBlack : kWhite,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        top: 30,
-                        left: kSidePadding,
-                        right: kSidePadding,
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 20, bottom: 20),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                IconButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  icon: Icon(
-                                    Icons.arrow_back_ios,
-                                    color: isDarkMode ? kWhite : kBlack,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 10),
-                            // Membership Icon
-                            Container(
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: kBlue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.workspace_premium,
-                                color: kBlue,
-                                size: 32,
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            // Title
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.card_membership,
-                                  color: isDarkMode ? kWhite : kBlack,
-                                  size: 24,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  "Membership Plans",
-                                  style: TextStyle(
-                                    color: isDarkMode ? kWhite : kBlack,
-                                    fontSize: kBigTextSize + 2,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            // Subtitle
-                            Text(
-                              "Upgrade your DAMA experience",
-                              style: TextStyle(
-                                color: isDarkMode ? kGrey : kGrey,
-                                fontSize: 14,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: 600),
-                        child: Obx(() {
-                          // Wait for membership expiration check to complete first
-                          if (membershipExpired.value == null) {
-                            return ListView(
-                              children: List.generate(
-                                3,
-                                (_) => const PlanCardSkeleton(),
-                              ),
-                            );
-                          }
-
-                          // Then wait for plans to load and plan status to be checked
-                          if (_plansController.isLoading.value ||
-                              _plansController.isLoadingPlanStatus.value) {
-                            return ListView(
-                              children: List.generate(
-                                3,
-                                (_) => const PlanCardSkeleton(),
-                              ),
-                            );
-                          }
-
-                          if (_plansController.plansList.isEmpty) {
-                            return Center(child: Text("No plans available"));
-                          }
-
-                          return ListView.builder(
-                            padding: EdgeInsets.zero,
-                            itemCount: _plansController.plansList.length,
-                            itemBuilder: (context, index) {
-                              final plan = _plansController.plansList[index];
-                              String buttonText = _getButtonText(
-                                plan.membership,
-                              );
-                              bool isEnabled = _isButtonEnabled(
-                                plan.membership,
-                              );
-                              Color buttonColor = _getButtonColor(
-                                plan.membership,
-                                buttonText,
-                              );
-                              final planLower = plan.membership.toLowerCase();
-                              final icon = planLower == "student"
-                                  ? FontAwesomeIcons.graduationCap
-                                  : planLower == "professional"
-                                      ? FontAwesomeIcons.briefcase
-                                      : FontAwesomeIcons.building;
-                              
-                              // Determine button configuration based on plan type
-                              if (planLower == "student") {
-                                // Student: Not Available button + View Details
-                                return plansCard(
-                                  icon: icon,
-                                  amount: plan.price.toString(),
-                                  plan: plan.membership,
-                                  buttonText: "View Details",
-                                  isEnabled: true,
-                                  buttonColor: kBlue,
-                                  onPrimaryClick: () => _showPlanDetailsPopup(
-                                    context,
-                                    plan.membership,
-                                    isDarkMode,
-                                  ),
-                                  showViewDetails: false,
-                                  secondaryButton: _buildNotAvailableButton(),
-                                );
-                              } else if (planLower == "professional") {
-                                // Professional: Active (disabled) + View Certificate + View Details
-                                return Obx(() => plansCard(
-                                  icon: icon,
-                                  amount: plan.price.toString(),
-                                  plan: plan.membership,
-                                  buttonText: "Active",
-                                  isEnabled: false,
-                                  buttonColor: Colors.green,
-                                  onPrimaryClick: () {},
-                                  onViewDetails: () => _showPlanDetailsPopup(
-                                    context,
-                                    plan.membership,
-                                    isDarkMode,
-                                  ),
-                                  showViewDetails: true,
-                                  secondaryButton: _buildViewCertificateButton(
-                                    context, 
-                                    hasMembershipCertificate.value,
-                                    isDarkMode,
-                                  ),
-                                ));
-                              } else {
-                                // Corporate: Upgrade + View Details
-                                return plansCard(
-                                  icon: icon,
-                                  amount: plan.price.toString(),
-                                  plan: plan.membership,
-                                  buttonText: buttonText == "Active" ? "Active" : "Upgrade",
-                                  isEnabled: buttonText != "Active",
-                                  buttonColor: buttonText == "Active" ? Colors.green : Colors.orange,
-                                  onPrimaryClick: () => _showFullMessageBottomSheet(
-                                    context,
-                                    plan.membership,
-                                    isDarkMode,
-                                    plan.price,
-                                    icon,
-                                    plan.id,
-                                    plan.type,
-                                  ),
-                                  onViewDetails: () => _showPlanDetailsPopup(
-                                    context,
-                                    plan.membership,
-                                    isDarkMode,
-                                  ),
-                                  showViewDetails: true,
-                                );
-                              }
-                            },
-                          );
-                        }),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (_paymentController.isLoading.value)
-              Container(
-                color: Colors.black.withOpacity(0.5),
-                child: Center(child: customSpinner),
-              ),
-          ],
-        ),
-      ),
-    );
+  /// Process payment and return result with success status and error message
+  Future<Map<String, dynamic>> _processPayment(PlanModel plan) async {
+    try {
+      final paymentController = Get.find<PaymentController>();
+      final correctPrice = _getCorrectPrice(plan);
+      
+      // Validate phone number format
+      if (phoneNumber.isEmpty) {
+        return {'success': false, 'error': 'Please enter a phone number'};
+      }
+      
+      // Format phone number - remove any non-digit characters except '+'
+      String formattedPhone = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+      
+      // Validate it's a Kenyan number
+      if (!formattedPhone.startsWith('+254') && !formattedPhone.startsWith('254') && !formattedPhone.startsWith('0')) {
+        return {'success': false, 'error': 'Please enter a valid Kenyan phone number'};
+      }
+      
+      debugPrint('[PlansScreen] Processing M-Pesa payment for ${plan.membership} - KES $correctPrice');
+      debugPrint('[PlansScreen] Phone: $formattedPhone');
+      
+      paymentController.object_id.value = plan.id;
+      paymentController.model.value = 'Plan';
+      paymentController.amountToPay.value = correctPrice;
+      paymentController.phoneNumber.value = formattedPhone;
+      
+      final success = await paymentController.pay(context);
+      
+      if (success) {
+        return {'success': true};
+      } else {
+        // Get error message from controller
+        final errorMsg = paymentController.errorMessage.value;
+        return {
+          'success': false,
+          'error': errorMsg.isNotEmpty ? errorMsg : 'Payment failed. Please try again.'
+        };
+      }
+    } catch (e) {
+      debugPrint('Error processing payment: $e');
+      return {
+        'success': false,
+        'error': 'An unexpected error occurred: ${e.toString()}'
+      };
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:dama/models/session_model.dart';
 import 'package:dama/models/training_model.dart';
 import 'package:dama/models/user_progress_model.dart';
+import 'package:dama/models/certificate_model.dart';
 import 'package:dama/services/api_service.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:get/get.dart';
@@ -176,6 +177,56 @@ class UserProgressController extends GetxController {
     } catch (e) {
       errorMessage.value = e.toString();
       return {'success': false, 'message': 'Error: $e'};
+    }
+  }
+
+  // Fetch training sessions for a specific training (used by TrainingDashboard)
+  Future<List<TrainingSession>> fetchTrainingSessions(String trainingId) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      final result = await _apiService.getTrainingSessions(trainingId);
+      final sessionsData = result['sessions'] as List? ?? [];
+      return sessionsData
+          .map((e) => TrainingSession.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      errorMessage.value = e.toString();
+      return [];
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Fetch user progress for a specific training
+  Future<UserTrainingProgress?> fetchUserProgress(String trainingId) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      final progressList = await _calculateStatusBasedProgress();
+      return progressList.firstWhereOrNull((p) => p.trainingId == trainingId);
+    } catch (e) {
+      errorMessage.value = e.toString();
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Fetch user certificates
+  Future<List<CertificateModel>> fetchUserCertificates(String userId) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      return await _apiService.getUserCertificates(userId);
+    } catch (e) {
+      errorMessage.value = e.toString();
+      return [];
+    } finally {
+      isLoading.value = false;
     }
   }
 }

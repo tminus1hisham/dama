@@ -31,10 +31,10 @@ class SelectedEventCard extends StatelessWidget {
   final VoidCallback onPay;
 
   Uri _mapsUrl(String location) => Uri.parse(
-    'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}',
-  );
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}',
+      );
 
-  Future<void> _openMaps(BuildContext context, location) async {
+  Future<void> _openMaps(BuildContext context, String location) async {
     final uri = _mapsUrl(location);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.inAppWebView);
@@ -47,7 +47,6 @@ class SelectedEventCard extends StatelessWidget {
 
   Event _calendarEvent(DateTime start, String title, String location) {
     final end = start.add(const Duration(hours: 2));
-
     return Event(
       title: title,
       description: 'Event from the Dama Kenya app',
@@ -61,44 +60,45 @@ class SelectedEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    bool isDarkMode = themeProvider.isDark;
+    final isDarkMode = themeProvider.isDark;
+
+    final isPast = date.isBefore(DateTime.now());
 
     return Padding(
-      padding: EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: 8),
       child: Container(
         color: isDarkMode ? kBlack : kWhite,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Event Image
             SizedBox(
               width: double.infinity,
-              child: SizedBox(
-                width: double.infinity,
-                height: 250,
-                child:
-                    imageUrl.isNotEmpty
-                        ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder:
-                              (context, error, stackTrace) => const Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  size: 50,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                        )
-                        : const Center(
-                          child: Icon(
-                            Icons.image_not_supported,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
+              height: 250,
+              child: imageUrl.isNotEmpty
+                  ? Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          size: 50,
+                          color: Colors.grey,
                         ),
-              ),
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(
+                        Icons.image_not_supported,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
+                    ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
+
+            // Heading (remains bold/larger)
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: kSidePadding,
@@ -113,6 +113,8 @@ class SelectedEventCard extends StatelessWidget {
                 ),
               ),
             ),
+
+            // Date + Location (secondary style)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: kSidePadding),
               child: Row(
@@ -125,23 +127,31 @@ class SelectedEventCard extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(Icons.calendar_month, color: kGrey),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Text(
                           DateFormat('MMMM dd, yyyy').format(date),
-                          style: TextStyle(color: kGrey, fontSize: kMidText),
+                          style: TextStyle(
+                            color: kGrey,
+                            fontSize: kMidText,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(width: 20),
+                  const SizedBox(width: 20),
                   Row(
                     children: [
                       Icon(Icons.pin_drop_outlined, color: kBlue),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           location,
-                          style: TextStyle(color: kBlue, fontSize: kMidText),
+                          style: TextStyle(
+                            color: kBlue,
+                            fontSize: kMidText,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -149,6 +159,8 @@ class SelectedEventCard extends StatelessWidget {
                 ],
               ),
             ),
+
+            // Divider
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: kSidePadding,
@@ -159,10 +171,14 @@ class SelectedEventCard extends StatelessWidget {
                 height: 2,
               ),
             ),
-            SizedBox(height: 10),
+
+            const SizedBox(height: 10),
+
+            // Price + Action Button
             Padding(
               padding: EdgeInsets.symmetric(horizontal: kSidePadding),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (!isPaid) ...[
                     Column(
@@ -173,37 +189,53 @@ class SelectedEventCard extends StatelessWidget {
                           style: TextStyle(
                             color: kGrey,
                             fontSize: kNormalTextSize,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
                           'KES $price',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
                             fontSize: kBigTextSize,
+                            fontWeight: FontWeight.bold,
                             color: isDarkMode ? kWhite : kBlue,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(width: 30),
+                    const SizedBox(width: 30),
                     Expanded(
                       child: CustomButton(
-                        callBackFunction: onPay,
-                        label: "RSVP",
-                        backgroundColor: kBlue,
+                        callBackFunction: isPast ? null : onPay,
+                        label: isPast ? "EVENT PAST" : "RSVP",
+                        backgroundColor: isPast ? Colors.grey : kBlue,
+                        // If CustomButton supports textStyle, use this:
+                        // textStyle: TextStyle(
+                        //   fontSize: kNormalTextSize,     // smaller, like date/location
+                        //   fontWeight: FontWeight.w600,    // semi-bold, matches secondary text
+                        //   color: kWhite,
+                        // ),
                       ),
                     ),
                   ],
+
                   if (isPaid) ...[
                     Expanded(
                       child: CustomButton(
                         callBackFunction: () {},
                         label: "ATTENDING",
                         backgroundColor: kGreen,
+                        // textStyle: TextStyle(
+                        //   fontSize: kNormalTextSize,
+                        //   fontWeight: FontWeight.w600,
+                        //   color: kWhite,
+                        // ),
                       ),
                     ),
                   ],
-                  SizedBox(width: 10),
+
+                  const SizedBox(width: 10),
+
+                  // Share button
                   GestureDetector(
                     onTap: () {
                       final link = 'https://mydama.damakenya.org/';
@@ -217,7 +249,7 @@ class SelectedEventCard extends StatelessWidget {
                         border: Border.all(color: kBlue, width: 1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Padding(
+                      child: const Padding(
                         padding: EdgeInsets.all(10),
                         child: Icon(Icons.share, color: kBlue),
                       ),
@@ -226,7 +258,10 @@ class SelectedEventCard extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 20),
+
+            const SizedBox(height: 20),
+
+            // About Event
             Padding(
               padding: EdgeInsets.symmetric(horizontal: kSidePadding),
               child: Text(
@@ -238,7 +273,7 @@ class SelectedEventCard extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: kSidePadding),
               child: Text(
@@ -249,7 +284,7 @@ class SelectedEventCard extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
           ],
         ),
       ),

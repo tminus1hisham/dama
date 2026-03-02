@@ -13,8 +13,8 @@ class ThemeAwareLogo extends StatelessWidget {
 
   const ThemeAwareLogo({
     super.key,
-    this.height = 40,
-    this.width = 75,
+    this.height = 50,
+    this.width = 100,
     this.fit = BoxFit.contain,
   });
 
@@ -41,8 +41,8 @@ class HeroThemeAwareLogo extends StatelessWidget {
   const HeroThemeAwareLogo({
     super.key,
     this.tag = "logo",
-    this.height = 40,
-    this.width = 75,
+    this.height = 50,
+    this.width = 100,
   });
 
   @override

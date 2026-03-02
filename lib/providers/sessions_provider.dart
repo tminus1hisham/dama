@@ -24,9 +24,15 @@ class SessionsProvider with ChangeNotifier {
 
     try {
       final response = await _apiService.getTrainingSessions(trainingId);
-      if (response['success'] == true) {
+      // API returns {sessions: [...]} directly, not wrapped in success field
+      if (response['sessions'] != null) {
         _sessions = List<TrainingSession>.from(
           (response['sessions'] as List).map((x) => TrainingSession.fromJson(x))
+        );
+      } else if (response['data'] != null && response['data']['sessions'] != null) {
+        // Alternative format: {data: {sessions: [...]}}
+        _sessions = List<TrainingSession>.from(
+          (response['data']['sessions'] as List).map((x) => TrainingSession.fromJson(x))
         );
       } else {
         _error = response['message'] ?? 'Failed to load sessions';

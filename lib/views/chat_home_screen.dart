@@ -48,7 +48,35 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
       body: Consumer<ChatProvider>(
         builder: (context, chatProvider, child) {
           if (chatProvider.conversations.isEmpty) {
-            return Center(child: Text('No conversations yet'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'No conversations yet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Start chatting with other DAMA Kenya members',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
           }
           
           return ListView.builder(

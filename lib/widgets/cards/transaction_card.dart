@@ -3,6 +3,10 @@ import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/transaction_model.dart';
 
@@ -295,18 +299,229 @@ class TransactionDetailsModal extends StatelessWidget {
 
   const TransactionDetailsModal({super.key, required this.transaction});
 
+  Future<void> _generateAndDownloadReceipt(BuildContext context) async {
+    try {
+      final pdf = pw.Document();
+      
+      // Format date and time
+      final formattedDate = DateFormat('MMM d, yyyy').format(transaction.createdAt);
+      final formattedTime = DateFormat('h:mm a').format(transaction.createdAt);
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: pw.EdgeInsets.all(40),
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Header
+                pw.Center(
+                  child: pw.Text(
+                    'DAMA Kenya Payment Receipt',
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Center(
+                  child: pw.Text(
+                    'Receipt Date: $formattedDate',
+                    style: const pw.TextStyle(fontSize: 12),
+                  ),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Divider(),
+                pw.SizedBox(height: 20),
+
+                // Transaction Summary
+                pw.Text(
+                  'Transaction Summary',
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+
+                // Detail rows
+                pw.Column(
+                  children: [
+                    _buildReceiptRow('Transaction ID', transaction.id),
+                    _buildReceiptRow('Reference Number', 'N/A'),
+                    _buildReceiptRow(
+                      'Description',
+                      transaction.objectTitle,
+                    ),
+                    _buildReceiptRow('Transaction Type', transaction.onModel),
+                    _buildReceiptRow(
+                      'Date & Time',
+                      '$formattedDate, $formattedTime',
+                    ),
+                    _buildReceiptRow('Payment Method', 'M-Pesa'),
+                  ],
+                ),
+
+                pw.SizedBox(height: 20),
+                pw.Divider(),
+                pw.SizedBox(height: 20),
+
+                // Amount Paid
+                pw.Text(
+                  'Amount Paid',
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Center(
+                  child: pw.Text(
+                    'KES ${transaction.amount}',
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+
+                // Payment Status
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.center,
+                  children: [
+                    pw.Text(
+                      'Payment Status',
+                      style: const pw.TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+                pw.Center(
+                  child: pw.Text(
+                    transaction.status,
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                pw.Spacer(),
+
+                // Footer
+                pw.Divider(),
+                pw.SizedBox(height: 20),
+                pw.Text(
+                  'Thank you for your purchase!',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+                pw.Center(
+                  child: pw.Column(
+                    children: [
+                      pw.Text(
+                        'DAMA Kenya – Data Management Professionals Community',
+                        style: const pw.TextStyle(fontSize: 11),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        'Support: support@damakenya.org',
+                        style: const pw.TextStyle(fontSize: 10),
+                      ),
+                      pw.Text(
+                        'www.damakenya.org',
+                        style: const pw.TextStyle(fontSize: 10),
+                      ),
+                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        'This is a system-generated receipt and does not require a signature.',
+                        style: const pw.TextStyle(fontSize: 9),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      // Generate filename
+      final fileName =
+          'Receipt_${transaction.id.substring(0, 8)}_${DateFormat('ddMMyyyy').format(transaction.createdAt)}.pdf';
+
+      // Save and share
+      await Printing.sharePdf(
+        bytes: await pdf.save(),
+        filename: fileName,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Receipt downloaded successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate receipt: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  pw.Widget _buildReceiptRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            label,
+            style: pw.TextStyle(
+              fontSize: 11,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.Text(
+            value,
+            style: const pw.TextStyle(fontSize: 11),
+            textAlign: pw.TextAlign.end,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
+    final utils = Utils();
+
+    final formattedDate = DateFormat('MMM d, yyyy').format(transaction.createdAt);
+    final formattedTime = DateFormat('h:mm a').format(transaction.createdAt);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF1F2937) : Colors.white,
+        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
       ),
       child: Column(
@@ -317,7 +532,7 @@ class TransactionDetailsModal extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: isDarkMode ? Colors.grey[600] : Colors.grey[300],
+              color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -331,7 +546,7 @@ class TransactionDetailsModal extends StatelessWidget {
                 Text(
                   'Transaction Details',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: isDarkMode ? Colors.white : Colors.black,
                   ),
@@ -350,150 +565,149 @@ class TransactionDetailsModal extends StatelessWidget {
           // Content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildDetailRow('Transaction ID', transaction.id, isDarkMode),
-                  _buildDetailRow(
-                    'M-Pesa Short Code',
-                    transaction.mpesaShortCode,
-                    isDarkMode,
-                  ),
-                  _buildDetailRow(
-                    'Amount',
-                    'KSh ${transaction.amount}',
-                    isDarkMode,
-                  ),
-                  _buildDetailRow('Status', transaction.status, isDarkMode),
-                  _buildDetailRow(
-                    'Date Created',
-                    Utils().formatUtcToLocal(transaction.createdAt.toString()),
-                    isDarkMode,
-                  ),
-
-                  const SizedBox(height: 20),
-                  Text(
-                    'User Information',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  _buildDetailRow(
-                    'Name',
-                    transaction.user.fullName,
-                    isDarkMode,
-                  ),
-                  _buildDetailRow('Email', transaction.user.email, isDarkMode),
-
-                  if (transaction.event != null) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      'Event Information',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : Colors.black,
+                  // Main Card
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF131C2B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF1E293B),
+                        width: 1,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    Container(
-                      height: 150,
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        image: DecorationImage(
-                          image: NetworkImage(
-                            transaction.event!.eventImageUrl,
-                          ),
-                          fit: BoxFit.cover,
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDarkMode
+                              ? Colors.black.withOpacity(0.3)
+                              : Colors.grey.withOpacity(0.1),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
+                      ],
                     ),
-
-                    _buildDetailRow(
-                      'Event Title',
-                      transaction.event!.eventTitle,
-                      isDarkMode,
-                    ),
-                    _buildDetailRow(
-                      'Location',
-                      transaction.event!.location,
-                      isDarkMode,
-                    ),
-                    _buildDetailRow(
-                      'Event Date',
-                      Utils().formatUtcToLocal(
-                        transaction.event!.eventDate.toString(),
-                      ),
-                      isDarkMode,
-                    ),
-                    _buildDetailRow(
-                      'Price',
-                      'KSh ${transaction.event!.price}',
-                      isDarkMode,
-                    ),
-
-                    const SizedBox(height: 12),
-                    Text(
-                      'Description',
-                      style: TextStyle(
-                        fontSize: kNormalTextSize,
-                        fontWeight: FontWeight.w600,
-                        color: isDarkMode ? Colors.white : Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      transaction.event!.description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                        height: 1.5,
-                      ),
-                    ),
-
-                    if (transaction.event!.speakers.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        'Speakers',
-                        style: TextStyle(
-                          fontSize: kNormalTextSize,
-                          fontWeight: FontWeight.w600,
-                          color: isDarkMode ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ...transaction.event!.speakers.map(
-                        (speaker) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundImage: NetworkImage(speaker.image),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                speaker.name,
-                                style: TextStyle(
-                                  fontSize: kNormalTextSize,
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                ),
-                              ),
-                            ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Transaction ID Section
+                        Text(
+                          'Transaction ID',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF94A3B8),
                           ),
                         ),
-                      ),
-                    ],
-                  ],
+                        const SizedBox(height: 6),
+                        Text(
+                          transaction.id,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          height: 1,
+                          width: double.infinity,
+                          color: const Color(0xFF334155),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Reference Number
+                        _buildDetailSection(
+                          'Reference Number',
+                          'N/A',
+                          isDarkMode,
+                        ),
+
+                        // Description
+                        _buildDetailSection(
+                          'Description',
+                          transaction.objectTitle,
+                          isDarkMode,
+                        ),
+
+                        // Amount
+                        _buildDetailSection(
+                          'Amount',
+                          'KSh ${transaction.amount}',
+                          isDarkMode,
+                        ),
+
+                        // Date & Time
+                        _buildDetailSection(
+                          'Date & Time',
+                          '$formattedDate $formattedTime',
+                          isDarkMode,
+                        ),
+
+                        // Type
+                        _buildDetailSection(
+                          'Type',
+                          transaction.onModel,
+                          isDarkMode,
+                        ),
+
+                        // Status
+                        _buildDetailSection(
+                          'Status',
+                          transaction.status,
+                          isDarkMode,
+                        ),
+
+                        // Payment Method (no underline - last item)
+                        Text(
+                          'Payment Method',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'M-Pesa',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Download Receipt Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _generateAndDownloadReceipt(context),
+                            icon: const Icon(Icons.download),
+                            label: const Text(
+                              'Download Receipt',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                   const SizedBox(height: 20),
                 ],
@@ -505,32 +719,39 @@ class TransactionDetailsModal extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, bool isDarkMode) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: kNormalTextSize,
-                fontWeight: FontWeight.w500,
-                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-              ),
-            ),
+  Widget _buildDetailSection(
+    String label,
+    String value,
+    bool isDarkMode,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF94A3B8),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: kNormalTextSize,
-              color: isDarkMode ? Colors.white : Colors.black,
-            ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          height: 1,
+          width: double.infinity,
+          color: const Color(0xFF334155),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

@@ -72,7 +72,7 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
               imageUrl: blog.imageUrl,
               author: blog.author != null 
                   ? '${blog.author!.firstName} ${blog.author!.lastName}'
-                  : 'Unknown Author',
+                  : 'DAMA KENYA',
               createdAt: blog.createdAt,
               description: blog.description,
               comments: blog.comments,
@@ -447,6 +447,7 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                               blog.comments.length;
 
                           return blogCard(
+                            category: blog.category ?? '',
                             roles: blog.author?.roles ?? [],
                             onProfileClicked: () {
                               if (blog.author == null) return;
@@ -485,7 +486,7 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                             profileImageUrl: blog.author?.profilePicture ?? '',
                             fullName: blog.author != null
                                 ? '${blog.author!.firstName} ${blog.author!.lastName}'
-                                : 'Unknown Author',
+                                : 'DAMA KENYA',
                             blog: blog.description,
                             heading: blog.title,
                             imageUrl: _utils.cleanUrl(blog.imageUrl),

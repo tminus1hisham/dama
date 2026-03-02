@@ -4,12 +4,13 @@ import 'package:dama/views/auth/register_screen.dart';
 import 'package:dama/views/auth/request_change_password.dart';
 import 'package:dama/views/auth/reset_password.dart';
 import 'package:dama/views/chat/chat_users_screen.dart';
-import 'package:dama/views/course_sessions_screen.dart';
 import 'package:dama/views/dashboard.dart';
 import 'package:dama/views/drawer_screen/about_dama.dart';
 import 'package:dama/views/drawer_screen/change_password.dart';
+import 'package:dama/views/drawer_screen/notification_preferences.dart';
 import 'package:dama/views/drawer_screen/notifications_screen.dart';
 import 'package:dama/views/drawer_screen/plans_screen.dart';
+import 'package:dama/views/drawer_screen/settings_screen.dart';
 import 'package:dama/views/drawer_screen/profile_screen.dart';
 import 'package:dama/views/drawer_screen/transactions.dart';
 import 'package:dama/views/my_certificates_screen.dart';
@@ -35,7 +36,9 @@ class AppRoutes {
   static const String transcation = '/transactions';
   static const String usersChatScreen = '/usersChatScreen';
   static const String notifications = '/notifications';
+  static const String notificationPreferences = '/notification-preferences';
   static const String aboutDama = '/aboutDama';
+  static const String settingsPage = '/settings';
   static const String changePassword = '/changePassword';
   static const String requestChangePassword = '/requestChangePassword';
   static const String resetPassword = '/resetPassword';
@@ -43,6 +46,8 @@ class AppRoutes {
   static const String todaySessions = '/today-sessions';
   static const String myTrainings = '/my-trainings';
   static const String certificates = '/my-certificates';
+  // NOTE: trainingDashboard removed — always navigate using:
+  // Get.to(() => TrainingDashboard(training: training))
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -52,60 +57,70 @@ class AppRoutes {
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
       case login:
         return PageTransition(
           child: LoginScreen(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
       case register:
         return PageTransition(
           child: RegisterScreen(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
       case home:
         return PageTransition(
           child: Dashboard(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
       case otp:
         return PageTransition(
           child: OtpScreen(),
           type: PageTransitionType.rightToLeft,
           duration: Duration(milliseconds: 300),
         );
+
       case personal_details:
         return PageTransition(
           child: PersonalDetails(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
       case professional_details:
         return PageTransition(
           child: ProfessionalDetails(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
       case plans:
         return PageTransition(
           child: PlansScreen(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
       case profile:
         return PageTransition(
           child: ProfileScreen(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
       case transcation:
         return PageTransition(
           child: Transactions(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
       case usersChatScreen:
         return PageTransition(
           child: ChatUsersScreen(),
@@ -127,12 +142,27 @@ class AppRoutes {
           duration: Duration(milliseconds: 300),
         );
 
+      case settingsPage:
+        return PageTransition(
+          child: SettingsScreen(),
+          type: PageTransitionType.fade,
+          duration: Duration(milliseconds: 300),
+        );
+
       case changePassword:
         return PageTransition(
           child: ChangePassword(),
           type: PageTransitionType.fade,
           duration: Duration(milliseconds: 300),
         );
+
+      case notificationPreferences:
+        return PageTransition(
+          child: NotificationPreferencesScreen(),
+          type: PageTransitionType.fade,
+          duration: Duration(milliseconds: 300),
+        );
+
       case requestChangePassword:
         return PageTransition(
           child: RequestChangePassword(),
@@ -177,9 +207,9 @@ class AppRoutes {
 
       default:
         return MaterialPageRoute(
-          builder:
-              (_) =>
-                  const Scaffold(body: Center(child: Text('Page not found'))),
+          builder: (_) => const Scaffold(
+            body: Center(child: Text('Page not found')),
+          ),
         );
     }
   }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:dama/models/user_model.dart';
+import 'package:dama/services/auth_alert_helper.dart';
 import 'package:get/get.dart';
 import '../routes/routes.dart';
 import '../services/api_service.dart';
@@ -193,11 +194,9 @@ class AuthController extends GetxController {
 
       bool isAvailable = await _auth.canCheckBiometrics;
       if (!isAvailable) {
-        Get.snackbar(
-          "Biometric not available",
-          "Your device does not support biometric authentication.",
-          backgroundColor: Colors.red.withOpacity(0.9),
-          colorText: Colors.white,
+        AuthAlertHelper.showError(
+          'Biometric Not Available',
+          'Your device does not support biometric authentication.',
         );
         return;
       }
@@ -219,30 +218,22 @@ class AuthController extends GetxController {
         if (success) {
           Get.offAllNamed(AppRoutes.home);
         } else {
-          if (Get.overlayContext != null) {
-            Get.snackbar(
-              "Biometric Login Failed",
-              "Could not authenticate with biometrics.",
-              backgroundColor: Colors.red.withOpacity(0.9),
-              colorText: Colors.white,
-            );
-          }
+          AuthAlertHelper.showError(
+            'Biometric Login Failed',
+            'Could not authenticate with biometrics.',
+          );
         }
       }
     } catch (e) {
       isLoading.value = false;
-      if (Get.overlayContext != null) {
-        Get.snackbar(
-          "Error",
-          "An error occurred during biometric authentication",
-          backgroundColor: Colors.red.withOpacity(0.9),
-          colorText: const Color.fromARGB(255, 47, 32, 32),
-        );
-      }
+      AuthAlertHelper.showError(
+        'Biometric Auth Error',
+        'An error occurred during biometric authentication',
+      );
     }
   }
 
-  void logout(BuildContext context) async {
+  Future<void> logout(BuildContext context) async {
     final success = await _authService.logoutUser();
     if (success) {
       // Reset auth state
@@ -346,6 +337,27 @@ class AuthController extends GetxController {
   }
 
   Future<void> _storeProfileFields(Map<String, dynamic> userData) async {
+    // Apply professional membership free for one year if user doesn't have membership
+    final hasMembership = userData['hasMembership'] ?? false;
+    final membershipExp = userData['membershipExp'];
+    
+    // Check if user already has a membershipExp to avoid overwriting
+    bool shouldApplyFree = !hasMembership;
+    String? freeUntil;
+    String? membershipStartDate;
+    String? effectiveMembershipExp = membershipExp;
+
+    if (shouldApplyFree) {
+      // Apply 1-year free professional membership
+      final expiryDate = DateTime.now().add(Duration(days: 365));
+      freeUntil = expiryDate.toIso8601String();
+      membershipStartDate = DateTime.now().toIso8601String();
+      effectiveMembershipExp = freeUntil;
+      
+      debugPrint('[AuthController] Applying free professional membership for 1 year');
+      debugPrint('[AuthController] Free until: $freeUntil');
+    }
+
     await StorageService.storeData({
       'firstName': userData['firstName'] ?? '',
       'lastName': userData['lastName'] ?? '',
@@ -353,8 +365,8 @@ class AuthController extends GetxController {
       'brief': userData['brief'] ?? '',
       'profile_picture': userData['profile_picture'] ?? '',
       'memberId': userData['memberId'] ?? '',
-      'hasMembership': userData['hasMembership'] ?? false,
-      'membershipExp': userData['membershipExp'] ?? '',
+      'hasMembership': hasMembership,
+      'membershipExp': effectiveMembershipExp ?? '',
       'membershipId': (() {
         final membershipIdRaw = userData['membershipId'];
         if (membershipIdRaw is Map) {
@@ -364,6 +376,8 @@ class AuthController extends GetxController {
       })(),
       'membershipCertificate': userData['membershipCertificate'] ?? '',
       'membershipCertificateDownload': userData['membershipCertificateDownload'] ?? '',
+      if (freeUntil != null) 'freeUntil': freeUntil,
+      if (membershipStartDate != null) 'membershipStartDate': membershipStartDate,
     });
 
     // Store user roles if available
@@ -421,41 +435,6 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       print('Error refreshing user profile: $e');
-    }
-  }
-
-  Future<bool> _checkIfAccountExists(String email) async {
-    try {
-      print('Checking if account exists for email: $email');
-      // Try to login with a dummy password to see if account exists
-      await _authService.login(
-        LoginModel(
-          email: email,
-          password: 'dummy_password_for_checking_existence',
-          fcmToken: ''
-        )
-      );
-      // If login succeeds, account exists
-      return true;
-    } catch (e) {
-      final errorMessage = e.toString().toLowerCase();
-      // If error indicates invalid credentials but account exists
-      if (errorMessage.contains('invalid') && errorMessage.contains('password') ||
-          errorMessage.contains('wrong') && errorMessage.contains('password') ||
-          errorMessage.contains('incorrect') && errorMessage.contains('password')) {
-        print('Account exists but password is wrong');
-        return true;
-      }
-      // If error indicates account not found
-      if (errorMessage.contains('not found') || 
-          errorMessage.contains('does not exist') ||
-          errorMessage.contains('no account')) {
-        print('Account does not exist');
-        return false;
-      }
-      // For other errors, assume account doesn't exist to be safe
-      print('Unknown error checking account existence: $e');
-      return false;
     }
   }
 

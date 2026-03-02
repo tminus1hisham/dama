@@ -344,7 +344,7 @@ class NotificationDetailModal extends StatelessWidget {
                           child: Text(
                             "Notification Details",
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: isDarkMode ? Colors.white : Colors.black87,
                             ),
@@ -382,7 +382,7 @@ class NotificationDetailModal extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: isDarkMode ? Colors.white : Colors.black87,
                         height: 1.3,

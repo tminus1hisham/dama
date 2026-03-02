@@ -4,6 +4,7 @@ class PlanModel {
   final String type;
   final int price;
   final List<String> included;
+  final List<String> benefits;
   final String createdAt;
   final String updatedAt;
 
@@ -13,6 +14,7 @@ class PlanModel {
     required this.type,
     required this.price,
     required this.included,
+    required this.benefits,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -24,6 +26,9 @@ class PlanModel {
       type: json['type'],
       price: json['price'],
       included: List<String>.from(json['included']),
+      benefits: json['benefits'] != null 
+          ? List<String>.from(json['benefits']) 
+          : [],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
     );
@@ -36,8 +41,32 @@ class PlanModel {
       'type': type,
       'price': price,
       'included': included,
+      'benefits': benefits,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
+  }
+
+  /// Create a copy of this plan
+  PlanModel copyWith({
+    String? id,
+    String? membership,
+    String? type,
+    int? price,
+    List<String>? included,
+    List<String>? benefits,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return PlanModel(
+      id: id ?? this.id,
+      membership: membership ?? this.membership,
+      type: type ?? this.type,
+      price: price ?? this.price,
+      included: included ?? this.included,
+      benefits: benefits ?? this.benefits,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

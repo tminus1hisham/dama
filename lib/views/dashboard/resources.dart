@@ -1,3 +1,5 @@
+import 'package:dama/controller/get_user_data.dart';
+import 'package:dama/controller/payment_controller.dart';
 import 'package:dama/controller/resource_controller.dart';
 import 'package:dama/controller/user_resources_controller.dart';
 import 'package:dama/services/local_storage_service.dart';
@@ -5,10 +7,14 @@ import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/views/pdf_viewer.dart';
 import 'package:dama/views/selected_screens/selected_resource_screen.dart';
+import 'package:dama/widgets/buttons/custom_button.dart';
 import 'package:dama/widgets/cards/resources_card.dart';
+import 'package:dama/widgets/modals/success_bottomsheet.dart';
 import 'package:dama/widgets/shimmer/resources_card_shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 import 'package:provider/provider.dart';
 
 class Resources extends StatefulWidget {
@@ -28,6 +34,10 @@ class _ResourcesState extends State<Resources>
   final UserResourceController _userResourceController = Get.put(
     UserResourceController(),
   );
+  final PaymentController _paymentController = Get.put(PaymentController());
+  final GetUserProfileController _getUserProfileController = Get.put(
+    GetUserProfileController(),
+  );
 
   bool _isLoading = false;
   int selectedTab = 0;
@@ -37,6 +47,13 @@ class _ResourcesState extends State<Resources>
   String title = '';
   String bio = '';
   String memberId = '';
+  
+  // Payment fields
+  String? completePhoneNumber;
+  String? countryCode = '+254';
+  String phoneNumber = '';
+  String? fetchedPhoneNumber;
+  String fetchedUserId = '';
   
   // Sorting options
   String _sortBy = 'newest'; // newest, oldest, price_low, price_high, rating
@@ -117,6 +134,285 @@ class _ResourcesState extends State<Resources>
       ),
     );
   }
+
+  Future<void> _fetchPhoneNumberAndUser() async {
+    fetchedPhoneNumber = await StorageService.getData("phoneNumber");
+    fetchedUserId = await StorageService.getData('userId');
+    await _getUserProfileController.fetchUserProfile(fetchedUserId);
+  }
+
+  void _showPhoneNumberModal(BuildContext context, dynamic resource, bool isDarkMode) {
+    // Pre-populate phone number from storage
+    String initialPhoneNumber = '';
+    if (fetchedPhoneNumber != null && fetchedPhoneNumber!.isNotEmpty) {
+      // Extract just the number part (without country code)
+      if (fetchedPhoneNumber!.startsWith('+254')) {
+        initialPhoneNumber = fetchedPhoneNumber!.substring(4);
+      } else if (fetchedPhoneNumber!.startsWith('254')) {
+        initialPhoneNumber = fetchedPhoneNumber!.substring(3);
+      } else {
+        initialPhoneNumber = fetchedPhoneNumber!;
+      }
+    }
+    
+    // Local variable to track loading state within the modal
+    bool isProcessing = false;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false, // Prevent dismissing during payment
+      enableDrag: false,    // Prevent dragging away during payment
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: isDarkMode ? kDarkThemeBg : kWhite,
+      builder: (modalContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              bottom: true,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 20),
+                      Text(
+                        'Purchase Resource',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? kWhite : kBlack,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        resource.title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDarkMode ? kWhite : kGrey,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        'Amount: KES ${resource.price}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: kBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Image.asset("images/mpesa.png", height: 50),
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Phone Number *",
+                              style: TextStyle(
+                                color: isDarkMode ? kWhite : kBlack,
+                                fontWeight: FontWeight.bold,
+                                fontSize: kNormalTextSize,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            IntlPhoneField(
+                              initialValue: initialPhoneNumber, // Autofill phone number
+                              enabled: !isProcessing, // Disable during processing
+                              decoration: InputDecoration(
+                                hintText: "7*******",
+                                hintStyle: TextStyle(
+                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                                ),
+                                counterText: '',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  borderSide: BorderSide(color: Colors.grey),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  borderSide: BorderSide(color: kBlue, width: 1.0),
+                                ),
+                              ),
+                              disableLengthCheck: true,
+                              validator: (PhoneNumber? phone) {
+                                if (phone == null || phone.number.isEmpty) {
+                                  return 'Please enter a phone number';
+                                }
+                                if (phone.number.length != 9) {
+                                  return 'Phone number must be exactly 9 digits';
+                                }
+                                if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                                  return 'Phone number must contain only digits';
+                                }
+                                return null;
+                              },
+                              style: TextStyle(
+                                color: isDarkMode ? kWhite : kBlack,
+                              ),
+                              dropdownTextStyle: TextStyle(
+                                color: isDarkMode ? kWhite : kBlack,
+                              ),
+                              dropdownIcon: Icon(
+                                Icons.arrow_drop_down,
+                                color: isDarkMode ? kWhite : kBlack,
+                              ),
+                              initialCountryCode: 'KE',
+                              onChanged: (PhoneNumber phone) {
+                                completePhoneNumber = phone.completeNumber;
+                              },
+                              onCountryChanged: (country) {
+                                countryCode = '+${country.dialCode}';
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: isProcessing
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: kBlue.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: kWhite,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Processing Payment...',
+                                      style: TextStyle(
+                                        color: kWhite,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : CustomButton(
+                                callBackFunction: () async {
+                                  if (completePhoneNumber != null &&
+                                      completePhoneNumber!.length >= 10) {
+                                    phoneNumber = completePhoneNumber!;
+                                    
+                                    // Show loading state
+                                    setModalState(() {
+                                      isProcessing = true;
+                                    });
+                                    
+                                    // Process payment while modal stays open
+                                    final success = await _processPayment(context, resource);
+                                    
+                                    // Close modal after payment completes
+                                    if (modalContext.mounted) {
+                                      Navigator.pop(modalContext);
+                                    }
+                                    
+                                    // Show success UI if payment succeeded
+                                    if (success && context.mounted) {
+                                      showSuccessBottomSheet(
+                                        context,
+                                        resource.title,
+                                        'Resource purchased',
+                                        'KES ${resource.price}',
+                                        isDarkMode,
+                                      );
+                                      // Navigate to PDF viewer after a delay
+                                      Future.delayed(const Duration(seconds: 3), () {
+                                        if (context.mounted) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => PDFViewerPage(
+                                                title: resource.title,
+                                                pdfUrl: resource.resourceLink,
+                                                onBack: () => Navigator.pop(context),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      });
+                                    }
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Please enter a valid phone number'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                },
+                                label: "Confirm Payment",
+                                backgroundColor: kBlue,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+        );
+      },
+    );
+  }
+
+  // Process payment and return success status
+  Future<bool> _processPayment(BuildContext context, dynamic resource) async {
+    // Check if user already has this resource
+    final isAlreadyPurchased = _userResourceController.resourceList.any(
+      (r) => r.id == resource.id,
+    );
+
+    if (isAlreadyPurchased) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You have already purchased this resource.')),
+        );
+      }
+      return false;
+    }
+
+    _paymentController
+      ..amountToPay.value = resource.price
+      ..model.value = 'Resource'
+      ..object_id.value = resource.id
+      ..phoneNumber.value = phoneNumber;
+
+    final success = await _paymentController.pay(context);
+
+    if (success) {
+      // Refresh user resources list after successful payment
+      await _userResourceController.fetchUserResources();
+    }
+
+    return success;
+  }
+
+
 
   @override
   void dispose() {
@@ -245,7 +541,6 @@ class _ResourcesState extends State<Resources>
                             return ResourcesCard(
                               heading: resource.title,
                               imageUrl: resource.resourceImageUrl,
-                              rating: resource.averageRating,
                               price: resource.price,
                               isPurchased: isPurchased,
                               onReadNowPressed: () {
@@ -255,53 +550,47 @@ class _ResourcesState extends State<Resources>
                                     builder: (context) => PDFViewerPage(
                                       title: resource.title,
                                       pdfUrl: resource.resourceLink,
+                                      onBack: () => Navigator.pop(context),
                                     ),
                                   ),
                                 );
                               },
                               onPressed: () {
-                                if (isPurchased) {
-                                  // Already purchased - open PDF directly
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PDFViewerPage(
-                                        title: resource.title,
-                                        pdfUrl: resource.resourceLink,
-                                      ),
+                                // Navigate to resource detail screen
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (
+                                      context,
+                                      animation,
+                                      secondaryAnimation,
+                                    ) => SelectedResourceScreen(
+                                      resourceID: resource.id,
+                                      isPaid: isPurchased || resource.price == 0,
+                                      title: resource.title,
+                                      imageUrl: resource.resourceImageUrl,
+                                      description: resource.description,
+                                      price: resource.price,
+                                      viewUrl: resource.resourceLink,
+                                      date: resource.createdAt,
+                                      rating: resource.averageRating,
                                     ),
-                                  );
-                                } else if (resource.price > 0) {
-                                  // Not purchased - navigate to payment modal
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => SelectedResourceScreen(
-                                        resourceID: resource.id,
-                                        isPaid: false,
-                                        autoShowPayment: true,
-                                        title: resource.title,
-                                        imageUrl: resource.resourceImageUrl,
-                                        description: resource.description,
-                                        price: resource.price,
-                                        viewUrl: resource.resourceLink,
-                                        date: resource.createdAt,
-                                        rating: resource.averageRating,
-                                      ),
+                                    transitionsBuilder: (
+                                      context,
+                                      animation,
+                                      secondaryAnimation,
+                                      child,
+                                    ) {
+                                      return FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      );
+                                    },
+                                    transitionDuration: const Duration(
+                                      milliseconds: 200,
                                     ),
-                                  );
-                                } else {
-                                  // Free resource - open directly
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PDFViewerPage(
-                                        title: resource.title,
-                                        pdfUrl: resource.resourceLink,
-                                      ),
-                                    ),
-                                  );
-                                }
+                                  ),
+                                );
                               },
                             );
                           },
@@ -381,7 +670,6 @@ class _ResourcesState extends State<Resources>
                             return ResourcesCard(
                               heading: resource.title,
                               imageUrl: resource.resourceImageUrl,
-                              rating: resource.averageRating,
                               price: resource.price,
                               isPurchased: true,
                               onReadNowPressed: () {
@@ -391,6 +679,7 @@ class _ResourcesState extends State<Resources>
                                     builder: (context) => PDFViewerPage(
                                       title: resource.title,
                                       pdfUrl: resource.resourceLink,
+                                      onBack: () => Navigator.pop(context),
                                     ),
                                   ),
                                 );

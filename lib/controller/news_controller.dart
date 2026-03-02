@@ -28,11 +28,15 @@ class NewsController extends GetxController {
 
   // Cache ALL news fetched from API
   final List<NewsModel> _allNews = [];
+  // Track seen news IDs to prevent duplicates
+  final Set<String> _seenNewsIds = {};
   List<NewsModel> _firstPageNews = [];
   bool _hasFetchedAll = false;
   bool _isFetching = false;
   bool _isBackgroundFetching = false;
-  bool _cancelBackgroundFetch = false;
+
+  // ✅ Generation counter replaces the fragile boolean cancel flag
+  int _fetchGeneration = 0;
 
   final PagingController<int, NewsModel> pagingController = PagingController(
     firstPageKey: 1,
@@ -45,11 +49,11 @@ class NewsController extends GetxController {
   // Initialize with 'All News' only
   var categories = <String>['All News'].obs;
 
-  var categoryCounts = <String, int>{}.obs; // Map category -> count
+  var categoryCounts = <String, int>{}.obs;
   var isLoadingCategories = false.obs;
   var isLoadingNews = false.obs;
   var selectedCategory = 'All News'.obs;
-  var categorySearchQuery = ''.obs; // For filtering categories
+  var categorySearchQuery = ''.obs;
 
   // Search within categories
   var filteredCategories = <String>[].obs;
@@ -154,7 +158,6 @@ class NewsController extends GetxController {
       'acquisition',
       'billion',
       'million',
-      'revenue',
       'growth',
       'economy',
       'economic',
@@ -285,7 +288,6 @@ class NewsController extends GetxController {
       'exam',
       'MIT',
       'Harvard',
-      'student',
       'academy',
     ],
     'TRAVEL': [
@@ -313,7 +315,6 @@ class NewsController extends GetxController {
   /// Infer category from news title using keywords
   String _inferCategory(String title) {
     final lowerTitle = title.toLowerCase();
-
     for (final entry in _categoryKeywords.entries) {
       for (final keyword in entry.value) {
         if (lowerTitle.contains(keyword)) {
@@ -326,14 +327,12 @@ class NewsController extends GetxController {
 
   /// Get category for a news item (from API or inferred)
   String _getCategoryForNews(NewsModel news) {
-    // First try API category
     final apiCategory = (news.category ?? '').trim().toUpperCase();
     if (apiCategory.isNotEmpty &&
         apiCategory != 'NULL' &&
         apiCategory != 'UNCATEGORIZED') {
       return apiCategory;
     }
-    // Fall back to content-based inference
     return _inferCategory(news.title);
   }
 
@@ -347,11 +346,9 @@ class NewsController extends GetxController {
     final token = await StorageService.getData('access_token');
     if (token != null && token.isNotEmpty) {
       fetchCategories();
-      // Fetch news first, then popular news will have data to work with
       if (_allNews.isEmpty && filteredNews.isEmpty) {
-        await _fetchNewsProgressively(); // Load all news progressively
+        await _fetchNewsProgressively();
       }
-      // Now fetch popular news after news data is available
       fetchPopularNews();
     }
   }
@@ -365,16 +362,14 @@ class NewsController extends GetxController {
 
   Future<void> _fetchPage(int pageKey) async {
     try {
-      final news = await _apiService.getNews(page: pageKey, limit: 50);
-      _allNews.addAll(news);
+      var news = await _apiService.getNews(page: pageKey, limit: 50);
+      news.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _addNewsWithDeduplication(news);
       _computeTrendingNews();
       _updateCategoryCounts();
       _applyFilter();
 
-      // Check if controller is disposed before updating paging controller
-      if (_isControllerDisposed) {
-        return;
-      }
+      if (_isControllerDisposed) return;
 
       final isLastPage = news.length < 10;
       if (isLastPage) {
@@ -389,12 +384,10 @@ class NewsController extends GetxController {
     }
   }
 
-  /// Normalize category name for consistent matching
   String _normalizeCategory(String category) {
     return category.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   }
 
-  /// Extract category from various API response formats
   String _extractCategory(dynamic categoryData) {
     if (categoryData == null) return '';
     if (categoryData is String) return _normalizeCategory(categoryData);
@@ -404,16 +397,12 @@ class NewsController extends GetxController {
     return _normalizeCategory(categoryData.toString());
   }
 
-  /// Update category counts after news is loaded
   void _updateCategoryCounts() {
     final counts = <String, int>{};
-
-    // Count for "All News"
     counts['All News'] = _allNews.length;
 
     for (final news in _allNews) {
       final category = _getCategoryForNews(news);
-      // Store counts with proper casing (first letter uppercase)
       final normalized = category.toUpperCase();
       final displayName =
           normalized[0].toUpperCase() + normalized.substring(1).toLowerCase();
@@ -421,37 +410,29 @@ class NewsController extends GetxController {
     }
 
     categoryCounts.value = counts;
-
-    // Update filtered categories based on search
     _filterCategories();
   }
 
-  /// Filter categories based on search query
   void _filterCategories() {
     final query = categorySearchQuery.value.trim().toLowerCase();
     if (query.isEmpty) {
       filteredCategories.value = categories.toList();
     } else {
       filteredCategories.value =
-          categories.where((cat) {
-            return cat.toLowerCase().contains(query);
-          }).toList();
+          categories.where((cat) => cat.toLowerCase().contains(query)).toList();
     }
   }
 
-  /// Search categories
   void searchCategories(String query) {
     categorySearchQuery.value = query;
     _filterCategories();
   }
 
-  /// Clear category search
   void clearCategorySearch() {
     categorySearchQuery.value = '';
     _filterCategories();
   }
 
-  /// Get count for a specific category
   int getCategoryCount(String category) {
     return categoryCounts[category] ?? 0;
   }
@@ -467,11 +448,8 @@ class NewsController extends GetxController {
                 (cat) => cat[0].toUpperCase() + cat.substring(1).toLowerCase(),
               )
               .toList();
-      if (filtered.isNotEmpty) {
-        categories.value = ['All News', ...filtered];
-      } else {
-        categories.value = ['All News'];
-      }
+      categories.value =
+          filtered.isNotEmpty ? ['All News', ...filtered] : ['All News'];
       _filterCategories();
     } catch (e) {
       categories.value = ['All News'];
@@ -484,15 +462,18 @@ class NewsController extends GetxController {
   Future<void> fetchPopularNews() async {
     try {
       debugPrint('Fetching popular news...');
-      final category = selectedCategory.value == 'All News' 
-          ? null 
-          : selectedCategory.value;
-      final popular = await _apiService.getPopularNews(limit: 10, category: category);
+      final category =
+          selectedCategory.value == 'All News'
+              ? null
+              : selectedCategory.value;
+      final popular =
+          await _apiService.getPopularNews(limit: 10, category: category);
       debugPrint('Popular news fetched: ${popular.length} items');
-      
-      // If API returns empty for a specific category, try fetching all and filter client-side
+
       if (popular.isEmpty && category != null) {
-        debugPrint('API returned empty for category $category, fetching all and filtering client-side');
+        debugPrint(
+          'API returned empty for category $category, fetching all and filtering client-side',
+        );
         final allPopular = await _apiService.getPopularNews(limit: 50);
         popularNews.value = allPopular;
       } else {
@@ -500,31 +481,41 @@ class NewsController extends GetxController {
       }
     } catch (e) {
       debugPrint('Error fetching popular news: $e');
-      // Fallback: Use trending news as popular news if API fails
-      // This ensures popular news is not empty when API fails
       if (trendingNews.isNotEmpty) {
         popularNews.value = trendingNews;
-        debugPrint('Using trending news as fallback for popular news: ${trendingNews.length} items');
+        debugPrint(
+          'Using trending news as fallback for popular news: ${trendingNews.length} items',
+        );
       } else if (_allNews.isNotEmpty) {
-        // If trending is also empty, compute from all news
         _computeTrendingNews();
         popularNews.value = trendingNews;
-        debugPrint('Computed trending as fallback for popular news: ${trendingNews.length} items');
+        debugPrint(
+          'Computed trending as fallback for popular news: ${trendingNews.length} items',
+        );
       } else {
         debugPrint('No news available for popular news fallback');
       }
     }
   }
-  
+
   /// Get filtered popular news based on selected category
   List<NewsModel> get filteredPopularNews {
     final selected = selectedCategory.value.trim().toUpperCase();
     if (selected == 'ALL NEWS') return popularNews;
-    
     return popularNews.where((news) {
       final newsCat = _getCategoryForNews(news);
       return newsCat == selected;
     }).toList();
+  }
+
+  /// Add news to _allNews with deduplication
+  void _addNewsWithDeduplication(List<NewsModel> newNews) {
+    for (final news in newNews) {
+      if (!_seenNewsIds.contains(news.id)) {
+        _seenNewsIds.add(news.id);
+        _allNews.add(news);
+      }
+    }
   }
 
   Future<void> _fetchNewsProgressively() async {
@@ -533,39 +524,42 @@ class NewsController extends GetxController {
       _applyFilter();
       return;
     }
+
     _isFetching = true;
-    _cancelBackgroundFetch = true; // Cancel any existing background fetch
-    await Future.delayed(Duration(milliseconds: 100)); // Let background fetch clean up
-    _cancelBackgroundFetch = false;
-    
+
+    // ✅ Increment generation — invalidates any running background fetch
+    final int myGeneration = ++_fetchGeneration;
+    _isBackgroundFetching = false;
+
     try {
       isLoadingNews.value = true;
       _allNews.clear();
+      _seenNewsIds.clear(); // Clear deduplication set too
       _firstPageNews = [];
       pagingController.value = PagingState(nextPageKey: 1, itemList: []);
-      
-      // Fetch first page and show immediately
+
       final firstPageNews = await _apiService.getNews(page: 1, limit: 10);
-      _allNews.addAll(firstPageNews);
+
+      // ✅ Bail out if a newer fetch has already started
+      if (myGeneration != _fetchGeneration) return;
+
+      _addNewsWithDeduplication(firstPageNews);
       _firstPageNews = List.from(firstPageNews);
       _computeTrendingNews();
-      _updateCategoryCounts(); // Update category counts
+      _updateCategoryCounts();
       _applyFilter();
       isLoadingNews.value = false;
 
-      // Append to paging controller
-      if (_isControllerDisposed) {
-        return;
-      }
-      if (_firstPageNews.length >= 10) {
-        pagingController.appendPage(_firstPageNews, 2);
-      } else {
-        pagingController.appendLastPage(_firstPageNews);
+      if (!_isControllerDisposed) {
+        if (_firstPageNews.length >= 10) {
+          pagingController.appendPage(_firstPageNews, 2);
+        } else {
+          pagingController.appendLastPage(_firstPageNews);
+        }
       }
 
-      // Continue fetching remaining pages in background
       if (firstPageNews.length >= 10) {
-        _fetchRemainingPagesInBackground();
+        _fetchRemainingPagesInBackground(myGeneration);
       } else {
         _hasFetchedAll = true;
       }
@@ -579,59 +573,65 @@ class NewsController extends GetxController {
     }
   }
 
-  Future<void> _fetchRemainingPagesInBackground() async {
+  Future<void> _fetchRemainingPagesInBackground(int generation) async {
     if (_isBackgroundFetching) return;
     _isBackgroundFetching = true;
     int page = 2;
     const int limit = 10;
     bool hasMore = true;
+
     while (hasMore) {
-      if (_cancelBackgroundFetch) {
+      // ✅ Stop if a newer fetch has started
+      if (generation != _fetchGeneration) {
         _isBackgroundFetching = false;
-        break;
+        return;
       }
+
       try {
         final news = await _apiService.getNews(page: page, limit: limit);
-        _allNews.addAll(news);
-        // Update trending and filtered list periodically (every 3 pages)
+
+        // ✅ Check AGAIN after the await — prevents stale data being added
+        if (generation != _fetchGeneration) {
+          _isBackgroundFetching = false;
+          return;
+        }
+
+        _addNewsWithDeduplication(news);
+
         if (page % 3 == 0) {
           _computeTrendingNews();
           _applyFilter();
         }
-        if (news.length < limit) {
-          hasMore = false;
-        } else {
-          page++;
-        }
+
+        hasMore = news.length >= limit;
+        if (hasMore) page++;
       } catch (e) {
         hasMore = false;
       }
     }
+
     _hasFetchedAll = true;
     _isBackgroundFetching = false;
-
-    // Append remaining news to paging controller
-    if (_firstPageNews.length >= 50) {
-      pagingController.appendLastPage(_allNews.sublist(_firstPageNews.length));
-    }
-
     _computeTrendingNews();
-    _updateCategoryCounts(); // Update category counts after all news loaded
+    _updateCategoryCounts();
     _applyFilter();
   }
 
   void _computeTrendingNews() {
     final selected = selectedCategory.value.trim().toUpperCase();
-    
-    // Filter by category if not "All News"
-    final filtered = selected == 'ALL NEWS'
-        ? _allNews
-        : _allNews.where((news) {
-            final newsCat = _getCategoryForNews(news);
-            return newsCat == selected;
-          }).toList();
-    
-    final sorted = List<NewsModel>.from(filtered);
+
+    final filtered =
+        selected == 'ALL NEWS'
+            ? _allNews
+            : _allNews.where((news) {
+                final newsCat = _getCategoryForNews(news);
+                return newsCat == selected;
+              }).toList();
+
+    final sortedByDate = List<NewsModel>.from(filtered);
+    sortedByDate.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final sorted = List<NewsModel>.from(sortedByDate);
     sorted.sort((a, b) {
       final engagementA = a.likes.length + a.comments.length;
       final engagementB = b.likes.length + b.comments.length;
@@ -644,7 +644,6 @@ class NewsController extends GetxController {
     List<NewsModel> filtered;
     final selected = selectedCategory.value.trim().toUpperCase();
 
-    // Debug logging
     debugPrint('_applyFilter called with category: $selected');
     debugPrint('_allNews count: ${_allNews.length}');
 
@@ -658,6 +657,9 @@ class NewsController extends GetxController {
           }).toList();
     }
 
+    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    // ✅ assignAll replaces the list — no duplicates
     filteredNews.assignAll(filtered);
     pagingController.value = PagingState(nextPageKey: null, itemList: filtered);
   }
@@ -665,26 +667,21 @@ class NewsController extends GetxController {
   void selectCategory(String category) {
     if (selectedCategory.value == category) return;
     selectedCategory.value = category;
-    
-    // Apply filter to update filtered news for new category
     _applyFilter();
-    
-    // Recompute trending news for the new category
     _computeTrendingNews();
-    
-    // Then fetch/refetch popular news for the new category
     fetchPopularNews();
   }
 
   Future<void> refreshNews() async {
-    _cancelBackgroundFetch = true;
-    _isBackgroundFetching = false;
+    // ✅ Incrementing generation cancels any in-flight background fetch
+    _fetchGeneration++;
     _hasFetchedAll = false;
+    _isBackgroundFetching = false;
+    _isFetching = false; // Reset fetch flag to allow refresh
     _allNews.clear();
+    _seenNewsIds.clear(); // Clear deduplication set too
     pagingController.value = PagingState(nextPageKey: 1, itemList: []);
-    _cancelBackgroundFetch = false;
     await _fetchNewsProgressively();
-    // Refresh popular news after refreshing all news
     fetchPopularNews();
   }
 }

@@ -66,6 +66,18 @@ class _SuccessBottomSheetContentState extends State<SuccessBottomSheetContent> {
           });
         }
       });
+    } else if (widget.date == 'Resource purchased') {
+      // Auto-navigate after 3 seconds for resources
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          // Close the success bottom sheet
+          Navigator.of(context).pop();
+          // Navigate to resources dashboard after a brief delay
+          Future.delayed(const Duration(milliseconds: 100), () {
+            Get.offAll(() => Dashboard(initialTab: 3, initialSubTab: 1));
+          });
+        }
+      });
     } else {
       // Auto-navigate after 3 seconds for events
       Future.delayed(const Duration(seconds: 3), () {
@@ -134,6 +146,9 @@ class _SuccessBottomSheetContentState extends State<SuccessBottomSheetContent> {
               // Check if this is for training enrollment
               if (widget.date == 'Training enrollment') {
                 Get.toNamed('/my-trainings');
+              } else if (widget.date == 'Resource purchased') {
+                // Navigate to dashboard with resources tab selected (index 3) and My Resources sub-tab (1)
+                Get.offAll(() => Dashboard(initialTab: 3, initialSubTab: 1));
               } else {
                 // Navigate to dashboard with events tab selected (index 4) and My Events and Tickets sub-tab (1)
                 Get.offAll(() => Dashboard(initialTab: 4, initialSubTab: 1));
@@ -146,7 +161,9 @@ class _SuccessBottomSheetContentState extends State<SuccessBottomSheetContent> {
             child: Text(
               widget.date == 'Training enrollment'
                   ? 'View My Trainings'
-                  : 'View My Reservations',
+                  : widget.date == 'Resource purchased'
+                      ? 'View My Resources'
+                      : 'View My Reservations',
               style: TextStyle(color: kWhite, fontSize: 16),
             ),
           ),

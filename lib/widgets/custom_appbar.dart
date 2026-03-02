@@ -112,14 +112,27 @@ class CustomAppbar extends StatelessWidget {
                 ),
                 if (unreadNotificationCount > 0)
                   Positioned(
-                    right: 8,
-                    top: 8,
+                    right: 2,
+                    top: 4,
                     child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
                         color: Colors.red,
                         shape: BoxShape.circle,
+                      ),
+                      constraints: BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      child: Center(
+                        child: Text(
+                          unreadNotificationCount > 99 ? '99+' : unreadNotificationCount.toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),

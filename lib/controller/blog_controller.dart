@@ -83,11 +83,14 @@ class BlogController extends GetxController {
       isLoadingBlogs.value = true;
       final category =
           selectedCategory.value == 'All Blogs' ? null : selectedCategory.value;
-      final blogs = await _apiService.getBlogs(
+      var blogs = await _apiService.getBlogs(
         page: pageKey,
         limit: 10,
         category: category,
       );
+
+      // Sort by date (newest first)
+      blogs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       final isLastPage = blogs.length < 10;
 
@@ -137,8 +140,12 @@ class BlogController extends GetxController {
             return blogCat == selected;
           }).toList();
     
-    // Sort by engagement (likes + comments)
-    final sorted = List<BlogPostModel>.from(filtered);
+    // Sort by date (newest first)
+    final sortedByDate = List<BlogPostModel>.from(filtered);
+    sortedByDate.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    
+    // Sort by engagement (likes + comments) for trending
+    final sorted = List<BlogPostModel>.from(sortedByDate);
     sorted.sort((a, b) {
       final engagementA = a.likes.length + a.comments.length;
       final engagementB = b.likes.length + b.comments.length;

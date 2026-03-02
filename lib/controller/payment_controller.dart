@@ -40,7 +40,7 @@ class PaymentController extends GetxController {
       print("Payment API Response: $result");
 
       if (result != null) {
-        // Check for explicit success indicators from M-Pesa
+        // Check for explicit failure indicators from M-Pesa
         final responseCode = result['ResponseCode']?.toString();
         final resultCode = result['ResultCode']?.toString();
         final status = result['status']?.toString().toLowerCase() ?? '';
@@ -66,47 +66,22 @@ class PaymentController extends GetxController {
           throw Exception(errorDetail);
         }
         
-        // M-Pesa STK push initiated successfully
-        // Check multiple possible success indicators
-        final hasCheckoutId = result['CheckoutRequestID'] != null || 
-                              result['checkoutRequestID'] != null ||
-                              (transaction != null && transaction['checkoutRequestID'] != null);
-        final isSuccessResponse = responseCode == '0' || 
-                                   (resultCode != null && int.tryParse(resultCode) == 0) ||
-                                   status == 'success' ||
-                                   status == 'completed' ||
-                                   message.toLowerCase().contains('success');
-        
-        if (isSuccessResponse || hasCheckoutId) {
-          // Show STK push initiated message
-          Get.snackbar(
-            'Payment Initiated',
-            "M-Pesa prompt sent to ${phoneNumber.value}! Check your phone to enter your PIN and complete payment.",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: kGreen,
-            colorText: Colors.white,
-            duration: Duration(seconds: 8),
-          );
-          return true;
-        } else if (status == 'pending' || status == 'processing') {
-          // Payment is being processed
-          Get.snackbar(
-            'Processing',
-            "Payment initiated. Please complete the payment on your phone.",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: kYellow,
-            colorText: Colors.black,
-            duration: Duration(seconds: 6),
-          );
-          return true;
-        } else if (result['error'] != null || message.toLowerCase().contains('error')) {
-          // Explicit error from API
-          throw Exception(message.isNotEmpty ? message : result['error']?.toString() ?? 'Payment failed');
-        }
+        // If we got a response from the API, the STK push was initiated successfully
+        // The actual payment happens on the user's phone
+        // Show STK push initiated message
+        Get.snackbar(
+          'Payment Initiated',
+          "M-Pesa prompt sent to ${phoneNumber.value}! Check your phone to enter your PIN and complete payment.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: kGreen,
+          colorText: Colors.white,
+          duration: Duration(seconds: 8),
+        );
+        return true;
       }
       
-      // Payment failed or returned null
-      throw Exception(result?['message'] ?? result?['error'] ?? "Payment could not be processed. Please try again.");
+      // Payment API returned null - likely a network error
+      throw Exception("Payment service unavailable. Please check your connection and try again.");
       
     } catch (e) {
       print("Payment Error: $e");

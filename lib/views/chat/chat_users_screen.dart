@@ -46,32 +46,6 @@ class _ChatUsersScreenState extends State<ChatUsersScreen> {
     setState(() {});
   }
 
-  Widget _buildNewChatButton() {
-    return GestureDetector(
-      onTap: () {
-        _showNewChatBottomSheet();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-        decoration: BoxDecoration(
-          color: kGreen,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.add, color: kWhite, size: 18),
-            SizedBox(width: 4),
-            Text(
-              "New Chat",
-              style: TextStyle(color: kWhite, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showNewChatBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -89,25 +63,29 @@ class _ChatUsersScreenState extends State<ChatUsersScreen> {
 
   Widget _buildPillButton(String text, int index) {
     final bool isSelected = selectedTab == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedTab = index;
-        });
-        _updateFilteredList();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? kBlue : kWhite,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: isSelected ? kBlue : kGrey),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isSelected ? kWhite : kGrey,
-            fontWeight: FontWeight.w600,
+    const selectedColor = Color(0xFF234EC6);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            selectedTab = index;
+          });
+          _updateFilteredList();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+          decoration: BoxDecoration(
+            color: isSelected ? selectedColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            border: isSelected ? Border.all(color: selectedColor) : null,
+          ),
+          child: Text(
+            text,
+            style: TextStyle(
+              color: isSelected ? kWhite : kGrey,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),
@@ -133,24 +111,19 @@ class _ChatUsersScreenState extends State<ChatUsersScreen> {
           UsersChatTopbar(
             searchController: _searchController,
             onSearchChanged: (value) => _updateFilteredList(),
+            onNewChatPressed: _showNewChatBottomSheet,
           ),
-          SizedBox(height: 5),
           Container(
             color: isDarkMode ? kBlack : kWhite,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 15),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    _buildNewChatButton(),
-                    const SizedBox(width: 10),
-                    _buildPillButton("All", 0),
-                    const SizedBox(width: 10),
-                    _buildPillButton("Unread", 1),
-                  ],
-                ),
+              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  _buildPillButton("All", 0),
+                  const SizedBox(width: 12),
+                  _buildPillButton("Unread", 1),
+                ],
               ),
             ),
           ),
@@ -210,23 +183,50 @@ class _ChatUsersScreenState extends State<ChatUsersScreen> {
                         children: [
                           Icon(
                             Icons.chat_bubble_outline,
-                            size: 48,
+                            size: 64,
                             color: Colors.grey[400],
                           ),
-                          SizedBox(height: 16),
+                          SizedBox(height: 20),
                           Text(
-                            "No conversations found",
+                            "No conversations yet",
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey[600],
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? kWhite : kBlack,
                             ),
                           ),
                           SizedBox(height: 8),
                           Text(
-                            "Start a conversation with someone",
+                            "Start chatting with other DAMA Kenya members",
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[500],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              _showNewChatBottomSheet();
+                            },
+                            icon: Icon(Icons.chat, size: 20),
+                            label: Text(
+                              'Start a conversation',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kBlue,
+                              foregroundColor: kWhite,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              elevation: 0,
                             ),
                           ),
                         ],
@@ -425,7 +425,7 @@ class _NewChatBottomSheetState extends State<NewChatBottomSheet> {
               child: Text(
                 'New Chat',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: isDarkMode ? kWhite : kBlack,
                 ),
@@ -440,7 +440,7 @@ class _NewChatBottomSheetState extends State<NewChatBottomSheet> {
                     (value) => _globalSearchController.performSearch(value),
                 style: TextStyle(color: isDarkMode ? kWhite : kBlack),
                 decoration: InputDecoration(
-                  hintText: 'Search users...',
+                  hintText: 'Search users by name',
                   hintStyle: TextStyle(color: kGrey),
                   prefixIcon: Icon(Icons.search, color: kGrey),
                   filled: true,

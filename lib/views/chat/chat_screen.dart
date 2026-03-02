@@ -128,6 +128,64 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  String formatDateHeader(String isoTime) {
+    try {
+      final dateTime = DateTime.parse(isoTime).toLocal();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(Duration(days: 1));
+      final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+      if (messageDate == today) {
+        return 'Today';
+      } else if (messageDate == yesterday) {
+        return 'Yesterday';
+      } else if (now.difference(messageDate).inDays < 7) {
+        // Show day name for last 7 days
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        return days[dateTime.weekday - 1];
+      } else {
+        // Show full date
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}';
+      }
+    } catch (e) {
+      return "";
+    }
+  }
+
+  String getDateKey(String isoTime) {
+    try {
+      final dateTime = DateTime.parse(isoTime).toLocal();
+      return '${dateTime.year}-${dateTime.month}-${dateTime.day}';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  Widget _buildDateHeader(String dateText, bool isDarkMode) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDarkMode ? kBlack.withOpacity(0.6) : Colors.grey[200],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            dateText,
+            style: TextStyle(
+              fontSize: 12,
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -163,13 +221,28 @@ class _ChatScreenState extends State<ChatScreen> {
                       final isMe = message.senderId == widget.currentUserId;
                       final isTempMessage = message.id.startsWith('temp_');
 
-                      return GestureDetector(
-                        onLongPress:
-                            () => _showDeleteMessageDialog(message.id, isMe),
-                        child: ChatBubble(
-                          clipper: ChatBubbleClipper1(
-                            type:
-                                isMe
+                      // Check if we need to show a date header
+                      bool showDateHeader = false;
+                      if (index == 0) {
+                        showDateHeader = true;
+                      } else {
+                        final prevMessage = _chatController.messages[index - 1];
+                        final currentDateKey = getDateKey('${message.createdAt}');
+                        final prevDateKey = getDateKey('${prevMessage.createdAt}');
+                        showDateHeader = currentDateKey != prevDateKey;
+                      }
+
+                      return Column(
+                        children: [
+                          if (showDateHeader)
+                            _buildDateHeader(formatDateHeader('${message.createdAt}'), isDarkMode),
+                          GestureDetector(
+                            onLongPress:
+                                () => _showDeleteMessageDialog(message.id, isMe),
+                            child: ChatBubble(
+                              clipper: ChatBubbleClipper1(
+                                type:
+                                    isMe
                                     ? BubbleType.sendBubble
                                     : BubbleType.receiverBubble,
                           ),
@@ -186,6 +259,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                   message.content,
                                   style: TextStyle(
                                     color: isMe ? Colors.white : Colors.black,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 SizedBox(height: 4),
@@ -195,7 +270,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                     Text(
                                       formatChatTime('${message.createdAt}'),
                                       style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: 12,
                                         color:
                                             isMe
                                                 ? Colors.white70
@@ -221,6 +296,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           ),
                         ),
+                      ),
+                        ],
                       );
                     },
                   );

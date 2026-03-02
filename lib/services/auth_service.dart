@@ -226,9 +226,13 @@ class AuthService {
     try {
       final accessToken = await StorageService.getData("access_token");
       final userId = await StorageService.getData("userId");
+      final phoneNumber = await StorageService.getData("phoneNumber");
+      final email = await StorageService.getData("email");
       
       print('[Initiate 2FA] Starting 2FA initiation');
       print('[Initiate 2FA] UserId: $userId');
+      print('[Initiate 2FA] PhoneNumber from storage: $phoneNumber');
+      print('[Initiate 2FA] Email from storage: $email');
       print('[Initiate 2FA] AccessToken exists: ${accessToken != null && accessToken.isNotEmpty}');
       
       if (accessToken == null || accessToken.isEmpty) {
@@ -239,6 +243,12 @@ class AuthService {
         throw Exception('No user ID available');
       }
 
+      // Build request body
+      final requestBody = {
+        'userId': userId,
+      };
+      
+      print('[Initiate 2FA] Request body: $requestBody');
       print('[Initiate 2FA] Calling POST $BASE_URL/user/initiate2fa');
 
       final response = await http.post(
@@ -247,9 +257,7 @@ class AuthService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: jsonEncode({
-          'userId': userId,
-        }),
+        body: jsonEncode(requestBody),
       );
 
       print('[Initiate 2FA] Response status: ${response.statusCode}');

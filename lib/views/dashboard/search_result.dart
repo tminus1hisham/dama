@@ -503,7 +503,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           title,
           style: TextStyle(
             color: isDarkMode ? kWhite : kBlack,
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),

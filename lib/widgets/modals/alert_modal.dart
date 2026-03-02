@@ -1,5 +1,4 @@
 import 'package:dama/models/alert_model.dart';
-import 'package:dama/utils/constants.dart';
 import 'package:flutter/material.dart';
 
 class AlertDialogWidget extends StatelessWidget {
@@ -22,112 +21,177 @@ class AlertDialogWidget extends StatelessWidget {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: isWeb ? 100 : 20,
+        horizontal: isWeb ? 100 : 24,
         vertical: 40,
       ),
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: isWeb ? 600 : double.infinity,
-          maxHeight: 700,
+          maxWidth: isWeb ? 500 : double.infinity,
         ),
         decoration: BoxDecoration(
-          color: isDarkMode ? kBlack : kWhite,
-          borderRadius: BorderRadius.circular(16),
+          // Dark blue gradient background
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1E3A5F), // Dark blue top
+              Color(0xFF0D1B2A), // Darker blue bottom
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 20,
-              offset: Offset(0, 10),
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Close button
+            // Close button (X) at top right
             Align(
               alignment: Alignment.topRight,
-              child: IconButton(
-                icon: Icon(Icons.close, color: isDarkMode ? kWhite : kBlack),
-                onPressed: onClose,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12, right: 12),
+                child: GestureDetector(
+                  onTap: onClose,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
               ),
             ),
 
-            // Alert Image
+            // Alert Image (optional - from API)
             if (alert.imageUrl.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
                     alert.imageUrl,
-                    height: 80,
+                    height: 100,
                     width: double.infinity,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: isDarkMode ? kDarkThemeBg : kBGColor,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.image_not_supported,
-                            size: 40,
-                            color: kGrey,
-                          ),
-                        ),
-                      );
+                      return const SizedBox.shrink();
                     },
                   ),
                 ),
               ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-            // Alert Description
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  alert.description,
-                  style: TextStyle(
-                    color: isDarkMode ? kWhite : kBlack,
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
+            // Red ALERT pill badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE53935).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFFE53935),
+                  width: 1.5,
                 ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE53935),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'ALERT',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // Action Button
+            // Alert Title/Description (from API)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: ElevatedButton(
-                onPressed: onClose,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kBlue,
-                  minimumSize: Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                alert.description,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  height: 1.4,
                 ),
-                child: Text(
-                  'Got it!',
-                  style: TextStyle(
-                    color: kWhite,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Got it button - cyan/teal
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: onClose,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF00BCD4), // Cyan
+                          Color(0xFF26C6DA), // Teal
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Container(
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'Got it',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
 
-            SizedBox(height: 20),
+            const SizedBox(height: 24),
           ],
         ),
       ),

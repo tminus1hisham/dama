@@ -12,8 +12,14 @@ import 'package:url_launcher/url_launcher.dart';
 class PDFViewerPage extends StatefulWidget {
   final String pdfUrl;
   final String title;
+  final VoidCallback? onBack;
 
-  const PDFViewerPage({super.key, required this.pdfUrl, required this.title});
+  const PDFViewerPage({
+    super.key, 
+    required this.pdfUrl, 
+    required this.title,
+    this.onBack,
+  });
 
   @override
   _PDFViewerPageState createState() => _PDFViewerPageState();
@@ -142,6 +148,7 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
         children: [
           TopNavigationbar(
             title: widget.title,
+            onBack: widget.onBack,
             actions: [
               if (!isLoading && errorMessage == null)
                 IconButton(
@@ -170,7 +177,7 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
               customSpinner,
               SizedBox(height: 16),
               Text(
-                'Loading certificate...',
+                'Loading ${widget.title.toLowerCase()}...',
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
             ],

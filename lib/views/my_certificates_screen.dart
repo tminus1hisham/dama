@@ -77,10 +77,8 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
                     return CertificateCard(
                       certificate: certificate,
                       onView: () => _showCertificatePreview(certificate),
-                      onDownload:
-                          () => _downloadCertificate(
-                            certificate.certificateNumber,
-                          ),
+                      onDownload: () => _certificateController
+                          .downloadCertificate(certificate.certificateNumber),
                     );
                   },
                 ),
@@ -97,26 +95,13 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder:
-          (context) => CertificatePreviewSheet(
-            certificate: certificate,
-            onDownload:
-                () => _downloadCertificate(certificate.certificateNumber),
-            onShare: () => _shareCertificate(certificate),
-          ),
-    );
-  }
-
-  void _downloadCertificate(String certificateNumber) {
-    _certificateController.downloadCertificate(certificateNumber);
-  }
-
-  void _shareCertificate(certificate) {
-    // TODO: Implement share functionality
-    Get.snackbar(
-      'Coming Soon',
-      'Certificate sharing will be available soon!',
-      snackPosition: SnackPosition.BOTTOM,
+      builder: (context) => CertificatePreviewSheet(
+        certificate: certificate,
+        onDownload: () => _certificateController
+            .downloadCertificate(certificate.certificateNumber),
+        onShare: () => _certificateController
+            .shareCertificate(certificate.certificateNumber),
+      ),
     );
   }
 }

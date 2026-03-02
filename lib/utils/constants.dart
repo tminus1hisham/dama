@@ -19,10 +19,13 @@ const kDarkText = Color(0xFFE0E0E0);
 const Color kDarkThemeBg = Color(0xFF0e1521);
 const Color kBlack = Color(0xFF0b1120);
 
-const kNormalTextSize = 15.0;
-const kMidText = 17.0;
-const kBigTextSize = 20.0;
-const kSmallTextSize = 12.0;
+// Glassmorphism border color
+const Color kGlassBorder = Color(0xFF1C3D72);
+
+const kNormalTextSize = 16.0;
+const kMidText = 20.0;
+const kBigTextSize = 24.0;
+const kSmallTextSize = 13.0;
 
 const kSidePadding = 15.0;
 

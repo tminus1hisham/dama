@@ -21,6 +21,7 @@ import 'package:dama/views/dashboard/resources.dart';
 import 'package:dama/views/dashboard/search_result.dart';
 import 'package:dama/views/drawer_screen/QRscanner.dart';
 import 'package:dama/views/home_screen.dart';
+import 'package:dama/views/pdf_viewer.dart';
 import 'package:dama/views/selected_screens/selected_blog_screen.dart';
 import 'package:dama/views/selected_screens/selected_event_screen.dart';
 import 'package:dama/views/selected_screens/selected_news_screen.dart';
@@ -50,12 +51,17 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard> {
+class _DashboardState extends State<Dashboard>
+    with SingleTickerProviderStateMixin {
   late int _selectedIndex;
   final AuthController _authController = Get.find<AuthController>();
   late PageController _pageController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late TextEditingController _searchController;
+
+  // Pulse animation for drawer avatar glow
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnim;
 
   final BlogController _blogController = Get.put(BlogController());
   final NewsController _newsController = Get.put(NewsController());
@@ -91,11 +97,21 @@ class _DashboardState extends State<Dashboard> {
 
   List<Widget> _screens = [];
 
+  @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialTab;
     _pageController = PageController(initialPage: _selectedIndex);
     _searchController = TextEditingController();
+
+    // Pulse animation controller for avatar glow in drawer
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.3, end: 0.85).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
 
     // Listen to profile picture changes
     _updateUserProfileController.profilePicture.listen((newPicture) {
@@ -120,6 +136,161 @@ class _DashboardState extends State<Dashboard> {
     ];
   }
 
+  // ─── Plan helpers (mirrors React ProfileMenuSidebar logic) ────────────────
+
+  /// Strip leading zeros: "D000000096" → "D96"
+  String _formatMemberIdShort(String id) {
+    if (id.isEmpty) return id;
+    final match = RegExp(r'^([A-Za-z]+)0*(\d+)$').firstMatch(id);
+    if (match != null) return '${match.group(1)}${match.group(2)}';
+    return id;
+  }
+
+  /// Remove API noise from plan names
+  String _cleanPlanName(String raw) {
+    return raw
+        .replaceAll(RegExp(r'subscription transaction', caseSensitive: false), '')
+        .replaceAll(RegExp(r'plan transaction', caseSensitive: false), '')
+        .replaceAll(RegExp(r'transaction', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s*membership\s*', caseSensitive: false), '')
+        .trim();
+  }
+
+  bool get _isStudent =>
+      hasMembership &&
+      _cleanPlanName(membershipName).toLowerCase().contains('student');
+
+  bool get _isPro =>
+      hasMembership &&
+      (_cleanPlanName(membershipName).toLowerCase().contains('professional') ||
+          _cleanPlanName(membershipName).toLowerCase().contains('pro'));
+
+  bool get _isCorporate =>
+      hasMembership &&
+      (_cleanPlanName(membershipName).toLowerCase().contains('corporate') ||
+          _cleanPlanName(membershipName).toLowerCase().contains('premium') ||
+          _cleanPlanName(membershipName).toLowerCase().contains('gold'));
+
+  LinearGradient _cardGradient(bool isDark) {
+    if (_isStudent) {
+      return LinearGradient(
+        colors: isDark
+            ? [const Color(0xFF703804).withOpacity(0.50), const Color(0xFF703804).withOpacity(0.45)]
+            : [const Color(0xFFFFD180), const Color(0xFFFFA726)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    }
+    if (_isPro) {
+      return LinearGradient(
+        colors: isDark
+            ? [const Color(0xFF6B6E6F).withOpacity(0.45), const Color(0xFF6B6E6F).withOpacity(0.40)]
+            : [const Color(0xFFCFD8DC), const Color(0xFF90A4AE)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    }
+    if (_isCorporate) {
+      return LinearGradient(
+        colors: isDark
+            ? [const Color(0xFFE5B80B).withOpacity(0.30), const Color(0xFFE5B80B).withOpacity(0.25)]
+            : [const Color(0xFFFFF176), const Color(0xFFFFD600)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    }
+    return LinearGradient(
+      colors: isDark
+          ? [const Color(0xFF1E1E1E), const Color(0xFF2C2C2C)]
+          : [const Color(0xFFF5F5F5), const Color(0xFFEEEEEE)],
+    );
+  }
+
+  Color _planIconBg() {
+    if (_isStudent) return const Color(0xFF703804);
+    if (_isPro) return const Color(0xFF6B6E6F);
+    if (_isCorporate) return const Color(0xFFE5B80B);
+    return Colors.grey.shade400;
+  }
+
+  Color _planTextColor(bool isDark) {
+    if (_isStudent) return isDark ? const Color(0xFFFFA726) : const Color(0xFF703804);
+    if (_isPro) return isDark ? const Color(0xFFCFD8DC) : const Color(0xFF6B6E6F);
+    if (_isCorporate) return isDark ? const Color(0xFFFFD600) : const Color(0xFFE5B80B);
+    return Colors.grey;
+  }
+
+  Color _badgeBg() {
+    if (_isStudent) return const Color(0xFF703804);
+    if (_isPro) return const Color(0xFF6B6E6F);
+    if (_isCorporate) return const Color(0xFFE5B80B);
+    return Colors.grey.shade400;
+  }
+
+  Color _badgeTextColor() => _isCorporate ? Colors.black : Colors.white;
+
+  Color _cardBorderColor(bool isDark) {
+    if (_isStudent) {
+      return isDark ? const Color(0xFF8A4505) : const Color(0xFFFFA726).withOpacity(0.6);
+    }
+    if (_isPro) {
+      return isDark ? const Color(0xFF7D8081) : const Color(0xFF6B6E6F).withOpacity(0.6);
+    }
+    if (_isCorporate) {
+      return isDark ? const Color(0xFFC9A00A) : const Color(0xFFFFD600).withOpacity(0.6);
+    }
+    return Colors.grey.withOpacity(0.3);
+  }
+
+  /// User initials (mirrors React userInitials)
+  String get _initials {
+    final name = '$firstName $lastName'.trim();
+    if (name.isEmpty) return 'U';
+    final parts = name.split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
+  /// Role badge widget (mirrors React getRoleBadge)
+  Widget? _roleBadgeWidget() {
+    final roles = userRoles.map((r) => r.toLowerCase()).toList();
+    if (roles.contains('admin')) return _drawerChip('Admin', Colors.red);
+    if (roles.contains('news_editor')) return _drawerChip('Editor', Colors.blue);
+    if (roles.contains('blogger')) return _drawerChip('Blogger', Colors.purple);
+    return null;
+  }
+
+  Widget _drawerChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  String _formatExpiry(String isoDate) {
+    if (isoDate.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(isoDate);
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+    } catch (_) {
+      return isoDate;
+    }
+  }
+
+  // ─── Data loading ──────────────────────────────────────────────────────────
+
   Future<void> _loadData() async {
     final url = await StorageService.getData('profile_picture');
     final fetchedFirstName = await StorageService.getData('firstName');
@@ -132,7 +303,6 @@ class _DashboardState extends State<Dashboard> {
     String? fetchedBio = await StorageService.getData('brief');
     final roles = await StorageService.getUserRoles();
 
-    // Ensure plans are loaded before getting membership name
     if (_plansController.plansList.isEmpty) {
       await _plansController.fetchPlans();
     }
@@ -153,16 +323,12 @@ class _DashboardState extends State<Dashboard> {
       });
     }
 
-    // Get membership status from plans controller (async, non-blocking)
     _getMembershipStatus();
-
-    // Check for role approval and redirect to admin panel
     _checkRoleApproval();
   }
 
   String formatMemberId(String memberId) {
     if (memberId.isEmpty) return '';
-
     return memberId
         .replaceAll('-', '')
         .replaceAllMapped(
@@ -189,7 +355,7 @@ class _DashboardState extends State<Dashboard> {
         );
         if (plan != null) {
           setState(() {
-            membershipName = '${plan.membership} Membership';
+            membershipName = plan.membership;
           });
         }
       }
@@ -198,35 +364,28 @@ class _DashboardState extends State<Dashboard> {
 
   Future<void> _getMembershipStatus() async {
     try {
-      // First try to load from local storage (offline mode)
       final storedHasMembership = await StorageService.getData('hasMembership');
       final storedMembershipId = await StorageService.getData('membershipId');
       final storedMembershipExp = await StorageService.getData('membershipExp');
 
       bool hasStoredMembership = false;
       if (storedHasMembership == true || storedHasMembership == 'true') {
-        // Check if membership is not expired
         if (storedMembershipExp != null) {
           try {
             final expiryDate = DateTime.parse(storedMembershipExp);
             if (expiryDate.isAfter(DateTime.now())) {
               hasStoredMembership = true;
             }
-          } catch (e) {
-            print('Error parsing stored membership expiry: $e');
-          }
+          } catch (e) {}
         }
       }
 
-      // If we have valid stored membership, use it
       if (hasStoredMembership && storedMembershipId != null) {
         setState(() {
           hasMembership = true;
           membershipId = storedMembershipId;
           membershipName = _plansController.getMembershipName();
         });
-        print('[Dashboard] Using stored membership data (offline mode)');
-        // Show offline mode notification (only once per session)
         if (!_hasShownOfflineNotification) {
           _hasShownOfflineNotification = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -244,32 +403,22 @@ class _DashboardState extends State<Dashboard> {
         return;
       }
 
-      // Try to get fresh data from server
-      // Ensure plans are loaded first
       if (_plansController.plansList.isEmpty) {
         await _plansController.fetchPlans();
       }
 
-      // Get current plan from plans controller
       final currentPlan = await _plansController.getCurrentUserPlan();
       final hasActivePlan = _plansController.hasActivePlan.value;
-      final membershipIdFromController =
-          _plansController.currentMembershipId.value;
-
-      print(
-        '[Dashboard] Membership status - Plan: $currentPlan, Active: $hasActivePlan, ID: $membershipIdFromController',
-      );
+      final membershipIdFromController = _plansController.currentMembershipId.value;
 
       setState(() {
         hasMembership = hasActivePlan;
-        membershipName =
-            hasActivePlan
-                ? _plansController.getMembershipName()
-                : 'No Active Membership';
+        membershipName = hasActivePlan
+            ? _plansController.getMembershipName()
+            : 'No Active Membership';
         membershipId = membershipIdFromController;
       });
 
-      // If no active membership in storage but plans controller shows active, update storage
       if (!hasMembership && hasActivePlan) {
         await StorageService.storeData({
           'hasMembership': true,
@@ -280,83 +429,35 @@ class _DashboardState extends State<Dashboard> {
         });
       }
     } catch (e) {
-      print('Error getting membership status: $e');
-      // On error, try to use stored data as fallback
       try {
-        final storedHasMembership = await StorageService.getData(
-          'hasMembership',
-        );
+        final storedHasMembership = await StorageService.getData('hasMembership');
         final storedMembershipId = await StorageService.getData('membershipId');
-
         if (storedHasMembership == true || storedHasMembership == 'true') {
           setState(() {
             hasMembership = true;
             membershipId = storedMembershipId ?? '';
-            membershipName = 'Professional Membership'; // Default fallback
+            membershipName = 'Professional Member';
           });
-          print('[Dashboard] Using stored membership as fallback after error');
-          // Show offline mode notification (only once per session)
-          if (!_hasShownOfflineNotification) {
-            _hasShownOfflineNotification = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Offline mode - using cached membership data',
-                    ),
-                    duration: Duration(seconds: 2),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-            });
-          }
         } else {
-          // Fallback to default professional membership
           setState(() {
             hasMembership = true;
-            membershipName = 'Professional Membership';
+            membershipName = 'Professional Member';
           });
-          print(
-            '[Dashboard] Using default professional membership as final fallback',
-          );
-          // Show offline mode notification (only once per session)
-          if (!_hasShownOfflineNotification) {
-            _hasShownOfflineNotification = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Offline mode - using default membership'),
-                    duration: Duration(seconds: 2),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-            });
-          }
         }
-      } catch (fallbackError) {
-        // Last resort fallback
+      } catch (_) {
         setState(() {
           hasMembership = true;
-          membershipName = 'Professional Membership';
+          membershipName = 'Professional Member';
         });
-        print('Using default professional membership as last resort');
       }
     }
   }
 
   Future<void> _checkRoleApproval() async {
     try {
-      final hasBeenRedirected = await StorageService.getData(
-        'hasBeenRedirectedToAdmin',
-      );
-      if ((userRoles.contains('news_editor') ||
-              userRoles.contains('blogger')) &&
+      final hasBeenRedirected = await StorageService.getData('hasBeenRedirectedToAdmin');
+      if ((userRoles.contains('news_editor') || userRoles.contains('blogger')) &&
           hasBeenRedirected != 'true') {
-        // Delay the dialog to avoid blocking UI initialization
         Future.delayed(Duration(seconds: 2), () {
           if (mounted) {
             Get.dialog(
@@ -369,9 +470,7 @@ class _DashboardState extends State<Dashboard> {
                   TextButton(
                     onPressed: () async {
                       Get.back();
-                      await StorageService.storeData({
-                        'hasBeenRedirectedToAdmin': 'true',
-                      });
+                      await StorageService.storeData({'hasBeenRedirectedToAdmin': 'true'});
                       launchUrl(
                         Uri.parse('https://admin.damakenya.org'),
                         mode: LaunchMode.externalApplication,
@@ -385,19 +484,14 @@ class _DashboardState extends State<Dashboard> {
           }
         });
       }
-    } catch (e) {
-      print('Error checking role approval: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> _checkAuthStatus() async {
     final token = await StorageService.getData('access_token');
-    print('Token in storage: $token');
     if (token == null || token.isEmpty) {
-      // No token, redirect to login
       Get.offAllNamed(AppRoutes.login);
     } else {
-      // User is logged in, load data (non-blocking)
       _loadData();
       Get.put(AlertController());
       _blogController.pagingController.addListener(() {
@@ -416,51 +510,32 @@ class _DashboardState extends State<Dashboard> {
 
   Future<void> _checkAndShowAlerts() async {
     if (!mounted) return;
-
     final AlertController alertController = Get.find<AlertController>();
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-
-    // Fetch alerts from backend
     await alertController.fetchAlerts();
-
     if (!mounted) return;
-
-    // Get active alerts
-    final activeAlerts =
-        alertController.alerts.where((alert) => alert.isActive()).toList();
-
+    final activeAlerts = alertController.alerts.where((alert) => alert.isActive()).toList();
     if (activeAlerts.isEmpty) return;
-
-    // Show alerts one by one
     for (var alert in activeAlerts) {
       if (!mounted) break;
-
       final shouldShow = await alertController.shouldShowAlert(alert.id);
-
       if (shouldShow && mounted) {
         await showDialog(
           context: context,
           barrierDismissible: true,
-          builder:
-              (context) => AlertDialogWidget(
-                alert: alert,
-                isDarkMode: themeProvider.isDark,
-                onClose: () {
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    alertController.markAlertAsShown(alert.id);
-                  }
-                },
-              ),
+          builder: (context) => AlertDialogWidget(
+            alert: alert,
+            isDarkMode: themeProvider.isDark,
+            onClose: () {
+              if (mounted) {
+                Navigator.of(context).pop();
+                alertController.markAlertAsShown(alert.id);
+              }
+            },
+          ),
         );
-
-        // Mark as shown after dialog closes
         await alertController.markAlertAsShown(alert.id);
-
-        // Optional: delay before showing next alert
-        if (mounted) {
-          await Future.delayed(const Duration(milliseconds: 300));
-        }
+        if (mounted) await Future.delayed(const Duration(milliseconds: 300));
       }
     }
   }
@@ -468,7 +543,6 @@ class _DashboardState extends State<Dashboard> {
   Future<void> _fetchAllData() async {
     _blogController.fetchBlogs();
     await _newsController.refreshNews();
-
     await Future.delayed(Duration(milliseconds: 100));
   }
 
@@ -493,6 +567,7 @@ class _DashboardState extends State<Dashboard> {
   void dispose() {
     _pageController.dispose();
     _searchController.dispose();
+    _pulseController.dispose();
     Get.delete<PlansController>();
     super.dispose();
   }
@@ -501,7 +576,8 @@ class _DashboardState extends State<Dashboard> {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => SearchResultsScreen(query: query),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            SearchResultsScreen(query: query),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -567,7 +643,680 @@ class _DashboardState extends State<Dashboard> {
     );
   }
 
-  // Web-specific layout
+  String _currentRoute = '/home';
+
+  void _onMenuItemTap(String route, String title) {
+    setState(() {
+      _currentRoute = route;
+    });
+    Navigator.pop(context);
+    Navigator.pushNamed(context, route);
+  }
+
+  // ─── Drawer nav item (mirrors React <Link> menu row) ─────────────────────
+  Widget _buildDrawerNavItem({
+    required String title,
+    required IconData icon,
+    required bool isDarkMode,
+    required VoidCallback onTap,
+    Widget? badge,
+    bool isDestructive = false,
+  }) {
+    final Color fg = isDestructive
+        ? const Color(0xFFEF4444)
+        : (isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151));
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: fg),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (badge != null) ...[badge, const SizedBox(width: 8)],
+              Icon(
+                Icons.chevron_right,
+                size: 15,
+                color: isDestructive
+                    ? const Color(0xFFEF4444).withOpacity(0.5)
+                    : fg.withOpacity(0.35),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Inline badge chip ────────────────────────────────────────────────────
+  Widget _menuBadge(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: fg,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
+
+  // ─── MOBILE DRAWER ── mirrors React ProfileMenuSidebar exactly ───────────
+  Widget _buildMobileDrawer() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final bool isDark = themeProvider.isDark;
+    final String cleanedPlan = _cleanPlanName(membershipName);
+    final String shortId = _formatMemberIdShort(memberId);
+    final roles = userRoles.map((r) => r.toLowerCase()).toList();
+    final bool isBlogger = roles.contains('blogger');
+    final bool isEditor = roles.contains('news_editor');
+    final bool isAdmin = roles.contains('admin');
+
+    // ── colours ─────────────────────────────────────────────────────────────
+    final Color surface = isDark ? kBlack : kWhite;
+    final Color divider = isDark ? Colors.white12 : Colors.black12;
+
+    return Drawer(
+      width: MediaQuery.of(context).size.width * 0.82,
+      backgroundColor: surface,
+      child: SafeArea(
+        child: Column(
+          children: [
+
+            // ══════════════════════════════════════════════════════════════
+            // HEADER  (avatar · name · role badge · member id · close btn)
+            // ══════════════════════════════════════════════════════════════
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 20, 8, 16),
+              decoration: BoxDecoration(
+                color: isDark ? kBlack : kWhite,
+                border: Border(bottom: BorderSide(color: divider)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+
+                  // ── DAMA Logo ─────────────────────────────────────────
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: ThemeAwareLogo(height: 40, fit: BoxFit.contain),
+                    ),
+                  ),
+
+                  // ── Avatar row ────────────────────────────────────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+
+                      // Pulsing indigo→blue glow ring  (animate-pulse in React)
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.pushNamed(context, AppRoutes.profile);
+                        },
+                        child: AnimatedBuilder(
+                          animation: _pulseAnim,
+                          builder: (context, child) => Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6366F1), Color(0xFF3B82F6)],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF6366F1)
+                                      .withOpacity(_pulseAnim.value * 0.5),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(2.5),
+                            child: child,
+                          ),
+                          child: CircleAvatar(
+                            radius: 26,
+                            backgroundImage: imageUrl.isNotEmpty
+                                ? NetworkImage(imageUrl)
+                                : null,
+                            backgroundColor: isDark
+                                ? const Color(0xFF1E1E1E)
+                                : const Color(0xFFEEF2FF),
+                            child: imageUrl.isEmpty
+                                ? Text(
+                                    _initials,
+                                    style: const TextStyle(
+                                      color: Color(0xFF6366F1),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      // Name + role badge + member-id
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    '$firstName $lastName'.trim().isNotEmpty
+                                        ? '$firstName $lastName'.trim()
+                                        : 'User',
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : Colors.black,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (_roleBadgeWidget() != null) ...[
+                                  const SizedBox(width: 6),
+                                  _roleBadgeWidget()!,
+                                ],
+                              ],
+                            ),
+                            if (title.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                title,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            if (shortId.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Member No: $shortId',
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[500],
+                                      fontSize: 11.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      // X / close button
+                      IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          size: 20,
+                          color: isDark ? Colors.white38 : Colors.black38,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // ══════════════════════════════════════════════════════
+                  // MEMBERSHIP CARD
+                  // React: compact horizontal row — plan gradient bg,
+                  //        Crown icon box, "Professional Member" bold,
+                  //        "Active" pill badge, "Valid until …" small
+                  // ══════════════════════════════════════════════════════
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, AppRoutes.plans);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        gradient: _cardGradient(isDark),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: _cardBorderColor(isDark), width: 1),
+                      ),
+                      child: Row(
+                        children: [
+
+                          // Crown / workspace_premium icon box
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: hasMembership
+                                  ? _planIconBg()
+                                  : Colors.grey.shade400,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.workspace_premium, // Crown in React
+                              size: 20,
+                              color:
+                                  _isCorporate ? Colors.black : Colors.white,
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          // Plan name + Active badge + Valid until
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Row: "Professional Member"  [Active]
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        hasMembership
+                                            ? '$cleanedPlan Member'
+                                            : 'No Plan',
+                                        style: TextStyle(
+                                          color: _planTextColor(isDark),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (hasMembership) ...[
+                                      const SizedBox(width: 6),
+                                      // Check if expired using FutureBuilder
+                                      FutureBuilder<bool>(
+                                        future: Get.find<PlansController>().isMembershipExpired(),
+                                        builder: (context, expiredSnapshot) {
+                                          final isExpired = expiredSnapshot.data ?? false;
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: isExpired
+                                                  ? kOrange.withOpacity(0.2)
+                                                  : _badgeBg(),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              isExpired ? 'Expired' : 'Active',
+                                              style: TextStyle(
+                                                color: isExpired
+                                                    ? kOrange
+                                                    : _badgeTextColor(),
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                // Show FREE status if still in free period, otherwise show expiry date or RENEW prompt
+                                if (hasMembership &&
+                                    membershipExiryDate.isNotEmpty)
+                                  FutureBuilder<bool>(
+                                    future: Get.find<PlansController>()
+                                        .isMembershipExpired(),
+                                    builder: (context, snapshot) {
+                                      final isExpired = snapshot.data ?? false;
+                                      if (isExpired) {
+                                        return Row(
+                                          children: [
+                                            Icon(
+                                              Icons.warning_amber_rounded,
+                                              size: 12,
+                                              color: kOrange,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Tap to renew membership',
+                                              style: TextStyle(
+                                                color: kOrange,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }
+                                      return Text(
+                                        'Valid until ${_formatExpiry(membershipExiryDate)}',
+                                        style: TextStyle(
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[700],
+                                          fontSize: 10,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                else if (!hasMembership)
+                                  Text(
+                                    'Upgrade for premium features',
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                          Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // ══════════════════════════════════════════════════════
+                  // VIEW CERTIFICATE BUTTON
+                  // React: amber-gradient border container, Award icon box
+                  //        (amber→orange gradient), "View Certificate" text
+                  // Only rendered when URL exists in storage
+                  // ══════════════════════════════════════════════════════
+                  FutureBuilder<dynamic>(
+                    future: StorageService.getData(
+                        'membershipCertificateDownload'),
+                    builder: (context, snapshot) {
+                      final certUrl =
+                          snapshot.data?.toString().trim() ?? '';
+                      if (certUrl.isEmpty) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: GestureDetector(
+                          onTap: () {
+                            final url = certUrl;
+                            Navigator.of(context).pop();
+                            Get.to(() => PDFViewerPage(
+                              pdfUrl: url,
+                              title: 'Membership Certificate',
+                            ));
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 9),
+                            decoration: BoxDecoration(
+                              // Subtle amber-tinted background (React: bg-amber-50 dark:bg-amber-950)
+                              color: isDark
+                                  ? const Color(0xFFF59E0B).withOpacity(0.08)
+                                  : const Color(0xFFFFFBEB),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xFFF59E0B)
+                                    .withOpacity(isDark ? 0.25 : 0.35),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                // Award icon — amber→orange gradient box
+                                Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFFF59E0B), // amber-500
+                                        Color(0xFFEA580C), // orange-600
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(7),
+                                  ),
+                                  child: const Icon(
+                                    Icons.military_tech, // Award in lucide
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'View Certificate',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? const Color(0xFFFBBF24) // amber-400
+                                        : const Color(0xFF92400E), // amber-800
+                                  ),
+                                ),
+                                const Spacer(),
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: 15,
+                                  color: isDark
+                                      ? const Color(0xFFFBBF24).withOpacity(0.6)
+                                      : const Color(0xFF92400E)
+                                          .withOpacity(0.5),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                ],
+              ),
+            ), // end HEADER container
+
+            // ══════════════════════════════════════════════════════════════
+            // MENU ITEMS  (scrollable)
+            // Order mirrors React baseMenuItems + role-specific splice
+            // ══════════════════════════════════════════════════════════════
+            Expanded(
+              child: ListView(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+                children: [
+
+                  // Role-specific items first (React splice at index 1)
+                  if (isBlogger || isAdmin) ...[
+                    _buildDrawerNavItem(
+                      title: 'Blog Editor',
+                      icon: Icons.edit_square, // PenSquare in lucide
+                      isDarkMode: isDark,
+                      badge: _menuBadge('Blogger',
+                          Colors.purple.withOpacity(0.15), Colors.purple),
+                      onTap: () {
+                        Navigator.pop(context);
+                        // Navigator.pushNamed(context, AppRoutes.blogger);
+                      },
+                    ),
+                    _buildDrawerNavItem(
+                      title: 'My Blogs',
+                      icon: Icons.menu_book, // BookOpen in lucide
+                      isDarkMode: isDark,
+                      onTap: () {
+                        Navigator.pop(context);
+                        // Navigator.pushNamed(context, AppRoutes.myBlogs);
+                      },
+                    ),
+                  ],
+                  if (isEditor || isAdmin) ...[
+                    _buildDrawerNavItem(
+                      title: 'News Editor',
+                      icon: Icons.newspaper, // Newspaper in lucide
+                      isDarkMode: isDark,
+                      badge: _menuBadge('Editor',
+                          Colors.blue.withOpacity(0.15), Colors.blue),
+                      onTap: () {
+                        Navigator.pop(context);
+                        // Navigator.pushNamed(context, AppRoutes.newsEditor);
+                      },
+                    ),
+                    _buildDrawerNavItem(
+                      title: 'My Articles',
+                      icon: Icons.article, // FileText in lucide
+                      isDarkMode: isDark,
+                      onTap: () {
+                        Navigator.pop(context);
+                        // Navigator.pushNamed(context, AppRoutes.myArticles);
+                      },
+                    ),
+                  ],
+                  if (isBlogger || isEditor || isAdmin)
+                    Divider(color: divider, height: 16, indent: 12, endIndent: 12),
+
+                  // ── Base menu items — same order as React baseMenuItems ─
+                  _buildDrawerNavItem(
+                    title: 'Profile',
+                    icon: Icons.person_outline, // User in lucide
+                    isDarkMode: isDark,
+                    onTap: () => _onMenuItemTap(AppRoutes.profile, 'Profile'),
+                  ),
+                  _buildDrawerNavItem(
+                    title: 'Membership',
+                    icon: Icons.workspace_premium, // Crown in lucide
+                    isDarkMode: isDark,
+                    badge: _menuBadge(
+                      'Premium',
+                      Color(0xFF1D2839),
+                      isDark 
+                        ? Color(0xFFFFFFFF)  // White text in dark mode
+                        : Color(0xFF000000), // Black text in light mode
+                    ),
+                    onTap: () => _onMenuItemTap(AppRoutes.plans, 'Membership'),
+                  ),
+                  _buildDrawerNavItem(
+                    title: 'Trainings',
+                    icon: Icons.school_outlined, // GraduationCap in lucide
+                    isDarkMode: isDark,
+                    onTap: () =>
+                        _onMenuItemTap(AppRoutes.trainings, 'Trainings'),
+                  ),
+                  _buildDrawerNavItem(
+                    title: 'View Certificate',
+                    icon: Icons.military_tech_outlined, // Award in lucide
+                    isDarkMode: isDark,
+                    onTap: () =>
+                        _onMenuItemTap(AppRoutes.myTrainings, 'View Certificate'),
+                  ),
+                  _buildDrawerNavItem(
+                    title: 'Notifications',
+                    icon: Icons.notifications_outlined, // Bell in lucide
+                    isDarkMode: isDark,
+                    onTap: () => _onMenuItemTap(
+                        AppRoutes.notifications, 'Notifications'),
+                  ),
+                  _buildDrawerNavItem(
+                    title: 'Transaction History',
+                    icon: Icons.history, // History in lucide
+                    isDarkMode: isDark,
+                    onTap: () => _onMenuItemTap(
+                        AppRoutes.transcation, 'Transaction History'),
+                  ),
+                  _buildDrawerNavItem(
+                    title: 'About DAMA',
+                    icon: Icons.info_outline, // Info in lucide
+                    isDarkMode: isDark,
+                    onTap: () =>
+                        _onMenuItemTap(AppRoutes.aboutDama, 'About DAMA'),
+                  ),
+                  _buildDrawerNavItem(
+                    title: 'Settings',
+                    icon: Icons.settings_outlined, // Settings in lucide
+                    isDarkMode: isDark,
+                    onTap: () => _onMenuItemTap(
+                        AppRoutes.settingsPage, 'Settings'),
+                  ),
+
+                  // QR scanner — only for event_verify role (not in React web)
+                  if (roles.contains('event_verify'))
+                    _buildDrawerNavItem(
+                      title: 'Scan Tickets',
+                      icon: Icons.qr_code_scanner,
+                      isDarkMode: isDark,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showEventSelectionForScanner(isDark);
+                      },
+                    ),
+                ],
+              ),
+            ),
+
+            // ══════════════════════════════════════════════════════════════
+            // LOGOUT  (destructive red row at bottom)
+            // ══════════════════════════════════════════════════════════════
+            Container(
+              decoration:
+                  BoxDecoration(border: Border(top: BorderSide(color: divider))),
+              child: _buildDrawerNavItem(
+                title: 'Logout',
+                icon: Icons.logout, // LogOut in lucide
+                isDarkMode: isDark,
+                isDestructive: true,
+                onTap: () {
+                  Navigator.pop(context);
+                  _authController.logout(context);
+                },
+              ),
+            ),
+
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
   Widget _buildWebLayout() {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
@@ -578,29 +1327,19 @@ class _DashboardState extends State<Dashboard> {
           backgroundColor: isDarkMode ? kDarkThemeBg : kBGColor,
           body: Column(
             children: [
-              // Top Navigation Bar
               Container(
                 height: 70,
                 color: isDarkMode ? kBlack : kWhite,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // If width < 800 → use compact layout (logo + search + menu button)
                     final bool isCompact = constraints.maxWidth < 800;
-
                     return Row(
                       children: [
-                        // Logo Section
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: ThemeAwareLogo(
-                            height: 40,
-                            fit: BoxFit.contain,
-                          ),
+                          child: ThemeAwareLogo(height: 40, fit: BoxFit.contain),
                         ),
-
                         if (!isCompact) SizedBox(width: 20),
-
-                        // Search Bar (flexible)
                         Expanded(
                           flex: isCompact ? 1 : 2,
                           child: SizedBox(
@@ -610,252 +1349,89 @@ class _DashboardState extends State<Dashboard> {
                                 Navigator.push(
                                   context,
                                   PageRouteBuilder(
-                                    pageBuilder:
-                                        (
-                                          context,
-                                          animation,
-                                          secondaryAnimation,
-                                        ) => SearchResultsScreen(query: query),
-                                    transitionsBuilder: (
-                                      context,
-                                      animation,
-                                      secondaryAnimation,
-                                      child,
-                                    ) {
-                                      return FadeTransition(
-                                        opacity: animation,
-                                        child: child,
-                                      );
+                                    pageBuilder: (context, animation, secondaryAnimation) =>
+                                        SearchResultsScreen(query: query),
+                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                      return FadeTransition(opacity: animation, child: child);
                                     },
-                                    transitionDuration: const Duration(
-                                      milliseconds: 200,
-                                    ),
+                                    transitionDuration: const Duration(milliseconds: 200),
                                   ),
                                 );
                               },
                               decoration: InputDecoration(
                                 hintText: 'Search',
-                                hintStyle: TextStyle(
-                                  color: kGrey,
-                                  fontSize: 14,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.search,
-                                  color: kGrey,
-                                  size: 20,
-                                ),
+                                hintStyle: TextStyle(color: kGrey, fontSize: 14),
+                                prefixIcon: Icon(Icons.search, color: kGrey, size: 20),
                                 filled: true,
-                                fillColor:
-                                    isDarkMode
-                                        ? kDarkThemeBg
-                                        : const Color(0xFFF0F0F0),
+                                fillColor: isDarkMode ? kDarkThemeBg : const Color(0xFFF0F0F0),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               ),
                             ),
                           ),
                         ),
-
                         if (!isCompact) ...[
                           SizedBox(width: 20),
-                          // Navigation Items (scrollable if overflow)
                           Expanded(
                             flex: 3,
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: Row(
                                 children: [
-                                  _buildWebNavItem(
-                                    'Home',
-                                    Icons.home,
-                                    0,
-                                    isDarkMode,
-                                  ),
-                                  _buildWebNavItem(
-                                    'Blogs',
-                                    Icons.library_books,
-                                    1,
-                                    isDarkMode,
-                                  ),
-                                  _buildWebNavItem(
-                                    'News',
-                                    Icons.newspaper,
-                                    2,
-                                    isDarkMode,
-                                  ),
-                                  _buildWebNavItem(
-                                    'Resources',
-                                    Icons.folder_copy,
-                                    3,
-                                    isDarkMode,
-                                  ),
-                                  _buildWebNavItem(
-                                    'Events',
-                                    Icons.calendar_month,
-                                    4,
-                                    isDarkMode,
-                                  ),
+                                  _buildWebNavItem('Home', Icons.home, 0, isDarkMode),
+                                  _buildWebNavItem('Blogs', Icons.library_books, 1, isDarkMode),
+                                  _buildWebNavItem('News', Icons.newspaper, 2, isDarkMode),
+                                  _buildWebNavItem('Resources', Icons.folder_copy, 3, isDarkMode),
+                                  _buildWebNavItem('Events', Icons.calendar_month, 4, isDarkMode),
                                 ],
                               ),
                             ),
                           ),
                         ],
-
                         Spacer(),
-
-                        // Profile
                         Row(
                           children: [
                             Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                // Profile Avatar
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      _isProfileDropdownOpen =
-                                          !_isProfileDropdownOpen;
+                                      _isProfileDropdownOpen = !_isProfileDropdownOpen;
                                     });
                                   },
                                   child: ProfileAvatar(
                                     radius: 18,
-                                    backgroundImage:
-                                        imageUrl.isNotEmpty
-                                            ? NetworkImage(imageUrl)
-                                            : null,
-                                    child:
-                                        imageUrl.isEmpty
-                                            ? Icon(
-                                              Icons.person,
-                                              size: 20,
-                                              color: kWhite,
-                                            )
-                                            : null,
+                                    backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                                    child: imageUrl.isEmpty
+                                        ? Icon(Icons.person, size: 20, color: kWhite)
+                                        : null,
                                   ),
                                 ),
-
-                                // Dropdown
                                 if (_isProfileDropdownOpen)
                                   PopupMenuButton<int>(
                                     color: kWhite,
                                     onSelected: (value) {
-                                      if (value == 0) {
-                                        Navigator.pushNamed(
-                                          context,
-                                          AppRoutes.profile,
-                                        );
-                                      } else if (value == 1) {
-                                        Navigator.pushNamed(
-                                          context,
-                                          AppRoutes.transcation,
-                                        );
-                                      } else if (value == 2) {
-                                        Navigator.pushNamed(
-                                          context,
-                                          AppRoutes.trainings,
-                                        );
-                                      } else if (value == 3) {
-                                        Navigator.pushNamed(
-                                          context,
-                                          AppRoutes.aboutDama,
-                                        );
-                                      } else if (value == 4) {
-                                        _authController.logout(context);
-                                      }
+                                      if (value == 0) Navigator.pushNamed(context, AppRoutes.profile);
+                                      else if (value == 1) Navigator.pushNamed(context, AppRoutes.transcation);
+                                      else if (value == 2) Navigator.pushNamed(context, AppRoutes.trainings);
+                                      else if (value == 3) Navigator.pushNamed(context, AppRoutes.aboutDama);
+                                      else if (value == 4) _authController.logout(context);
                                     },
-                                    itemBuilder:
-                                        (context) => [
-                                          PopupMenuItem(
-                                            value: 0,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.person,
-                                                  color: kGrey,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text("Profile"),
-                                              ],
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 1,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.history,
-                                                  color: kGrey,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text("Transaction History"),
-                                              ],
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 2,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.school,
-                                                  color: kGrey,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text("Training"),
-                                              ],
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 3,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.history,
-                                                  color: kGrey,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text("About Dama"),
-                                              ],
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 4,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.logout,
-                                                  color: Colors.red,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text(
-                                                  "Logout",
-                                                  style: TextStyle(
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(value: 0, child: Row(children: [Icon(Icons.person, color: kGrey), SizedBox(width: 8), Text("Profile")])),
+                                      PopupMenuItem(value: 1, child: Row(children: [Icon(Icons.history, color: kGrey), SizedBox(width: 8), Text("Transaction History")])),
+                                      PopupMenuItem(value: 2, child: Row(children: [Icon(Icons.school, color: kGrey), SizedBox(width: 8), Text("Training")])),
+                                      PopupMenuItem(value: 3, child: Row(children: [Icon(Icons.history, color: kGrey), SizedBox(width: 8), Text("About Dama")])),
+                                      PopupMenuItem(value: 4, child: Row(children: [Icon(Icons.logout, color: Colors.red), SizedBox(width: 8), Text("Logout", style: TextStyle(color: Colors.red))])),
+                                    ],
                                     child: ProfileAvatar(
                                       radius: 18,
-                                      backgroundImage:
-                                          imageUrl.isNotEmpty
-                                              ? NetworkImage(imageUrl)
-                                              : null,
-                                      child:
-                                          imageUrl.isEmpty
-                                              ? Icon(
-                                                Icons.person,
-                                                size: 20,
-                                                color: Colors.white,
-                                              )
-                                              : null,
+                                      backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                                      child: imageUrl.isEmpty ? Icon(Icons.person, size: 20, color: Colors.white) : null,
                                     ),
                                   ),
                               ],
@@ -887,10 +1463,7 @@ class _DashboardState extends State<Dashboard> {
                           membershipName: membershipName,
                         ),
                       ),
-
                       SizedBox(width: 10),
-
-                      // Main Content Area
                       Expanded(
                         child: Container(
                           color: isDarkMode ? kDarkThemeBg : Color(0xFFF5F5F5),
@@ -907,17 +1480,13 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ),
                       SizedBox(width: 10),
-
                       if (MediaQuery.of(context).size.width > 1200) ...[
-                        // Right Sidebar
                         _buildRightSidebar(isDarkMode),
                       ],
                     ],
                   ),
                 ),
               ),
-
-              // Footer
               Container(
                 height: 50,
                 color: isDarkMode ? kBlack : kWhite,
@@ -936,23 +1505,13 @@ class _DashboardState extends State<Dashboard> {
                       child: Row(
                         children: [
                           TextButton(
-                            onPressed: () {
-                              // Add privacy policy navigation
-                            },
-                            child: Text(
-                              'Privacy policy',
-                              style: TextStyle(color: kGrey, fontSize: 12),
-                            ),
+                            onPressed: () {},
+                            child: Text('Privacy policy', style: TextStyle(color: kGrey, fontSize: 12)),
                           ),
                           SizedBox(width: 20),
                           TextButton(
-                            onPressed: () {
-                              // Add terms navigation
-                            },
-                            child: Text(
-                              'Terms & Conditions',
-                              style: TextStyle(color: kGrey, fontSize: 12),
-                            ),
+                            onPressed: () {},
+                            child: Text('Terms & Conditions', style: TextStyle(color: kGrey, fontSize: 12)),
                           ),
                         ],
                       ),
@@ -967,37 +1526,19 @@ class _DashboardState extends State<Dashboard> {
     );
   }
 
-  Widget _buildWebNavItem(
-    String title,
-    IconData icon,
-    int index,
-    bool isDarkMode,
-  ) {
+  Widget _buildWebNavItem(String title, IconData icon, int index, bool isDarkMode) {
     return Padding(
       padding: const EdgeInsets.only(top: 20, left: 5, right: 20),
       child: GestureDetector(
         onTap: () => _onNavItemTap(index),
         child: Column(
           children: [
-            // SizedBox(height: 2),
-            Icon(
-              icon,
-              color:
-                  _selectedIndex == index
-                      ? kBlue
-                      : (isDarkMode ? kWhite : kGrey),
-            ),
+            Icon(icon, color: _selectedIndex == index ? kBlue : (isDarkMode ? kWhite : kGrey)),
             Text(
               title,
               style: TextStyle(
-                color:
-                    _selectedIndex == index
-                        ? kBlue
-                        : (isDarkMode ? kWhite : kGrey),
-                fontWeight:
-                    _selectedIndex == index
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                color: _selectedIndex == index ? kBlue : (isDarkMode ? kWhite : kGrey),
+                fontWeight: _selectedIndex == index ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],
@@ -1015,105 +1556,74 @@ class _DashboardState extends State<Dashboard> {
     required Widget Function(T) screenBuilder,
   }) {
     return Column(
-      children:
-          items.take(6).map((item) {
-            return InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder:
-                        (context, animation, secondaryAnimation) =>
-                            screenBuilder(item),
-                    transitionsBuilder: (
-                      context,
-                      animation,
-                      secondaryAnimation,
-                      child,
-                    ) {
-                      return FadeTransition(opacity: animation, child: child);
-                    },
-                    transitionDuration: const Duration(milliseconds: 500),
-                  ),
-                );
-              },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: isDarkMode ? kDarkCard : kBGColor,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // Image container
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.grey[100],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child:
-                            imageGetter(item) != null &&
-                                    imageGetter(item)!.isNotEmpty
-                                ? Image.network(
-                                  imageGetter(item)!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) => Center(
-                                        child: Icon(
-                                          Icons.broken_image,
-                                          size: 50,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                )
-                                : Center(
-                                  child: Icon(
-                                    fallbackIcon,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                      ),
-                    ),
-                    SizedBox(width: 15),
-                    // Content
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            titleGetter(item),
-                            style: TextStyle(
-                              color: isDarkMode ? kWhite : kBlack,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Icon(
-                      Icons.more_vert,
-                      size: 16,
-                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ],
-                ),
+      children: items.take(6).map((item) {
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => screenBuilder(item),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                transitionDuration: const Duration(milliseconds: 500),
               ),
             );
-          }).toList(),
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: isDarkMode ? kDarkCard : kBGColor, width: 2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.grey[100],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: imageGetter(item) != null && imageGetter(item)!.isNotEmpty
+                        ? Image.network(
+                            imageGetter(item)!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
+                          )
+                        : Center(child: Icon(fallbackIcon, size: 50, color: Colors.grey)),
+                  ),
+                ),
+                SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titleGetter(item),
+                        style: TextStyle(
+                          color: isDarkMode ? kWhite : kBlack,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 10),
+                Icon(Icons.more_vert, size: 16, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -1132,10 +1642,8 @@ class _DashboardState extends State<Dashboard> {
           imageGetter: (event) => event.eventImageUrl,
           fallbackIcon: Icons.image_not_supported,
           screenBuilder: (event) {
-            final paidEventIds =
-                _userEventsController.eventsList.map((e) => e.id).toSet();
+            final paidEventIds = _userEventsController.eventsList.map((e) => e.id).toSet();
             final isPaid = paidEventIds.contains(event.id);
-
             return SelectedEventScreen(
               title: event.eventTitle,
               price: event.price,
@@ -1150,7 +1658,6 @@ class _DashboardState extends State<Dashboard> {
           },
         );
         break;
-
       case 1:
         title = "Popular Blogs";
         content = _buildSidebarItemsList<BlogPostModel>(
@@ -1159,21 +1666,19 @@ class _DashboardState extends State<Dashboard> {
           titleGetter: (blog) => blog.title,
           imageGetter: (blog) => blog.imageUrl,
           fallbackIcon: Icons.article,
-          screenBuilder:
-              (blog) => SelectedBlogScreen(
-                authorId: blog.author!.id,
-                title: blog.title,
-                imageUrl: blog.imageUrl,
-                createdAt: blog.createdAt,
-                description: blog.description,
-                blogId: blog.id,
-                comments: blog.comments,
-                roles: [],
-                sources: blog.sources,
-              ),
+          screenBuilder: (blog) => SelectedBlogScreen(
+            authorId: blog.author!.id,
+            title: blog.title,
+            imageUrl: blog.imageUrl,
+            createdAt: blog.createdAt,
+            description: blog.description,
+            blogId: blog.id,
+            comments: blog.comments,
+            roles: [],
+            sources: blog.sources,
+          ),
         );
         break;
-
       case 2:
         title = "Popular News";
         content = _buildSidebarItemsList<NewsModel>(
@@ -1182,23 +1687,21 @@ class _DashboardState extends State<Dashboard> {
           titleGetter: (news) => news.title,
           imageGetter: (news) => news.imageUrl,
           fallbackIcon: Icons.newspaper,
-          screenBuilder:
-              (news) => SelectedNewsScreen(
-                title: news.title,
-                imageUrl: news.imageUrl,
-                author: news.author.firstName,
-                createdAt: "${news.createdAt}",
-                description: news.description,
-                profileImageUrl: news.author.profilePicture,
-                authorID: news.author.id,
-                newsId: news.id,
-                comments: news.comments,
-                roles: [],
-                sources: news.sources,
-              ),
+          screenBuilder: (news) => SelectedNewsScreen(
+            title: news.title,
+            imageUrl: news.imageUrl,
+            author: news.author.firstName,
+            createdAt: "${news.createdAt}",
+            description: news.description,
+            profileImageUrl: news.author.profilePicture,
+            authorID: news.author.id,
+            newsId: news.id,
+            comments: news.comments,
+            roles: [],
+            sources: news.sources,
+          ),
         );
         break;
-
       case 3:
         title = "My Resources";
         content = _buildSidebarItemsList<ResourceModel>(
@@ -1208,24 +1711,18 @@ class _DashboardState extends State<Dashboard> {
           imageGetter: (resource) => resource.resourceImageUrl,
           fallbackIcon: Icons.folder,
           screenBuilder: (resource) {
-            // Calculate average rating from the ratings list
             double averageRating = 0.0;
             if (resource.ratings.isNotEmpty) {
               double sum = 0.0;
               int validRatings = 0;
-
               for (var rating in resource.ratings) {
                 if (rating is num) {
                   sum += rating.toDouble();
                   validRatings++;
                 }
               }
-
-              if (validRatings > 0) {
-                averageRating = sum / validRatings;
-              }
+              if (validRatings > 0) averageRating = sum / validRatings;
             }
-
             return SelectedResourceScreen(
               title: resource.title,
               price: resource.price,
@@ -1273,455 +1770,7 @@ class _DashboardState extends State<Dashboard> {
     );
   }
 
-  Widget _buildMobileDrawer() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    bool isDarkMode = themeProvider.isDark;
-
-    return Drawer(
-      backgroundColor: isDarkMode ? kBlack : kWhite,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-          Container(
-            padding: EdgeInsets.only(top: 50, left: 15, bottom: 20),
-            decoration: BoxDecoration(color: isDarkMode ? kBlack : kWhite),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundImage:
-                      imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                  child:
-                      imageUrl.isEmpty
-                          ? Icon(Icons.person, size: 30, color: kWhite)
-                          : null,
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$firstName $lastName'.trim().isNotEmpty
-                            ? '$firstName $lastName'.trim()
-                            : 'User',
-                        style: TextStyle(
-                          color: isDarkMode ? kWhite : kBlack,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (title.isNotEmpty) ...[
-                        SizedBox(height: 4),
-                        Text(
-                          title,
-                          style: TextStyle(
-                            color: isDarkMode ? kWhite : kBlack,
-                            fontSize: 15,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      SizedBox(height: 10),
-                      if (memberId.isNotEmpty)
-                        Text(
-                          formatMemberId(memberId),
-                          style: TextStyle(
-                            color: isDarkMode ? kWhite : kGrey,
-                            fontSize: 15,
-                          ),
-                        ),
-                      SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, AppRoutes.profile);
-                        },
-                        child: Text(
-                          'Edit Profile',
-                          style: TextStyle(
-                            color: kWhite,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              height: 2,
-              color: isDarkMode ? kDarkThemeBg : kLightGrey,
-            ),
-          ),
-
-          // Membership Status Section
-          Padding(
-            padding: EdgeInsets.all(15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Membership Status',
-                  style: TextStyle(
-                    color: isDarkMode ? kWhite : kBlack,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 10),
-                if (hasMembership) ...[
-                  // Glass Grey Membership Card
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.grey.withOpacity(0.3),
-                          Colors.grey.withOpacity(0.1),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.grey.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // ACTIVE Status
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green,
-                                  size: 18,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'ACTIVE',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 10),
-                            // Professional Member
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.workspace_premium,
-                                  color:
-                                      isDarkMode ? kWhite : Colors.grey[700],
-                                  size: 18,
-                                ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    membershipName,
-                                    style: TextStyle(
-                                      color:
-                                          isDarkMode
-                                              ? kWhite
-                                              : Colors.grey[800],
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 6),
-                            // All premium benefits unlocked
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.lock_open,
-                                  color:
-                                      isDarkMode
-                                          ? kWhite.withOpacity(0.7)
-                                          : Colors.grey[600],
-                                  size: 16,
-                                ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'All premium benefits unlocked',
-                                    style: TextStyle(
-                                      color:
-                                          isDarkMode
-                                              ? kWhite.withOpacity(0.7)
-                                              : Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (membershipExiryDate.isNotEmpty) ...[
-                              SizedBox(height: 4),
-                              Text(
-                                'Expires: ${formatMembershipExpiry(membershipExiryDate)}',
-                                style: TextStyle(
-                                  color: kGrey,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                            SizedBox(height: 12),
-                            // Manage Plan Button
-                            InkWell(
-                              onTap: () {
-                                Navigator.pop(context);
-                                Navigator.pushNamed(context, AppRoutes.plans);
-                              },
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: 10,
-                                  horizontal: 14,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      isDarkMode
-                                          ? Colors.grey[800]
-                                          : Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.settings,
-                                          color:
-                                              isDarkMode
-                                                  ? kWhite
-                                                  : Colors.grey[700],
-                                          size: 16,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Manage Plan',
-                                          style: TextStyle(
-                                            color:
-                                                isDarkMode
-                                                    ? kWhite
-                                                    : Colors.grey[800],
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Icon(
-                                      Icons.arrow_forward_ios,
-                                      color:
-                                          isDarkMode
-                                              ? kWhite
-                                              : Colors.grey[700],
-                                      size: 14,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? kDarkThemeBg : kBGColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Not a member yet',
-                          style: TextStyle(
-                            color: isDarkMode ? kWhite : kBlack,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Unlock exclusive benefits and resources',
-                          style: TextStyle(color: kGrey, fontSize: 12),
-                        ),
-                        SizedBox(height: 10),
-                        // Benefits now handled by profileCard widget
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(context, AppRoutes.plans);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kBlue,
-                              padding: EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Upgrade Today',
-                              style: TextStyle(
-                                color: kWhite,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              height: 2,
-              color: isDarkMode ? kDarkThemeBg : kLightGrey,
-            ),
-          ),
-
-          // Drawer Items
-          ListTile(
-            leading: Icon(
-              Icons.person_2_outlined,
-              color: isDarkMode ? kWhite : kBlack,
-            ),
-            title: Text(
-              'Profile',
-              style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-            ),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
-          ),
-          ListTile(
-            leading: Icon(Icons.history, color: isDarkMode ? kWhite : kBlack),
-            title: Text(
-              'Transaction History',
-              style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-            ),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.transcation),
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.notifications_none,
-              color: isDarkMode ? kWhite : kBlack,
-            ),
-            title: Text(
-              'Notifications',
-              style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-            ),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.notifications),
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.school_sharp,
-              color: isDarkMode ? kWhite : kBlack,
-            ),
-            title: Text(
-              'Training',
-              style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-            ),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.trainings),
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.workspace_premium,
-              color: isDarkMode ? kWhite : kBlack,
-            ),
-            title: Text(
-              'Membership',
-              style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-            ),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.plans),
-          ),
-          if (userRoles.contains('event_verify'))
-            ListTile(
-              leading: Icon(
-                Icons.qr_code_scanner,
-                color: isDarkMode ? kWhite : kBlack,
-              ),
-              title: Text(
-                'Scan Tickets',
-                style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _showEventSelectionForScanner(isDarkMode);
-              },
-            ),
-          ListTile(
-            leading: Icon(
-              Icons.info_outline,
-              color: isDarkMode ? kWhite : kBlack,
-            ),
-            title: Text(
-              'About Dama',
-              style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-            ),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.aboutDama),
-          ),
-          ListTile(
-            leading: Icon(Icons.logout, color: kRed),
-            title: Text('Logout', style: TextStyle(color: kRed)),
-            onTap: () {
-              Navigator.pop(context);
-              _authController.logout(context);
-            },
-          ),
-
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              height: 2,
-              color: isDarkMode ? kDarkThemeBg : kLightGrey,
-            ),
-          ),
-          SizedBox(height: 30),
-          SizedBox(height: 30),
-          ],
-        ),
-      ),
-    );
-  }
-
+  // ─── MOBILE LAYOUT ────────────────────────────────────────────────────────
   Widget _buildMobileLayout() {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
@@ -1737,7 +1786,7 @@ class _DashboardState extends State<Dashboard> {
               backgroundColor: isDarkMode ? kDarkThemeBg : kWhite,
               automaticallyImplyLeading: false,
               titleSpacing: 0,
-              title: CustomAppbar(
+              title: Obx(() => CustomAppbar(
                 onMenuTap: _toggleDrawer,
                 imageUrl: imageUrl,
                 onChatTap: () {
@@ -1747,15 +1796,9 @@ class _DashboardState extends State<Dashboard> {
                   Navigator.push(
                     context,
                     PageRouteBuilder(
-                      pageBuilder:
-                          (context, animation, secondaryAnimation) =>
-                              SearchResultsScreen(query: query),
-                      transitionsBuilder: (
-                        context,
-                        animation,
-                        secondaryAnimation,
-                        child,
-                      ) {
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          SearchResultsScreen(query: query),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
                         return FadeTransition(opacity: animation, child: child);
                       },
                       transitionDuration: const Duration(milliseconds: 200),
@@ -1765,14 +1808,12 @@ class _DashboardState extends State<Dashboard> {
                 onNotificationTap: () {
                   Navigator.pushNamed(context, AppRoutes.notifications);
                 },
-                unreadNotificationCount:
-                    _notificationController.notificationList
-                        .where((n) => !n.read)
-                        .length,
-              ),
+                unreadNotificationCount: _notificationController.notificationList
+                    .where((n) => !n.read)
+                    .length,
+              )),
             ),
           ),
-
           body: SafeArea(
             bottom: true,
             child: PageView(
@@ -1800,11 +1841,7 @@ class _DashboardState extends State<Dashboard> {
             ],
             tabSize: 50,
             tabBarHeight: 55,
-            textStyle: TextStyle(
-              fontSize: 12,
-              color: kGrey,
-              fontWeight: FontWeight.w500,
-            ),
+            textStyle: TextStyle(fontSize: 14, color: kGrey, fontWeight: FontWeight.w500),
             tabIconColor: kGrey,
             tabSelectedColor: kBlue,
             tabIconSize: 28.0,

@@ -9,8 +9,11 @@ import 'package:provider/provider.dart';
 import 'controller/auth_controller.dart';
 import 'controller/global_search_controller.dart';
 import 'controller/register_controller.dart';
+import 'controller/training_controller.dart';
 import 'controller/user_training_controller.dart';
+import 'controller/user_progress_controller.dart';
 import 'controller/linkedin_controller.dart';
+import 'controller/payment_controller.dart';
 import 'providers/chat_provider.dart';
 import 'providers/sessions_provider.dart';
 import 'services/firebase_messaging_service.dart';
@@ -38,7 +41,10 @@ void main() async {
   }
 
   Get.put(AuthController());
+  Get.put(TrainingController());
   Get.put(UserTrainingController());
+  Get.put(UserProgressController());
+  Get.put(PaymentController());
   runApp(
     MultiProvider(
       providers: [

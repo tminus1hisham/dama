@@ -28,7 +28,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   String? imageUrl;
   String? firstName;
   String? lastName;
@@ -45,6 +46,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _isUploading = false;
   bool _isUpdating = false;
+
+  // Pulse animation for profile avatar glow
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnim;
 
   final Utils _utils = Utils();
 
@@ -69,6 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? selectedRole;
 
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _companyController = TextEditingController();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
@@ -79,14 +85,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _appVersion = '';
 
+  /// User initials fallback — mirrors React userInitials logic
+  String get _initials {
+    final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
+    if (name.isEmpty) return 'U';
+    final parts = name.split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
   @override
   void initState() {
     super.initState();
+
+    // Pulse animation — same as drawer avatar
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.3, end: 0.85).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
     loadAppVersion();
+
     _fetchData().then((_) {
       _firstNameController.text = firstName ?? '';
       _lastNameController.text = lastName ?? '';
       _titleController.text = title ?? '';
+      _companyController.text = company ?? '';
       _bioController.text = bio ?? '';
       _emailController.text = email ?? '';
       _phoneController.text = phoneNumber ?? '';
@@ -107,9 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _fetchData() async {
     try {
-      String? fetchedProfilePicture = await StorageService.getData(
-        'profile_picture',
-      );
+      String? fetchedProfilePicture = await StorageService.getData('profile_picture');
       String? fetchedLastName = await StorageService.getData('lastName');
       String? fetchedFirstName = await StorageService.getData('firstName');
       String? fetchedTitle = await StorageService.getData('title');
@@ -118,24 +143,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       String? fetchedEmail = await StorageService.getData('email');
       String? fetchedPhoneNumber = await StorageService.getData('phoneNumber');
       String? fetchedMemberId = await StorageService.getData('memberId');
-      dynamic fetchedHasMembership = await StorageService.getData(
-        'hasMembership',
-      );
-      String? fetchedMembershipExp = await StorageService.getData(
-        'membershipExp',
-      );
-      String? fetchedMembershipId = await StorageService.getData(
-        'membershipId',
-      );
+      dynamic fetchedHasMembership = await StorageService.getData('hasMembership');
+      String? fetchedMembershipExp = await StorageService.getData('membershipExp');
+      String? fetchedMembershipId = await StorageService.getData('membershipId');
 
-      // Parse hasMembership safely
       bool parsedHasMembership = false;
       if (fetchedHasMembership is bool) {
         parsedHasMembership = fetchedHasMembership;
       } else if (fetchedHasMembership is String) {
         parsedHasMembership = fetchedHasMembership == 'true';
-      } else {
-        parsedHasMembership = false;
       }
 
       setState(() {
@@ -153,45 +169,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         membershipId = fetchedMembershipId;
       });
 
-      // Check if membership has expired
       if (hasMembership && membershipExp != null && membershipExp!.isNotEmpty) {
         try {
           DateTime expiryDate = DateTime.parse(membershipExp!);
-          DateTime now = DateTime.now();
-          if (now.isAfter(expiryDate)) {
-            // Membership has expired
-            setState(() {
-              hasMembership = false;
-            });
-            // Update storage to reflect expired status
+          if (DateTime.now().isAfter(expiryDate)) {
+            setState(() => hasMembership = false);
             await StorageService.storeData({'hasMembership': false});
-            print(
-              '[ProfileScreen] Membership expired on $membershipExp, updated hasMembership to false',
-            );
           }
-        } catch (e) {
-          print('[ProfileScreen] Error parsing membership expiry date: $e');
-        }
+        } catch (e) {}
       }
 
-      // Update the controller with the fetched data
       if (fetchedProfilePicture != null) {
-        updateUserProfileController.profilePicture.value =
-            fetchedProfilePicture;
+        updateUserProfileController.profilePicture.value = fetchedProfilePicture;
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading profile data')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading profile data')),
+      );
     }
   }
 
   Future<void> _pickImage() async {
-    // Request storage permission
     var status = await Permission.photos.request();
-    if (!status.isGranted) {
-      return;
-    }
+    if (!status.isGranted) return;
 
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -214,36 +214,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _isUploading = false;
           });
 
-          updateUserProfileController.firstName.value =
-              _firstNameController.text;
+          updateUserProfileController.firstName.value = _firstNameController.text;
           updateUserProfileController.lastName.value = _lastNameController.text;
           updateUserProfileController.title.value = _titleController.text;
 
-          if (bio != null) {
-            updateUserProfileController.brief.value = bio!;
-          }
-
-          if (phoneNumber != null) {
-            updateUserProfileController.phoneNumber.value = phoneNumber!;
-          }
-
-          if (phoneNumber != null) {
-            updateUserProfileController.phoneNumber.value = phoneNumber!;
-          }
+          if (bio != null) updateUserProfileController.brief.value = bio!;
+          if (phoneNumber != null) updateUserProfileController.phoneNumber.value = phoneNumber!;
 
           updateUserProfileController.updateUser();
         } else {
           setState(() => _isUploading = false);
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Failed to upload image')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload image')),
+          );
         }
       }
     } catch (e) {
       setState(() => _isUploading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
     }
   }
 
@@ -253,18 +243,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     updateUserProfileController.firstName.value = _firstNameController.text;
     updateUserProfileController.lastName.value = _lastNameController.text;
     updateUserProfileController.title.value = _titleController.text;
+    updateUserProfileController.company.value = _companyController.text;
 
-    if (bio != null) {
-      updateUserProfileController.brief.value = bio!;
-    }
-
-    if (profilePicture != null) {
-      updateUserProfileController.profilePicture.value = profilePicture!;
-    }
-
-    if (phoneNumber != null) {
-      updateUserProfileController.phoneNumber.value = phoneNumber!;
-    }
+    if (bio != null) updateUserProfileController.brief.value = bio!;
+    if (profilePicture != null) updateUserProfileController.profilePicture.value = profilePicture!;
+    if (phoneNumber != null) updateUserProfileController.phoneNumber.value = phoneNumber!;
 
     updateUserProfileController.updateUser();
 
@@ -272,12 +255,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       'firstName': _firstNameController.text,
       'lastName': _lastNameController.text,
       'title': _titleController.text,
+      'company': _companyController.text,
     });
 
     setState(() {
       firstName = _firstNameController.text;
       lastName = _lastNameController.text;
       title = _titleController.text;
+      company = _companyController.text;
       _isUpdating = false;
     });
   }
@@ -291,18 +276,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       updateUserProfileController.firstName.value = firstName!;
       updateUserProfileController.lastName.value = lastName!;
     }
-
-    if (title != null) {
-      updateUserProfileController.title.value = title!;
-    }
-
-    if (profilePicture != null) {
-      updateUserProfileController.profilePicture.value = profilePicture!;
-    }
-
-    if (phoneNumber != null) {
-      updateUserProfileController.phoneNumber.value = phoneNumber!;
-    }
+    if (title != null) updateUserProfileController.title.value = title!;
+    if (profilePicture != null) updateUserProfileController.profilePicture.value = profilePicture!;
+    if (phoneNumber != null) updateUserProfileController.phoneNumber.value = phoneNumber!;
 
     updateUserProfileController.updateUser();
 
@@ -319,23 +295,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_phoneController.text.isNotEmpty) {
       updateUserProfileController.phoneNumber.value = _phoneController.text;
     }
-
     if (firstName != null && lastName != null) {
       updateUserProfileController.firstName.value = firstName!;
       updateUserProfileController.lastName.value = lastName!;
     }
-
-    if (title != null) {
-      updateUserProfileController.title.value = title!;
-    }
-
-    if (profilePicture != null) {
-      updateUserProfileController.profilePicture.value = profilePicture!;
-    }
-
-    if (bio != null) {
-      updateUserProfileController.brief.value = bio!;
-    }
+    if (title != null) updateUserProfileController.title.value = title!;
+    if (profilePicture != null) updateUserProfileController.profilePicture.value = profilePicture!;
+    if (bio != null) updateUserProfileController.brief.value = bio!;
 
     updateUserProfileController.updateUser();
 
@@ -350,190 +316,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  void _showEditNameAndTitleDialog() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    bool isDarkMode = themeProvider.isDark;
+ void _showEditNameAndTitleDialog() {
+  final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+  bool isDarkMode = themeProvider.isDark;
 
-    showDialog(
-      context: context,
-      builder:
-          (context) => Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 800),
-              child: AlertDialog(
-                backgroundColor: isDarkMode ? kBlack : kWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+  showDialog(
+    context: context,
+    builder: (context) => Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: AlertDialog(
+          backgroundColor: isDarkMode ? kBlack : kWhite,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: kBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                title: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: kBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(Icons.person_rounded, color: kBlue, size: 24),
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      'Edit Profile',
-                      style: TextStyle(
-                        color: isDarkMode ? kWhite : kBlack,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: kBlue,
+                  size: 24,
                 ),
-                content: SizedBox(
-                  width: double.maxFinite,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: _firstNameController,
-                        style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-                        decoration: InputDecoration(
-                          labelText: "First Name",
-                          labelStyle: TextStyle(
-                            color: isDarkMode ? kWhite : kGrey,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: kBlue, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      TextField(
-                        controller: _lastNameController,
-                        style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-                        decoration: InputDecoration(
-                          labelText: "Last Name",
-                          labelStyle: TextStyle(
-                            color: isDarkMode ? kWhite : kGrey,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: kBlue, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      TextField(
-                        controller: _titleController,
-                        style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-                        decoration: InputDecoration(
-                          labelText: "Professional Title",
-                          labelStyle: TextStyle(
-                            color: isDarkMode ? kWhite : kGrey,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: kBlue, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Edit Profile',
+                style: TextStyle(
+                  color: isDarkMode ? kWhite : kBlack,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
-                actions: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color:
-                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _updateNameAndTitle();
-                              Navigator.pop(context);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kBlue,
-                              foregroundColor: kWhite,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              'Save Changes',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildTextField(
+                      _firstNameController, 'First Name', isDarkMode),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                      _lastNameController, 'Last Name', isDarkMode),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                      _titleController, 'Professional Title', isDarkMode),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                      _companyController,
+                      'Company / Organization',
+                      isDarkMode),
                 ],
               ),
             ),
           ),
-    );
-  }
+          actionsPadding:
+              const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          actions: [
+            _buildDialogActions(
+                context, isDarkMode, _updateNameAndTitle),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
   void _showDeleteAccountConfirmation(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -542,109 +397,92 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 800),
-              child: AlertDialog(
-                backgroundColor: isDarkMode ? kBlack : kWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+      builder: (context) => Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 800),
+          child: AlertDialog(
+            backgroundColor: isDarkMode ? kBlack : kWhite,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: kRed.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.warning_rounded, color: kRed, size: 24),
                 ),
-                title: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: kRed.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(Icons.warning_rounded, color: kRed, size: 24),
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      'Delete Account',
-                      style: TextStyle(
-                        color: isDarkMode ? kWhite : kBlack,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                content: Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Are you sure you want to request account deletion? This action cannot be undone and all your data will be permanently removed.',
-                    style: TextStyle(
-                      color:
-                          isDarkMode
-                              ? kWhite.withOpacity(0.8)
-                              : kBlack.withOpacity(0.7),
-                      fontSize: 16,
-                      height: 1.4,
-                    ),
+                SizedBox(width: 12),
+                Text(
+                  'Delete Account',
+                  style: TextStyle(
+                    color: isDarkMode ? kWhite : kBlack,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
-                actions: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color:
-                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+              ],
+            ),
+            content: Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'Are you sure you want to request account deletion? This action cannot be undone and all your data will be permanently removed.',
+                style: TextStyle(
+                  color: isDarkMode ? kWhite.withOpacity(0.8) : kBlack.withOpacity(0.7),
+                  fontSize: 16,
+                  height: 1.4,
+                ),
+              ),
+            ),
+            actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+            actions: [
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: isDarkMode ? kWhite : kBlack,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              requestDeleteAccountController
-                                  .requestDeleteAccount(context);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kRed,
-                              foregroundColor: kWhite,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              'Delete Account',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          requestDeleteAccountController.requestDeleteAccount(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kRed,
+                          foregroundColor: kWhite,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
                         ),
+                        child: Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w600)),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -654,147 +492,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     showDialog(
       context: context,
-      builder:
-          (context) => Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 800),
-              child: AlertDialog(
-                backgroundColor: isDarkMode ? kBlack : kWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+      builder: (context) => Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 800),
+          child: AlertDialog(
+            backgroundColor: isDarkMode ? kBlack : kWhite,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: kBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.edit_rounded, color: kBlue, size: 24),
                 ),
-                title: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: kBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(Icons.edit_rounded, color: kBlue, size: 24),
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      'Edit Bio',
-                      style: TextStyle(
-                        color: isDarkMode ? kWhite : kBlack,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                content: SizedBox(
-                  width: double.maxFinite,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(height: 8),
-                      TextField(
-                        controller: _bioController,
-                        maxLines: 5,
-                        maxLength: 500,
-                        style: TextStyle(
-                          color: isDarkMode ? kWhite : kBlack,
-                          fontSize: 16,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: "Tell us about yourself",
-                          labelStyle: TextStyle(
-                            color: isDarkMode ? kWhite : kGrey,
-                          ),
-                          hintText:
-                              "Share your professional background, interests, or goals...",
-                          hintStyle: TextStyle(
-                            color:
-                                isDarkMode
-                                    ? kWhite.withOpacity(0.5)
-                                    : kGrey.withOpacity(0.7),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color:
-                                  isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: kBlue, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
-                          contentPadding: EdgeInsets.all(16),
-                        ),
-                      ),
-                    ],
+                SizedBox(width: 12),
+                Text(
+                  'Edit Bio',
+                  style: TextStyle(
+                    color: isDarkMode ? kWhite : kBlack,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
-                actions: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color:
-                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 8),
+                  TextField(
+                    controller: _bioController,
+                    maxLines: 5,
+                    maxLength: 500,
+                    style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: 16),
+                    decoration: InputDecoration(
+                      labelText: "Tell us about yourself",
+                      labelStyle: TextStyle(color: isDarkMode ? kWhite : kGrey),
+                      hintText: "Share your professional background, interests, or goals...",
+                      hintStyle: TextStyle(
+                        color: isDarkMode ? kWhite.withOpacity(0.5) : kGrey.withOpacity(0.7),
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _submitBioDetails();
-                              Navigator.pop(context);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kBlue,
-                              foregroundColor: kWhite,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              'Save Changes',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
                       ),
-                    ],
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: kBlue, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
+                      contentPadding: EdgeInsets.all(16),
+                    ),
                   ),
                 ],
               ),
             ),
+            actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+            actions: [_buildDialogActions(context, isDarkMode, _submitBioDetails)],
           ),
+        ),
+      ),
     );
   }
 
@@ -805,218 +572,210 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     showDialog(
       context: context,
-      builder:
-          (context) => Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: 800,
-                maxHeight: MediaQuery.of(context).size.height * 0.9,
-              ),
-              child: AlertDialog(
-                backgroundColor: isDarkMode ? kBlack : kWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+      builder: (context) => Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 800,
+            maxHeight: MediaQuery.of(context).size.height * 0.9,
+          ),
+          child: AlertDialog(
+            backgroundColor: isDarkMode ? kBlack : kWhite,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: kBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.contact_phone_rounded, color: kBlue, size: 24),
                 ),
-                title: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: kBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.contact_phone_rounded,
-                        color: kBlue,
-                        size: 24,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Flexible(
-                      child: Text(
-                        'Edit Contact Information',
-                        style: TextStyle(
-                          color: isDarkMode ? kWhite : kBlack,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                content: SingleChildScrollView(
-                  child: Form(
-                    key: _contactFormKey,
-                    child: SizedBox(
-                      width: double.maxFinite,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(height: 8),
-                          TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            style: TextStyle(
-                              color: isDarkMode ? kWhite : kBlack,
-                              fontSize: 16,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: "Email Address",
-                              labelStyle: TextStyle(
-                                color: isDarkMode ? kWhite : kGrey,
-                              ),
-                              hintText: "Enter your email address",
-                              hintStyle: TextStyle(
-                                color:
-                                    isDarkMode
-                                        ? kWhite.withOpacity(0.5)
-                                        : kGrey.withOpacity(0.7),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color:
-                                      isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color:
-                                      isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: kBlue, width: 2),
-                              ),
-                              filled: true,
-                              fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
-                              contentPadding: EdgeInsets.all(16),
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          TextFormField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            style: TextStyle(
-                              color: isDarkMode ? kWhite : kBlack,
-                              fontSize: 16,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: "Phone Number",
-                              labelStyle: TextStyle(
-                                color: isDarkMode ? kWhite : kGrey,
-                              ),
-                              hintText: "Enter your phone number (9 digits)",
-                              hintStyle: TextStyle(
-                                color:
-                                    isDarkMode
-                                        ? kWhite.withOpacity(0.5)
-                                        : kGrey.withOpacity(0.7),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color:
-                                      isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color:
-                                      isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: kBlue, width: 2),
-                              ),
-                              filled: true,
-                              fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
-                              contentPadding: EdgeInsets.all(16),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return "Phone number is required";
-                              }
-                              // Remove any non-digit characters for validation
-                              final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
-                              if (digitsOnly.length != 9) {
-                                return "Phone number must be exactly 9 digits";
-                              }
-                              if (!RegExp(r'^[0-9]+$').hasMatch(digitsOnly)) {
-                                return "Phone number must contain only digits";
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
+                SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    'Edit Contact Information',
+                    style: TextStyle(
+                      color: isDarkMode ? kWhite : kBlack,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
-                actions: [
-                  Row(
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Form(
+                key: _contactFormKey,
+                child: SizedBox(
+                  width: double.maxFinite,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color:
-                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
+                      SizedBox(height: 8),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: 16),
+                        decoration: _inputDecoration('Email Address', isDarkMode),
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (_contactFormKey.currentState!.validate()) {
-                                _submitContactDetails();
-                                Navigator.pop(context);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kBlue,
-                              foregroundColor: kWhite,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              'Save Changes',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: 16),
+                        decoration: _inputDecoration('Phone Number', isDarkMode,
+                            hint: 'Enter your phone number (9 digits)'),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return "Phone number is required";
+                          }
+                          final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+                          if (digitsOnly.length != 9) return "Phone number must be exactly 9 digits";
+                          if (!RegExp(r'^[0-9]+$').hasMatch(digitsOnly)) {
+                            return "Phone number must contain only digits";
+                          }
+                          return null;
+                        },
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+            actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+            actions: [
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: isDarkMode ? kWhite : kBlack,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_contactFormKey.currentState!.validate()) {
+                            _submitContactDetails();
+                            Navigator.pop(context);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kBlue,
+                          foregroundColor: kWhite,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
+                        ),
+                        child: Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ),
                 ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Shared dialog helpers ──────────────────────────────────────────────────
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    bool isDarkMode,
+  ) {
+    return TextField(
+      controller: controller,
+      style: TextStyle(color: isDarkMode ? kWhite : kBlack),
+      decoration: _inputDecoration(label, isDarkMode),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, bool isDarkMode, {String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: isDarkMode ? kWhite : kGrey),
+      hintText: hint,
+      hintStyle: TextStyle(
+        color: isDarkMode ? kWhite.withOpacity(0.5) : kGrey.withOpacity(0.7),
+      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: kBlue, width: 2),
+      ),
+      filled: true,
+      fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
+      contentPadding: EdgeInsets.all(16),
+    );
+  }
+
+  Widget _buildDialogActions(
+    BuildContext context,
+    bool isDarkMode,
+    VoidCallback onSave,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 48,
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontWeight: FontWeight.w500),
               ),
             ),
           ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: SizedBox(
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () {
+                onSave();
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kBlue,
+                foregroundColor: kWhite,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+              ),
+              child: Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1025,16 +784,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       Get.snackbar("Error", "Please select a valid role");
       return;
     }
-
     await roleRequestController.requestRole(selectedRole!);
   }
 
   @override
   void dispose() {
+    _pulseController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
     _titleController.dispose();
     _bioController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _companyController.dispose();
     super.dispose();
   }
 
@@ -1042,6 +804,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
+
     return SafeArea(
       bottom: true,
       child: Scaffold(
@@ -1059,13 +822,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // ── Profile header with animated glow avatar ──────
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
-                              padding: EdgeInsets.only(bottom: 50),
+                              padding: EdgeInsets.only(bottom: 56),
                               child: Stack(
                                 clipBehavior: Clip.none,
                                 children: [
+                                  // Background banner — tappable to change image
                                   GestureDetector(
                                     onTap: _pickImage,
                                     child: Image.asset(
@@ -1074,58 +839,101 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       fit: BoxFit.cover,
                                     ),
                                   ),
+
+                                  // Animated glow avatar (matches drawer + React design)
                                   Positioned(
-                                    bottom: -40,
+                                    bottom: -44,
                                     left: 20,
-                                    child: Stack(
-                                      children: [
-                                        ProfileAvatar(
-                                          radius: 40,
-                                          backgroundColor: kLightGrey,
-                                          backgroundImage:
-                                              profilePicture != null
-                                                  ? NetworkImage(
-                                                    profilePicture!,
-                                                  )
-                                                  : null,
-                                          borderColor: kBlue,
-                                          borderWidth: 1.0,
-                                          child:
-                                              profilePicture == null
-                                                  ? Icon(
-                                                    Icons.person,
-                                                    size: 40,
-                                                    color: kGrey,
-                                                  )
-                                                  : null,
+                                    child: GestureDetector(
+                                      onTap: _pickImage,
+                                      child: AnimatedBuilder(
+                                        animation: _pulseAnim,
+                                        builder: (context, child) {
+                                          return Container(
+                                            width: 90,
+                                            height: 90,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  Color(0xFF6366F1),
+                                                  Color(0xFF3B82F6),
+                                                  Color(0xFF6366F1),
+                                                ],
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFF3B82F6)
+                                                      .withOpacity(_pulseAnim.value * 0.55),
+                                                  blurRadius: 18,
+                                                  spreadRadius: 3,
+                                                ),
+                                                BoxShadow(
+                                                  color: const Color(0xFF6366F1)
+                                                      .withOpacity(_pulseAnim.value * 0.3),
+                                                  blurRadius: 30,
+                                                  spreadRadius: 5,
+                                                ),
+                                              ],
+                                            ),
+                                            padding: const EdgeInsets.all(3),
+                                            child: child,
+                                          );
+                                        },
+                                        child: CircleAvatar(
+                                          radius: 42,
+                                          backgroundColor: isDarkMode
+                                              ? const Color(0xFF1E1E1E)
+                                              : const Color(0xFFEEF2FF),
+                                          backgroundImage: profilePicture != null
+                                              ? NetworkImage(profilePicture!)
+                                              : null,
+                                          child: profilePicture == null
+                                              ? Text(
+                                                  _initials,
+                                                  style: const TextStyle(
+                                                    color: Color(0xFF6366F1),
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 24,
+                                                  ),
+                                                )
+                                              : null,
                                         ),
-                                        // Positioned(
-                                        //   bottom: 0,
-                                        //   right: 0,
-                                        //   child: Container(
-                                        //     padding: EdgeInsets.all(5),
-                                        //     decoration: BoxDecoration(
-                                        //       color: kBlue,
-                                        //       shape: BoxShape.circle,
-                                        //       border: Border.all(
-                                        //         color: kWhite,
-                                        //         width: 2,
-                                        //       ),
-                                        //     ),
-                                        //     child: Icon(
-                                        //       FontAwesomeIcons.pen,
-                                        //       size: 15,
-                                        //       color: kWhite,
-                                        //     ),
-                                        //   ),
-                                        // ),
-                                      ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Camera edit icon overlay
+                                  Positioned(
+                                    bottom: -44 + 60,
+                                    left: 20 + 60,
+                                    child: GestureDetector(
+                                      onTap: _pickImage,
+                                      child: Container(
+                                        width: 28,
+                                        height: 28,
+                                        decoration: BoxDecoration(
+                                          color: kBlue,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: isDarkMode ? kBlack : kWhite,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.camera_alt,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
+
+                          // Edit Profile Picture button
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
@@ -1137,12 +945,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                           ),
+
+                          // Profile details
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Edit Profile Details row
                                 Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                                   child: Row(
@@ -1156,23 +965,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      InkWell(
-                                        onTap: _showEditNameAndTitleDialog,
-                                        child: Icon(
-                                          FontAwesomeIcons.pen,
-                                          size: 16,
-                                          color: isDarkMode ? kWhite : kBlack,
-                                        ),
-                                      ),
+                                     InkWell(
+  onTap: _showEditNameAndTitleDialog,
+  child: CircleAvatar(
+    radius: 15,
+    backgroundColor: kGrey,
+    child: Icon(
+      FontAwesomeIcons.pen,
+      size: 15,
+      color: kWhite,
+    ),
+  ),
+),
                                     ],
                                   ),
                                 ),
-                                // User info
                                 Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 20),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         "${firstName ?? ''} ${lastName ?? ''}",
@@ -1184,15 +995,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                       Text(
                                         title ?? '',
-                                        style: TextStyle(
-                                          color: isDarkMode ? kWhite : kBlack,
-                                        ),
+                                        style: TextStyle(color: isDarkMode ? kWhite : kBlack),
                                       ),
                                       Text(
                                         company ?? '',
-                                        style: TextStyle(
-                                          color: isDarkMode ? kWhite : kGrey,
-                                        ),
+                                        style: TextStyle(color: isDarkMode ? kWhite : kGrey),
                                       ),
                                       SizedBox(height: 10),
                                     ],
@@ -1201,20 +1008,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ],
                             ),
                           ),
+
                           SizedBox(height: 10),
+
+                          // Bio
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 20,
-                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
                                         Text(
                                           'My Bio',
@@ -1227,9 +1033,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         SizedBox(height: 10),
                                         Text(
                                           bio ?? '',
-                                          style: TextStyle(
-                                            color: isDarkMode ? kWhite : kBlack,
-                                          ),
+                                          style: TextStyle(color: isDarkMode ? kWhite : kBlack),
                                         ),
                                       ],
                                     ),
@@ -1239,32 +1043,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     child: CircleAvatar(
                                       radius: 15,
                                       backgroundColor: kGrey,
-                                      child: Icon(
-                                        FontAwesomeIcons.pen,
-                                        size: 15,
-                                        color: kWhite,
-                                      ),
+                                      child: Icon(FontAwesomeIcons.pen, size: 15, color: kWhite),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
+
                           SizedBox(height: 10),
-                          // Contact & Location Section
+
+                          // Contact & Location
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 20,
-                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         'Contact & Location',
@@ -1279,167 +1077,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         child: CircleAvatar(
                                           radius: 15,
                                           backgroundColor: kGrey,
-                                          child: Icon(
-                                            FontAwesomeIcons.pen,
-                                            size: 15,
-                                            color: kWhite,
-                                          ),
+                                          child: Icon(FontAwesomeIcons.pen, size: 15, color: kWhite),
                                         ),
                                       ),
                                     ],
                                   ),
                                   SizedBox(height: 15),
-                                  // Email
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Email',
-                                            style: TextStyle(
-                                              color: kGrey,
-                                              fontSize: kSmallTextSize,
-                                            ),
-                                          ),
-                                          SizedBox(height: 5),
-                                          Text(
-                                            email ?? 'Not set',
-                                            style: TextStyle(
-                                              color:
-                                                  isDarkMode ? kWhite : kBlack,
-                                              fontSize: kNormalTextSize,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                  _contactRow('Email', email ?? 'Not set', isDarkMode),
                                   SizedBox(height: 15),
-                                  Divider(
-                                    color: kGrey.withOpacity(0.2),
-                                    height: 1,
-                                  ),
+                                  Divider(color: kGrey.withOpacity(0.2), height: 1),
                                   SizedBox(height: 15),
-                                  // Phone
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Phone',
-                                            style: TextStyle(
-                                              color: kGrey,
-                                              fontSize: kSmallTextSize,
-                                            ),
-                                          ),
-                                          SizedBox(height: 5),
-                                          Text(
-                                            phoneNumber ?? 'Not set',
-                                            style: TextStyle(
-                                              color:
-                                                  isDarkMode ? kWhite : kBlack,
-                                              fontSize: kNormalTextSize,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                  _contactRow('Phone', phoneNumber ?? 'Not set', isDarkMode),
                                 ],
                               ),
                             ),
                           ),
+
                           SizedBox(height: 10),
+
+                          // Dark mode + Change password
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 20,
-                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Dark Mode',
                                             style: TextStyle(
-                                              color:
-                                                  isDarkMode ? kWhite : kBlack,
+                                              color: isDarkMode ? kWhite : kBlack,
                                               fontSize: kNormalTextSize,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                           Text(
                                             isDarkMode ? "Light" : "Dark",
-                                            style: TextStyle(
-                                              color:
-                                                  isDarkMode ? kWhite : kGrey,
-                                            ),
+                                            style: TextStyle(color: isDarkMode ? kWhite : kGrey),
                                           ),
                                         ],
                                       ),
                                       Switch(
                                         value: isDarkMode,
-                                        onChanged: (value) {
-                                          themeProvider.toggleTheme();
-                                        },
+                                        onChanged: (value) => themeProvider.toggleTheme(),
                                         activeThumbColor: kBlue,
-                                        inactiveThumbColor:
-                                            isDarkMode
-                                                ? Colors.grey[600]!
-                                                : kGrey,
+                                        inactiveThumbColor: isDarkMode ? Colors.grey[600]! : kGrey,
                                       ),
                                     ],
                                   ),
                                   SizedBox(height: 10),
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Change Password',
                                             style: TextStyle(
-                                              color:
-                                                  isDarkMode ? kWhite : kBlack,
+                                              color: isDarkMode ? kWhite : kBlack,
                                               fontSize: kNormalTextSize,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                           Text(
                                             "Change your password",
-                                            style: TextStyle(
-                                              color:
-                                                  isDarkMode ? kWhite : kGrey,
-                                            ),
+                                            style: TextStyle(color: isDarkMode ? kWhite : kGrey),
                                           ),
                                         ],
                                       ),
                                       IconButton(
                                         onPressed: () {
-                                          Navigator.pushNamed(
-                                            context,
-                                            AppRoutes.changePassword,
-                                          );
+                                          Navigator.pushNamed(context, AppRoutes.changePassword);
                                         },
                                         icon: Icon(
                                           Icons.arrow_forward_ios,
@@ -1452,6 +1167,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                           ),
+
+                          // Role request
                           Container(
                             color: kWhite,
                             child: Column(
@@ -1461,31 +1178,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   color: isDarkMode ? kBlack : kWhite,
                                   child: Obx(() {
                                     if (roleRequestController.isLoading.value) {
-                                      return Center(
-                                        child: CircularProgressIndicator(),
-                                      );
+                                      return Center(child: CircularProgressIndicator());
                                     }
-
                                     return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
                                         DictDropdown(
                                           label: "Request For role",
                                           value: selectedRole,
                                           items: roleOptions,
                                           isRequired: true,
-                                          onChanged:
-                                              (value) => setState(
-                                                () => selectedRole = value,
-                                              ),
+                                          onChanged: (value) =>
+                                              setState(() => selectedRole = value),
                                         ),
                                         SizedBox(height: 10),
                                         Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 15.0,
-                                          ),
-                                          // Adjust padding values as needed
+                                          padding: EdgeInsets.symmetric(horizontal: 15.0),
                                           child: CustomButton(
                                             callBackFunction: _requestRole,
                                             label: 'Request',
@@ -1500,7 +1208,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ],
                             ),
                           ),
+
                           SizedBox(height: 10),
+
+                          // Footer
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
@@ -1517,15 +1228,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                   SizedBox(height: 10),
                                   GestureDetector(
-                                    onTap: () {
-                                      _showDeleteAccountConfirmation(context);
-                                    },
+                                    onTap: () => _showDeleteAccountConfirmation(context),
                                     child: Text(
                                       'Delete Account',
-                                      style: TextStyle(
-                                        color: kRed,
-                                        fontSize: 18,
-                                      ),
+                                      style: TextStyle(color: kRed, fontSize: 18),
                                     ),
                                   ),
                                 ],
@@ -1551,13 +1257,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _contactRow(String label, String value, bool isDarkMode) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: TextStyle(color: kGrey, fontSize: kSmallTextSize)),
+            SizedBox(height: 5),
+            Text(
+              value,
+              style: TextStyle(
+                color: isDarkMode ? kWhite : kBlack,
+                fontSize: kNormalTextSize,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   String _formatDate(String dateString) {
     try {
-      // Assuming the date is in ISO format or similar
       DateTime date = DateTime.parse(dateString);
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
-      return dateString; // Return original if parsing fails
+      return dateString;
     }
   }
 }

@@ -5,8 +5,10 @@ import 'package:get/get.dart';
 
 class ResourceController extends GetxController {
   var resourceList = <ResourceModel>[].obs;
+  var relatedResources = <ResourceModel>[].obs;
   var isLoading = false.obs;
   var isLoadingMore = false.obs;
+  var isLoadingRelated = false.obs;
   var hasMore = true.obs;
   var currentPage = 1.obs;
 
@@ -73,5 +75,80 @@ class ResourceController extends GetxController {
 
   Future<void> refreshResources() async {
     return fetchResources(refresh: true);
+  }
+
+  /// Fetch related resources (same category, excluding current resource)
+  Future<void> fetchRelatedResources(String currentResourceId) async {
+    debugPrint('=== fetchRelatedResources called ===');
+    debugPrint('Current resource ID: $currentResourceId');
+    isLoadingRelated.value = true;
+    try {
+      List<ResourceModel> allResources = await _resourceService.getResources(
+        page: 1,
+        limit: 50, // Get more to have variety for related items
+      );
+
+      debugPrint('Fetched ${allResources.length} total resources');
+      
+      // Filter out current resource and get 3-4 similar ones
+      final filtered = allResources
+          .where((r) => r.id != currentResourceId)
+          .take(4)
+          .toList();
+      
+      debugPrint('Filtered to ${filtered.length} related resources');
+      for (var r in filtered) {
+        debugPrint('  - ${r.title} (${r.id})');
+      }
+      
+      relatedResources.assignAll(filtered);
+      debugPrint('relatedResources.length: ${relatedResources.length}');
+      update(); // Notify GetBuilder listeners
+    } catch (e) {
+      debugPrint('Error fetching related resources: $e');
+      relatedResources.clear();
+      update(); // Notify GetBuilder listeners
+    } finally {
+      isLoadingRelated.value = false;
+    }
+  }
+
+  /// Update a resource's rating locally after user submits a rating
+  void updateResourceRating(String resourceId, double newAverageRating) {
+    // Update in main resource list
+    final index = resourceList.indexWhere((r) => r.id == resourceId);
+    if (index != -1) {
+      final oldResource = resourceList[index];
+      resourceList[index] = ResourceModel(
+        id: oldResource.id,
+        title: oldResource.title,
+        price: oldResource.price,
+        description: oldResource.description,
+        resourceLink: oldResource.resourceLink,
+        ratings: oldResource.ratings,
+        resourceImageUrl: oldResource.resourceImageUrl,
+        createdAt: oldResource.createdAt,
+        averageRating: newAverageRating,
+      );
+      debugPrint('[ResourceController] Updated rating for resource $resourceId to $newAverageRating');
+    }
+
+    // Also update in related resources if present
+    final relatedIndex = relatedResources.indexWhere((r) => r.id == resourceId);
+    if (relatedIndex != -1) {
+      final oldResource = relatedResources[relatedIndex];
+      relatedResources[relatedIndex] = ResourceModel(
+        id: oldResource.id,
+        title: oldResource.title,
+        price: oldResource.price,
+        description: oldResource.description,
+        resourceLink: oldResource.resourceLink,
+        ratings: oldResource.ratings,
+        resourceImageUrl: oldResource.resourceImageUrl,
+        createdAt: oldResource.createdAt,
+        averageRating: newAverageRating,
+      );
+    }
+    update();
   }
 }

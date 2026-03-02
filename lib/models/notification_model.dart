@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class NotificationModel {
   final String id;
   final bool read;
@@ -36,11 +38,15 @@ class NotificationModel {
         if (extractedType == null || extractedType.isEmpty) {
           extractedType = dataMap['type']?.toString() ?? dataMap['data']?.toString();
         }
-        // Extract referenceId from data map
+        // Extract referenceId from data map - check multiple possible keys
         if (extractedRefId == null || extractedRefId.isEmpty) {
           extractedRefId = dataMap['referenceId']?.toString() ?? 
                           dataMap['reference_id']?.toString() ?? 
-                          dataMap['id']?.toString();
+                          dataMap['id']?.toString() ??
+                          dataMap['blogId']?.toString() ??
+                          dataMap['newsId']?.toString() ??
+                          dataMap['eventId']?.toString() ??
+                          dataMap['trainingId']?.toString();
         }
       } else if (json['data'] is String) {
         // If 'data' is a string, it might be the type directly (e.g., "blog", "news")
@@ -51,6 +57,12 @@ class NotificationModel {
         dataMap = {'data': json['data']};
       }
     }
+    
+    debugPrint('[NotificationModel.fromJson] Extracted:');
+    debugPrint('  - ID: $extractedId');
+    debugPrint('  - Type: $extractedType');
+    debugPrint('  - ReferenceId: $extractedRefId');
+    debugPrint('  - Raw data keys: ${dataMap?.keys.toList()}');
     
     return NotificationModel(
       id: extractedId,

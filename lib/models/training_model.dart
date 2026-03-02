@@ -32,6 +32,51 @@ class Trainer {
   }
 }
 
+class Certificate {
+  final bool? issued;
+  final String? certificateNumber;
+  final DateTime? issuedAt;
+  final DateTime? expiresAt;
+
+  Certificate({
+    this.issued,
+    this.certificateNumber,
+    this.issuedAt,
+    this.expiresAt,
+  });
+
+  factory Certificate.fromJson(Map<String, dynamic> json) {
+    return Certificate(
+      issued: json['issued'] as bool?,
+      certificateNumber: json['certificateNumber'] as String?,
+      issuedAt: json['issuedAt'] != null ? DateTime.tryParse(json['issuedAt']) : null,
+      expiresAt: json['expiresAt'] != null ? DateTime.tryParse(json['expiresAt']) : null,
+    );
+  }
+}
+
+class CertificateConfig {
+  final bool enabled;
+  final String? templateId;
+  final List<String>? requirements;
+
+  CertificateConfig({
+    this.enabled = false,
+    this.templateId,
+    this.requirements,
+  });
+
+  factory CertificateConfig.fromJson(Map<String, dynamic> json) {
+    return CertificateConfig(
+      enabled: json['enabled'] as bool? ?? false,
+      templateId: json['templateId'] as String?,
+      requirements: json['requirements'] != null 
+          ? List<String>.from(json['requirements']) 
+          : null,
+    );
+  }
+}
+
 class TrainingModel {
   final String id;
   final String title;
@@ -51,6 +96,9 @@ class TrainingModel {
   final DateTime? startDate;
   final String? status;
   final Map<String, dynamic>? userData;
+  final String? category;
+  final Certificate? certificate;
+  final CertificateConfig? certificateConfig;
 
   TrainingModel({
     required this.id,
@@ -71,6 +119,9 @@ class TrainingModel {
     this.startDate,
     this.status,
     this.userData,
+    this.category,
+    this.certificate,
+    this.certificateConfig,
   });
 
   factory TrainingModel.fromJson(Map<String, dynamic> json) {
@@ -132,11 +183,17 @@ class TrainingModel {
                     status: 'scheduled',
                     meetingLink: null,
                     meetingPlatform: null,
+                    meetingUrl: null,
                     notes: null,
                     resources: [],
+                    materials: [],
                     attendance: [],
                     createdAt: DateTime.now(),
                     updatedAt: DateTime.now(),
+                    isJoined: null,
+                    type: null,
+                    duration: null,
+                    recordingUrl: null,
                   );
                 }
               })
@@ -164,6 +221,9 @@ class TrainingModel {
               : null,
       status: json['status'] is String ? json['status'] : null,
       userData: json['userData'] is Map<String, dynamic> ? json['userData'] : null,
+      category: json['category'] is String ? json['category'] : null,
+      certificate: json['certificate'] is Map<String, dynamic> ? Certificate.fromJson(json['certificate']) : null,
+      certificateConfig: json['certificateConfig'] is Map<String, dynamic> ? CertificateConfig.fromJson(json['certificateConfig']) : null,
     );
   }
 
@@ -186,6 +246,9 @@ class TrainingModel {
     DateTime? startDate,
     String? status,
     Map<String, dynamic>? userData,
+    String? category,
+    Certificate? certificate,
+    CertificateConfig? certificateConfig,
   }) {
     return TrainingModel(
       id: id ?? this.id,
@@ -206,6 +269,9 @@ class TrainingModel {
       startDate: startDate ?? this.startDate,
       status: status ?? this.status,
       userData: userData ?? this.userData,
+      category: category ?? this.category,
+      certificate: certificate ?? this.certificate,
+      certificateConfig: certificateConfig ?? this.certificateConfig,
     );
   }
 }

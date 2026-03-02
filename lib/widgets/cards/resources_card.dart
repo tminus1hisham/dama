@@ -8,14 +8,12 @@ class ResourcesCard extends StatelessWidget {
     super.key,
     required this.heading,
     required this.imageUrl,
-    required this.rating,
     required this.price,
     required this.onPressed,
     required this.onReadNowPressed,
     this.isPurchased = false,
   });
 
-  final double rating;
   final String heading;
   final String imageUrl;
   final int price;
@@ -79,21 +77,21 @@ class ResourcesCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              // Read Now or Purchase button and Rating row
+              // Action button and Price row
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: kSidePadding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Action button (left)
+              // Action button (left) - always go to detail screen
                     ElevatedButton.icon(
-                      onPressed: isPurchased ? onReadNowPressed : onPressed,
+                      onPressed: onPressed,
                       icon: Icon(
-                        isPurchased ? Icons.menu_book_outlined : Icons.shopping_cart_outlined,
+                        (isPurchased || price == 0) ? Icons.menu_book_outlined : Icons.shopping_cart_outlined,
                         size: 18,
                       ),
                       label: Text(
-                        isPurchased ? 'Read Now' : 'Purchase',
+                        (isPurchased || price == 0) ? 'Read Now' : 'Purchase',
                         style: const TextStyle(
                           color: kWhite,
                           fontWeight: FontWeight.w600,
@@ -112,40 +110,14 @@ class ResourcesCard extends StatelessWidget {
                         elevation: 0,
                       ),
                     ),
-                    // Price/FREE (center)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text(
-                        price == 0 ? 'FREE' : (isPurchased ? 'OWNED' : 'KES $price'),
-                        style: TextStyle(
-                          color: price == 0 ? kGreen : (isPurchased ? kBlue : kGreen),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                    // Price/FREE (right side)
+                    Text(
+                      price == 0 ? 'FREE' : 'KES $price',
+                      style: TextStyle(
+                        color: kGreen,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
-                    ),
-                    // Rating (right)
-                    Row(
-                      children: [
-                        ...List.generate(5, (index) {
-                          return Icon(
-                            index < rating.round()
-                                ? Icons.star_rounded
-                                : Icons.star_outline_rounded,
-                            color: index < rating.round() ? kYellow : kGrey,
-                            size: 20,
-                          );
-                        }),
-                        const SizedBox(width: 6),
-                        Text(
-                          rating.toStringAsFixed(1),
-                          style: TextStyle(
-                            color: isDarkMode ? kWhite : kBlack,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),

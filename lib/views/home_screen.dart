@@ -220,8 +220,13 @@ class _HomeScreenState extends State<HomeScreen>
           _commentController.comments[blog.id]?.length ?? blog.comments.length;
 
       return blogCard(
+        category: blog.category ?? '',
         roles: blog.author?.roles ?? [],
         onProfileClicked: () {
+          if (blog.author == null) {
+            debugPrint('[HomeScreen] Cannot navigate - blog author is null');
+            return;
+          }
           Navigator.push(
             context,
             PageRouteBuilder(
@@ -320,6 +325,7 @@ class _HomeScreenState extends State<HomeScreen>
           newsItem.comments.length;
 
       return NewsCard(
+        category: newsItem.category ?? '',
         roles: newsItem.author?.roles ?? [],
         onProfileClicked: () {
           Navigator.push(

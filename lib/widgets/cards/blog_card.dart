@@ -1,3 +1,4 @@
+import 'package:dama/models/blogs_model.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/utils/utils.dart';
@@ -5,6 +6,19 @@ import 'package:dama/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+
+// Category colors helper class
+class _CategoryColors {
+  final Color backgroundColor;
+  final Color textColor;
+  final Color borderColor;
+
+  _CategoryColors({
+    required this.backgroundColor,
+    required this.textColor,
+    required this.borderColor,
+  });
+}
 
 class blogCard extends StatelessWidget {
   const blogCard({
@@ -16,6 +30,7 @@ class blogCard extends StatelessWidget {
     required this.imageUrl,
     required this.time,
     required this.title,
+    required this.category,
     required this.onCommentsPressed,
     required this.onLikePressed,
     required this.onSharePressed,
@@ -34,6 +49,7 @@ class blogCard extends StatelessWidget {
   final String heading;
   final String blog;
   final String imageUrl;
+  final String category;
   final String commentNumber;
   final VoidCallback onCommentsPressed;
   final VoidCallback onLikePressed;
@@ -44,13 +60,76 @@ class blogCard extends StatelessWidget {
   final bool isLiked;
   final List roles;
 
+  _CategoryColors _getCategoryColors(String category) {
+    final cat = category.toLowerCase();
+    
+    if (cat.contains('science')) {
+      return _CategoryColors(
+        backgroundColor: const Color(0xFFECFDF5), // emerald-50
+        textColor: const Color(0xFF047857), // emerald-700
+        borderColor: const Color(0xFFA7F3D0), // emerald-200
+      );
+    } else if (cat.contains('education')) {
+      return _CategoryColors(
+        backgroundColor: const Color(0xFFFFF7ED), // orange-50
+        textColor: const Color(0xFFC2410C), // orange-700
+        borderColor: const Color(0xFFFDBA74), // orange-200
+      );
+    } else if (cat.contains('engineering')) {
+      return _CategoryColors(
+        backgroundColor: const Color(0xFFECFEFF), // cyan-50
+        textColor: const Color(0xFF0E7490), // cyan-700
+        borderColor: const Color(0xFF67E8F9), // cyan-200
+      );
+    } else if (cat.contains('technology') || cat.contains('tech')) {
+      return _CategoryColors(
+        backgroundColor: const Color(0xFFEEF2FF), // indigo-50
+        textColor: const Color(0xFF4338CA), // indigo-700
+        borderColor: const Color(0xFFC7D2FE), // indigo-200
+      );
+    } else if (cat.contains('politics')) {
+      return _CategoryColors(
+        backgroundColor: const Color(0xFFFFFBEB), // amber-50
+        textColor: const Color(0xFFB45309), // amber-700
+        borderColor: const Color(0xFFFCD34D), // amber-200
+      );
+    }
+    
+    // Default blue colors
+    return _CategoryColors(
+      backgroundColor: const Color(0xFFEFF6FF), // blue-50
+      textColor: const Color(0xFF1D4ED8), // blue-700
+      borderColor: const Color(0xFFBFDBFE), // blue-200
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
 
-    bool isAdminOrManager =
-        roles.contains('admin') || roles.contains('manager');
+// Check if author has official role (admin, news editor, or blogger)
+// This is informational only - all posts show DAMA logo since only these roles can post
+bool isOfficialAuthor = roles.isNotEmpty && roles.any(
+  (role) {
+    final roleStr = role.toString().toLowerCase();
+    return roleStr == 'admin' || 
+           roleStr == 'news editor' || 
+           roleStr == 'news_editor' || 
+           roleStr == 'newseditor' || 
+           roleStr == 'blogger';
+  },
+);
+
+debugPrint('\n=== [BlogCard Build] ===');
+debugPrint('Author: "$fullName" (length: ${fullName.length})');
+debugPrint('Profile Image URL: "$profileImageUrl" (length: ${profileImageUrl?.length ?? 0})');
+debugPrint('Raw Roles: $roles');
+debugPrint('Roles Count: ${roles.length}');
+debugPrint('isOfficialAuthor: $isOfficialAuthor');
+debugPrint('=== [End BlogCard Build] ===\n');
+    // Get category-specific colors
+    final categoryColors = _getCategoryColors(category);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -82,28 +161,13 @@ class blogCard extends StatelessWidget {
                   Expanded(
                     child: Row(
                       children: [
-                        GestureDetector(
-                          onTap: isAdminOrManager ? null : onProfileClicked,
-                          child: ProfileAvatar(
-                            radius: 20,
-                            backgroundColor:
-                                isDarkMode ? Color(0xFF2a3040) : kLightGrey,
-                            backgroundImage:
-                                isAdminOrManager
-                                    ? kDamaLogo
-                                    : (profileImageUrl != null &&
-                                        profileImageUrl!.isNotEmpty &&
-                                        profileImageUrl != 'null')
-                                    ? NetworkImage(profileImageUrl!)
-                                    : null,
-                            child:
-                                (!isAdminOrManager &&
-                                        (profileImageUrl == null ||
-                                            profileImageUrl!.isEmpty ||
-                                            profileImageUrl == 'null'))
-                                    ? Icon(Icons.person, size: 20, color: kGrey)
-                                    : null,
-                          ),
+                        ProfileAvatar(
+                          radius: 32,
+                          backgroundColor:
+                              isDarkMode ? Color(0xFF2a3040) : kLightGrey,
+                          backgroundImage: kDamaLogo,
+                          borderWidth: 0,
+                          borderColor: Colors.transparent,
                         ),
                         SizedBox(width: 10),
                         Expanded(
@@ -111,7 +175,7 @@ class blogCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isAdminOrManager ? "DAMA KENYA" : fullName,
+                                "DAMA KENYA",
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -131,14 +195,15 @@ class blogCard extends StatelessWidget {
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      color: kBlue,
+                      color: categoryColors.backgroundColor,
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: categoryColors.borderColor, width: 1.5),
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 15, vertical: 7),
                     child: Text(
-                      "Blogs",
+                      category.isNotEmpty ? category : "Blogs",
                       style: TextStyle(
-                        color: kWhite,
+                        color: categoryColors.textColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -173,15 +238,19 @@ class blogCard extends StatelessWidget {
                   // Description preview
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 14),
-                    child: Text(
-                      _stripHtmlTags(blog),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color:
-                            isDarkMode ? Color(0xFFa0a8b8) : Color(0xFF6b7280),
-                        height: 1.4,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        BlogPostModel.getOpeningSentence(blog),
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color:
+                              isDarkMode ? Color(0xFFa0a8b8) : Color(0xFF6b7280),
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ),

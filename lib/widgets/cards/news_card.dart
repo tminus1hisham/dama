@@ -1,3 +1,4 @@
+import 'package:dama/models/news_model.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/widgets/profile_avatar.dart';
@@ -7,13 +8,15 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:provider/provider.dart';
 
 class NewsCard extends StatelessWidget {
-  const NewsCard({super.key, 
+  const NewsCard({
+    super.key, 
     required this.profileImageUrl,
     required this.fullName,
     required this.heading,
     required this.description,
     required this.imageUrl,
     required this.time,
+    required this.category,
     required this.onPressed,
     required this.onCommentsPressed,
     required this.onLikePressed,
@@ -31,6 +34,7 @@ class NewsCard extends StatelessWidget {
   final String heading;
   final String description;
   final String imageUrl;
+  final String category;
   final VoidCallback onPressed;
   final String commentNumber;
   final VoidCallback onCommentsPressed;
@@ -41,13 +45,76 @@ class NewsCard extends StatelessWidget {
   final VoidCallback onProfileClicked;
   final List roles;
 
+  // Category-based colors map
+  Map<String, Color> _getCategoryColors(String category) {
+    final lowerCategory = category.toLowerCase();
+    switch (lowerCategory) {
+      case 'science':
+        return {
+          'bg': const Color(0xFFECFDF5), // emerald-50
+          'text': const Color(0xFF047857), // emerald-700
+          'border': const Color(0xFFA7F3D0), // emerald-200
+        };
+      case 'education':
+        return {
+          'bg': const Color(0xFFFFF7ED), // orange-50
+          'text': const Color(0xFFC2410C), // orange-700
+          'border': const Color(0xFFFDBA74), // orange-200
+        };
+      case 'engineering':
+        return {
+          'bg': const Color(0xFFECFEFF), // cyan-50
+          'text': const Color(0xFF0891B2), // cyan-700
+          'border': const Color(0xFFA5F3FC), // cyan-200
+        };
+      case 'technology':
+        return {
+          'bg': const Color(0xFFEEF2FF), // indigo-50
+          'text': const Color(0xFF4F46E5), // indigo-700
+          'border': const Color(0xFFC7D2FE), // indigo-200
+        };
+      case 'politics':
+        return {
+          'bg': const Color(0xFFFFFBEB), // amber-50
+          'text': const Color(0xFFB45309), // amber-700
+          'border': const Color(0xFFFCD34D), // amber-200
+        };
+      default:
+        return {
+          'bg': kWhite,
+          'text': kOrange,
+          'border': kOrange.withOpacity(0.3),
+        };
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
 
-    bool isAdminOrManager =
-        roles.contains('admin') || roles.contains('manager');
+    // Check if author has official role (admin, news editor, or blogger)
+    // This is informational only - all posts show DAMA logo since only these roles can post
+    bool isOfficialAuthor = roles.isNotEmpty && roles.any(
+      (role) {
+        final roleStr = role.toString().toLowerCase();
+        return roleStr == 'admin' || 
+               roleStr == 'news editor' || 
+               roleStr == 'news_editor' || 
+               roleStr == 'newseditor' || 
+               roleStr == 'blogger';
+      },
+    );
+    
+    debugPrint('\n=== [NewsCard Build] ===');
+    debugPrint('Author: "$fullName" (length: ${fullName.length})');
+    debugPrint('Profile Image URL: "$profileImageUrl" (length: ${profileImageUrl?.length ?? 0})');
+    debugPrint('Raw Roles: $roles');
+    debugPrint('Roles Count: ${roles.length}');
+    debugPrint('isOfficialAuthor: $isOfficialAuthor');
+    debugPrint('=== [End NewsCard Build] ===\n');
+    
+    final categoryColors = _getCategoryColors(category);
 
     return Container(
       width: 300, // Fixed width for horizontal scrolling
@@ -74,77 +141,63 @@ class NewsCard extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(left: 10, right: 15, top: 23),
               child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: isAdminOrManager ? null : onProfileClicked,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ProfileAvatar(
-                                radius: 30,
-                                backgroundColor: kLightGrey,
-                                backgroundImage:
-                                    isAdminOrManager
-                                        ? kDamaLogo
-                                        : (profileImageUrl != null &&
-                                            profileImageUrl!.isNotEmpty &&
-                                            profileImageUrl != 'null')
-                                        ? NetworkImage(profileImageUrl!)
-                                        : null,
-                                child:
-                                    (!isAdminOrManager &&
-                                            (profileImageUrl == null ||
-                                                profileImageUrl!.isEmpty ||
-                                                profileImageUrl == 'null'))
-                                        ? const Icon(
-                                          Icons.person,
-                                          size: 30,
-                                          color: kGrey,
-                                        )
-                                        : null,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ProfileAvatar(
+                          radius: 32,
+                          backgroundColor: kLightGrey,
+                          backgroundImage: kDamaLogo,
+                          borderWidth: 0,
+                          borderColor: Colors.transparent,
+                        ),
+                        SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "DAMA KENYA",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDarkMode ? kWhite : kBlack,
                               ),
-                              SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    isAdminOrManager ? "DAMA KENYA" : fullName,
-                                    style: TextStyle(
-                                      fontSize: kMidText,
-                                  color: isDarkMode ? kWhite : kBlack,
-                                ),
+                            ),
+                            Text(
+                              time,
+                              style: TextStyle(
+                                fontSize: kNormalTextSize,
+                                color: kGrey,
                               ),
-                              Text(
-                                time,
-                                style: TextStyle(
-                                  fontSize: kNormalTextSize,
-                                  color: kGrey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      color: kOrange,
+                      color: categoryColors['bg'],
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: categoryColors['border'] as Color, 
+                        width: 1.5,
+                      ),
                     ),
                     padding: EdgeInsets.symmetric(
                       horizontal: 15,
                       vertical: 7,
                     ),
                     child: Text(
-                      "News",
+                      category.isNotEmpty ? category : "News",
                       style: TextStyle(
-                        color: kWhite,
+                        color: categoryColors['text'] as Color,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -165,12 +218,12 @@ class NewsCard extends StatelessWidget {
                       bottom: 10,
                     ),
                     child: Text(
+                      heading,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                         color: isDarkMode ? kWhite : kBlack,
                       ),
-                      heading,
                     ),
                   ),
                   if (description.isNotEmpty) ...[
@@ -180,14 +233,18 @@ class NewsCard extends StatelessWidget {
                         right: kSidePadding,
                         bottom: 10,
                       ),
-                      child: Text(
-                        _stripHtmlAndTruncate(description, 100),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDarkMode ? kGrey : kGrey,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          NewsModel.getOpeningSentence(description),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDarkMode ? kGrey : kGrey,
+                          ),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

@@ -255,6 +255,16 @@ class LinkedInController extends GetxController {
         throw Exception('User ID not found in LinkedIn callback response');
       }
 
+      // Extract registration status
+      final bool passwordSet = decodedUser['password_set'] == true;
+      final bool phoneVerified = decodedUser['phone_number_verified'] == true;
+      
+      print('=== REGISTRATION STATUS ===');
+      print('password_set: $passwordSet');
+      print('phone_number_verified: $phoneVerified');
+      print('Fully registered: ${passwordSet && phoneVerified}');
+      print('===========================');
+
       // Extract all user fields from LinkedIn callback for registration form
       // Save LinkedIn data to pre-populate registration form
       Map<String, dynamic> linkedInUserData = {
@@ -269,7 +279,8 @@ class LinkedInController extends GetxController {
         'title': decodedUser['title'] ?? '',
         'company': decodedUser['company'] ?? '',
         'brief': decodedUser['brief'] ?? '',
-        'password_set': true,
+        'password_set': passwordSet,
+        'phone_number_verified': phoneVerified,
         'authType': 'linkedin',
       };
 
@@ -294,13 +305,24 @@ class LinkedInController extends GetxController {
       await StorageService.storeData({'authType': 'linkedin'});
       await StorageService.storeData({'registration_source': 'linkedin'});
 
-      // Navigate to personal details screen to complete registration
-      Get.offAllNamed(AppRoutes.personal_details);
-      _showSnackbar(
-        'Welcome',
-        'Please complete your profile to continue',
-        isError: false,
-      );
+      // Navigate based on registration status
+      if (passwordSet && phoneVerified) {
+        print('🏠✅ User fully registered - navigating to HOME');
+        Get.offAllNamed(AppRoutes.home);
+        _showSnackbar(
+          'Welcome Back',
+          'Successfully logged in with LinkedIn',
+          isError: false,
+        );
+      } else {
+        print('📝⚠️ User needs to complete registration - navigating to PERSONAL DETAILS');
+        Get.offAllNamed(AppRoutes.personal_details);
+        _showSnackbar(
+          'Welcome',
+          'Please complete your profile to continue',
+          isError: false,
+        );
+      }
     } catch (e) {
       print('Error in _processTokenResponse: $e');
       rethrow;

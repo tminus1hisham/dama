@@ -393,7 +393,7 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                     height: 40,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding: EdgeInsets.only(left: 12, right: 4),
                       itemCount: displayCategories.length,
                       itemBuilder: (context, index) {
                         final category = displayCategories[index];
@@ -520,7 +520,7 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                         height: 130,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          padding: EdgeInsets.only(left: 12, right: 4),
                           itemCount: filteredPopular.length,
                           itemBuilder: (context, index) {
                             final news = filteredPopular[index];
@@ -616,6 +616,7 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                               _commentController.comments[news.id]?.length ??
                               news.comments.length;
                           return NewsCard(
+                            category: news.category ?? '',
                             roles: news.author.roles,
                             onProfileClicked: () {
                               Navigator.push(

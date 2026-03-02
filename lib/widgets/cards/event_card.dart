@@ -29,10 +29,10 @@ class EventCard extends StatelessWidget {
   final VoidCallback? onViewTicket;
 
   Uri _mapsUrl(String location) => Uri.parse(
-    'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}',
-  );
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}',
+      );
 
-  Future<void> _openMaps(BuildContext context, location) async {
+  Future<void> _openMaps(BuildContext context, String location) async {
     final uri = _mapsUrl(location);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.inAppWebView);
@@ -45,7 +45,6 @@ class EventCard extends StatelessWidget {
 
   Event _calendarEvent(DateTime start, String title, String location) {
     final end = start.add(const Duration(hours: 2));
-
     return Event(
       title: title,
       description: 'Event from the Dama Kenya app',
@@ -59,15 +58,18 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    bool isDarkMode = themeProvider.isDark;
+    final isDarkMode = themeProvider.isDark;
+
+    final isPast = date.isBefore(DateTime.now());
 
     return Padding(
-      padding: EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: 8),
       child: Container(
         color: isDarkMode ? kBlack : kWhite,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Title + Confirmed badge
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: kSidePadding,
@@ -86,9 +88,9 @@ class EventCard extends StatelessWidget {
                     ),
                   ),
                   if (isConfirmed) ...[
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 4,
                       ),
@@ -101,12 +103,12 @@ class EventCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.check_circle, color: kGreen, size: 14),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
                             'Confirmed',
                             style: TextStyle(
                               color: kGreen,
-                              fontSize: 12,
+                              fontSize: 12,               // smaller, like secondary text
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -117,6 +119,8 @@ class EventCard extends StatelessWidget {
                 ],
               ),
             ),
+
+            // Date + Location row – secondary style
             Padding(
               padding: EdgeInsets.symmetric(horizontal: kSidePadding),
               child: Row(
@@ -129,29 +133,40 @@ class EventCard extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(Icons.calendar_month, color: kGrey),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Text(
                           DateFormat('MMMM dd, yyyy').format(date),
-                          style: TextStyle(color: kGrey, fontSize: kMidText),
+                          style: TextStyle(
+                            color: kGrey,
+                            fontSize: kMidText,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(width: 20),
+                  const SizedBox(width: 20),
                   Row(
                     children: [
                       Icon(Icons.pin_drop_outlined, color: kBlue),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 10),
                       Text(
                         location,
-                        style: TextStyle(color: kBlue, fontSize: kMidText),
+                        style: TextStyle(
+                          color: kBlue,
+                          fontSize: kMidText,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 10),
+
+            const SizedBox(height: 10),
+
+            // Image + overlays
             GestureDetector(
               onTap: onPressed,
               child: Stack(
@@ -159,28 +174,60 @@ class EventCard extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     height: 250,
-                    child:
-                        imageUrl.isNotEmpty
-                            ? Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (context, error, stackTrace) => const Center(
-                                    child: Icon(
-                                      Icons.broken_image,
-                                      size: 50,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                            )
-                            : const Center(
+                    child: imageUrl.isNotEmpty
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
                               child: Icon(
-                                Icons.image_not_supported,
+                                Icons.broken_image,
                                 size: 50,
                                 color: Colors.grey,
                               ),
                             ),
+                          )
+                        : const Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          ),
                   ),
+
+                  // View Details button
+                  Positioned(
+                    left: 10,
+                    top: 10,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: TextButton.icon(
+                        onPressed: onPressed,
+                        icon: const Icon(Icons.info_outline,
+                            color: kWhite, size: 18),
+                        label: const Text(
+                          'View Details',
+                          style: TextStyle(
+                            color: kWhite,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Price tag – smaller font, matches surrounding secondary text
                   Positioned(
                     right: 10,
                     top: 10,
@@ -189,22 +236,50 @@ class EventCard extends StatelessWidget {
                         color: kBlue,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 3,
-                        ),
-                        child: Text(
-                          'Kes $price',
-                          style: TextStyle(color: kWhite, fontSize: kMidText),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Text(
+                        price > 0 ? 'KES $price' : 'FREE',
+                        style: TextStyle(
+                          color: kWhite,
+                          fontSize: 13,                   // smaller to match date/location style
+                          fontWeight: FontWeight.w600,    // semi-bold, not heavy
                         ),
                       ),
                     ),
                   ),
+
+                  // PAST EVENT badge – also smaller font
+                  if (isPast)
+                    Positioned(
+                      left: 10,
+                      bottom: 10,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: const Text(
+                          'PAST EVENT',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,                   // smaller
+                            fontWeight: FontWeight.w600,    // matches secondary text
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-            // Action buttons for confirmed events
+
+            // Confirmed event action buttons
             if (isConfirmed) ...[
               Padding(
                 padding: EdgeInsets.symmetric(
@@ -216,42 +291,44 @@ class EventCard extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: onPressed,
-                        icon: Icon(Icons.event, color: kBlue, size: 18),
-                        label: Text(
+                        icon: const Icon(Icons.event, color: kBlue, size: 18),
+                        label: const Text(
                           'View Event',
                           style: TextStyle(
                             color: kBlue,
+                            fontSize: 14,              // slightly smaller
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: kBlue),
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          side: const BorderSide(color: kBlue),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: onViewTicket,
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.confirmation_number,
                           color: kWhite,
                           size: 18,
                         ),
-                        label: Text(
+                        label: const Text(
                           'View Ticket',
                           style: TextStyle(
                             color: kWhite,
+                            fontSize: 14,              // smaller
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kBlue,
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),

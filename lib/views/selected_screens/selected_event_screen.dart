@@ -290,7 +290,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                       Text(
                         'Your Event Ticket',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: isDarkMode ? kWhite : kBlack,
                         ),

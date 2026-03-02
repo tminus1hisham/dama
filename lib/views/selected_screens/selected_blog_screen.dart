@@ -323,115 +323,48 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                       .spaceBetween,
                                               children: [
                                                 // Author info
-                                                Obx(() {
-                                                  final userProfile =
-                                                      _fetchUserProfileController
-                                                          .profile
-                                                          .value;
-                                                  final authorName =
-                                                      widget
-                                                                  .userId
-                                                                  .isNotEmpty &&
-                                                              userProfile !=
-                                                                  null
-                                                          ? '${userProfile.firstName} ${userProfile.lastName}'
-                                                          : widget.author;
-                                                  final profileImage =
-                                                      widget
-                                                                  .userId
-                                                                  .isNotEmpty &&
-                                                              userProfile !=
-                                                                  null
-                                                          ? userProfile
-                                                              .profilePicture
-                                                          : widget
-                                                              .profileImageUrl;
-
-                                                  return Row(
-                                                    children: [
-                                                      GestureDetector(
-                                                        onTap: () {
-                                                          // if (_isScrollingBlocked) {
-                                                          //   _showSubscriptionBottomSheet();
-                                                          //   return;
-                                                          // }
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                              builder:
-                                                                  (
-                                                                    context,
-                                                                  ) => OtherUserProfile(
-                                                                    userID:
-                                                                        widget
-                                                                            .authorId,
-                                                                  ),
-                                                            ),
-                                                          );
-                                                        },
-                                                        child: ProfileAvatar(
-                                                          radius: 25,
-                                                          backgroundColor:
-                                                              kLightGrey,
-                                                          backgroundImage:
-                                                              isAdminOrManager
-                                                                  ? kDamaLogo
-                                                                  : (profileImage !=
-                                                                      null)
-                                                                  ? NetworkImage(
-                                                                    profileImage,
-                                                                  )
-                                                                  : null,
-                                                          child:
-                                                              (!isAdminOrManager &&
-                                                                      (profileImage
-                                                                              .isEmpty ||
-                                                                          profileImage ==
-                                                                              'null'))
-                                                                  ? Icon(
-                                                                    Icons
-                                                                        .person,
-                                                                    size: 30,
-                                                                    color:
-                                                                        kGrey,
-                                                                  )
-                                                                  : null,
+                                                Row(
+                                                  children: [
+                                                    ProfileAvatar(
+                                                      radius: 25,
+                                                      backgroundColor:
+                                                          kLightGrey,
+                                                      backgroundImage:
+                                                          kDamaLogo,
+                                                      child: null,
+                                                    ),
+                                                    SizedBox(width: 10),
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          "DAMA KENYA",
+                                                          style: TextStyle(
+                                                            color:
+                                                                isDarkMode
+                                                                    ? kWhite
+                                                                    : kBlack,
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
                                                         ),
-                                                      ),
-                                                      SizedBox(width: 10),
-                                                      Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            isAdminOrManager
-                                                                ? "DAMA KENYA"
-                                                                : authorName,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  isDarkMode
-                                                                      ? kWhite
-                                                                      : kBlack,
-                                                              fontSize:
-                                                                  kMidText,
-                                                            ),
+                                                        Text(
+                                                          _utils.timeAgo(
+                                                            widget.createdAt,
                                                           ),
-                                                          Text(
-                                                            _utils.timeAgo(
-                                                              widget.createdAt,
-                                                            ),
-                                                            style: TextStyle(
-                                                              color: kGrey,
-                                                              fontSize:
-                                                                  kNormalTextSize,
-                                                            ),
+                                                          style: TextStyle(
+                                                            color: kGrey,
+                                                            fontSize:
+                                                                kNormalTextSize,
                                                           ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  );
-                                                }),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
 
                                                 // Comments button
                                                 Obx(() {
@@ -505,7 +438,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                     isDarkMode
                                                         ? kWhite
                                                         : kBlack,
-                                                fontSize: kBigTextSize,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -521,7 +454,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                               data: widget.description,
                                               style: {
                                                 "html": Style(
-                                                  fontSize: FontSize(16.0),
+                                                  fontSize: FontSize(14.0),
                                                   backgroundColor:
                                                       isDarkMode
                                                           ? kBlack
@@ -530,11 +463,12 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                       isDarkMode
                                                           ? kWhite
                                                           : kBlack,
-                                                  textAlign: TextAlign.left,
+                                                  textAlign: TextAlign.justify,
                                                   margin: Margins.zero,
+                                                  lineHeight: LineHeight(1.4),
                                                 ),
                                                 "*": Style(
-                                                  fontSize: FontSize(16.0),
+                                                  fontSize: FontSize(14.0),
                                                   color:
                                                       isDarkMode
                                                           ? kWhite
@@ -543,54 +477,140 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                       isDarkMode
                                                           ? kBlack
                                                           : kWhite,
+                                                  textAlign: TextAlign.justify,
+                                                  lineHeight: LineHeight(1.4),
+                                                ),
+                                                "h1": Style(
+                                                  fontSize: FontSize(24.0),
+                                                  fontWeight: FontWeight.bold,
+                                                  color:
+                                                      isDarkMode
+                                                          ? kWhite
+                                                          : kBlack,
                                                   textAlign: TextAlign.left,
+                                                  margin: Margins.only(
+                                                    top: 20,
+                                                    bottom: 12,
+                                                  ),
                                                 ),
                                                 "h2": Style(
-                                                  fontSize: FontSize(16.0),
+                                                  fontSize: FontSize(20.0),
                                                   fontWeight: FontWeight.bold,
                                                   color:
                                                       isDarkMode
                                                           ? kWhite
                                                           : kBlack,
                                                   textAlign: TextAlign.left,
+                                                  margin: Margins.only(
+                                                    top: 18,
+                                                    bottom: 10,
+                                                  ),
+                                                ),
+                                                "h3": Style(
+                                                  fontSize: FontSize(18.0),
+                                                  fontWeight: FontWeight.bold,
+                                                  color:
+                                                      isDarkMode
+                                                          ? kWhite
+                                                          : kBlack,
+                                                  textAlign: TextAlign.left,
+                                                  margin: Margins.only(
+                                                    top: 16,
+                                                    bottom: 8,
+                                                  ),
                                                 ),
                                                 "p": Style(
-                                                  fontSize: FontSize(20.0),
+                                                  fontSize: FontSize(14.0),
                                                   color:
                                                       isDarkMode
                                                           ? kWhite
                                                           : kBlack,
-                                                  textAlign: TextAlign.left,
-                                                  margin: Margins.zero,
+                                                  textAlign: TextAlign.justify,
+                                                  margin: Margins.only(
+                                                    bottom: 16,
+                                                  ),
+                                                  lineHeight: LineHeight(1.4),
                                                 ),
                                                 "strong": Style(
-                                                  fontSize: FontSize(16.0),
+                                                  fontSize: FontSize(14.0),
                                                   fontWeight: FontWeight.bold,
                                                   color:
                                                       isDarkMode
                                                           ? kWhite
                                                           : kBlack,
-                                                  textAlign: TextAlign.left,
-                                                  margin: Margins.zero,
+                                                  textAlign: TextAlign.justify,
                                                 ),
                                                 "em": Style(
-                                                  fontSize: FontSize(20.0),
+                                                  fontSize: FontSize(14.0),
                                                   fontStyle: FontStyle.italic,
                                                   color:
                                                       isDarkMode
                                                           ? kWhite
                                                           : kBlack,
-                                                  textAlign: TextAlign.left,
-                                                  margin: Margins.zero,
+                                                  textAlign: TextAlign.justify,
+                                                ),
+                                                "li": Style(
+                                                  fontSize: FontSize(14.0),
+                                                  color:
+                                                      isDarkMode
+                                                          ? kWhite
+                                                          : kBlack,
+                                                  textAlign: TextAlign.justify,
+                                                  margin: Margins.only(
+                                                    bottom: 8,
+                                                  ),
+                                                  lineHeight: LineHeight(1.4),
+                                                ),
+                                                "ul": Style(
+                                                  margin: Margins.only(
+                                                    bottom: 16,
+                                                  ),
+                                                ),
+                                                "ol": Style(
+                                                  margin: Margins.only(
+                                                    bottom: 16,
+                                                  ),
+                                                ),
+                                                "blockquote": Style(
+                                                  fontSize: FontSize(14.0),
+                                                  fontStyle: FontStyle.italic,
+                                                  color: isDarkMode
+                                                      ? Colors.grey[400]
+                                                      : Colors.grey[700],
+                                                  margin: Margins.only(
+                                                    top: 16,
+                                                    bottom: 16,
+                                                    left: 16,
+                                                  ),
+                                                  padding: HtmlPaddings.only(
+                                                    left: 12,
+                                                  ),
+                                                  border: Border(
+                                                    left: BorderSide(
+                                                      color: isDarkMode
+                                                          ? Colors.grey[700]!
+                                                          : Colors.grey[300]!,
+                                                      width: 3,
+                                                    ),
+                                                  ),
+                                                  lineHeight: LineHeight(1.4),
                                                 ),
                                                 "body": Style(
-                                                  fontSize: FontSize(16.0),
+                                                  fontSize: FontSize(14.0),
                                                   backgroundColor:
                                                       isDarkMode
                                                           ? kBlack
                                                           : kWhite,
-                                                  textAlign: TextAlign.left,
+                                                  textAlign: TextAlign.justify,
                                                   margin: Margins.zero,
+                                                ),
+                                                "br": Style(
+                                                  margin: Margins.zero,
+                                                  padding: HtmlPaddings.zero,
+                                                  display: Display.inline,
+                                                ),
+                                                "div": Style(
+                                                  margin: Margins.only(bottom: 12),
                                                 ),
                                               },
                                             ),

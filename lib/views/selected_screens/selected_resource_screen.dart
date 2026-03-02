@@ -1,6 +1,7 @@
 import 'package:dama/controller/get_user_data.dart';
 import 'package:dama/controller/payment_controller.dart';
 import 'package:dama/controller/rating_controller.dart';
+import 'package:dama/controller/resource_controller.dart';
 import 'package:dama/controller/transaction_controller.dart';
 import 'package:dama/models/rating_model.dart';
 import 'package:dama/models/transaction_model.dart';
@@ -12,7 +13,7 @@ import 'package:dama/widgets/buttons/custom_button.dart';
 import 'package:dama/widgets/cards/profile_card.dart';
 import 'package:dama/widgets/cards/selected_resource.dart';
 import 'package:dama/widgets/custom_spinner.dart';
-import 'package:dama/widgets/inputs/custom_input.dart';
+
 import 'package:dama/widgets/modals/rating_dialog.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:flutter/material.dart';
@@ -54,21 +55,22 @@ class SelectedResourceScreen extends StatefulWidget {
 class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
   final GetUserProfileController _getUserProfileController = Get.put(GetUserProfileController());
   final TransactionController _transactionController = Get.put(TransactionController());
+  final ResourceController _resourceController = Get.put(ResourceController());
   bool _hasPurchased = false;
   final PaymentController _paymentController = Get.put(PaymentController());
   final RatingController _ratingController = Get.put(RatingController());
   late final GlobalKey<ScaffoldState> _resourceKey;
-  final GlobalKey<FormState> _paymentFormKey = GlobalKey<FormState>();
-  
   // Flag to prevent multiple modal shows
   bool _hasShownPaymentModal = false;
+  
+  // Local rating state that can be updated after user rates
+  late double _currentRating;
 
   String? completePhoneNumber;
   String? countryCode = '+254';
   String phoneNumber = '';
   String? fetchedPhoneNumber;
   String fetchedUserId = '';
-  double _currentRating = 0;
   String imageUrl = '';
   String firstName = '';
   String lastName = '';
@@ -99,79 +101,23 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
       if (result && context != null && context.mounted) {
         // Refresh purchase status after successful payment
         _checkIfPurchased(fetchedUserId);
-        showSuccessResource(context, title, price, isDark);
+        // Show simple success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Purchase successful! You can now access the resource.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     });
-  }
-
-  void showSuccessResource(
-    BuildContext context,
-    String? title,
-    int price,
-    bool isDark,
-  ) {
-    if (!context.mounted) {
-      return;
-    }
-
-    showModalBottomSheet(
-      backgroundColor: isDark ? kBlack : kWhite,
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder:
-          (context) => SafeArea(
-            bottom: true,
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 100),
-                  SizedBox(height: 20),
-                  Text(
-                    'Purchase Confirmed',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? kWhite : kBlack,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    "Thank you for purchasing $title. Please find the resource in your resources tab",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? kWhite : kBlack,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 24),
-                  SizedBox(height: 8),
-                  Text(
-                    'KES: $price',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? kWhite : kBlack,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 30),
-                ],
-              ),
-            ),
-          ),
-    );
   }
 
   void _showPhoneNumberModal(bool isDark, title, price) {
     // Prevent showing multiple modals
     if (_hasShownPaymentModal) return;
     _hasShownPaymentModal = true;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -180,105 +126,137 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
       ),
       backgroundColor: isDark ? kDarkThemeBg : kWhite,
       builder: (context) {
-        return Form(
-          key: _paymentFormKey,
-          child: SafeArea(
-            bottom: true,
-            child: Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(height: 10),
-                    Image.asset("images/mpesa.png", height: 50),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Phone Number *",
-                            style: TextStyle(
-                              color: isDark ? kWhite : kBlack,
-                              fontWeight: FontWeight.bold,
-                              fontSize: kNormalTextSize,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          IntlPhoneField(
-                            decoration: InputDecoration(
-                              hintText: "7*******",
-                              hintStyle: TextStyle(
-                                color: isDark ? Colors.grey[400] : Colors.grey[700],
-                              ),
-                              counterText: '',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                                borderSide: BorderSide(color: Colors.grey),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                                borderSide: BorderSide(color: kBlue, width: 1.0),
-                              ),
-                            ),
-                            disableLengthCheck: true,
-                            validator: (PhoneNumber? phone) {
-                              if (phone == null || phone.number.isEmpty) {
-                                return 'Please enter a phone number';
-                              }
-                              if (phone.number.length != 9) {
-                                return 'Phone number must be exactly 9 digits';
-                              }
-                              if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
-                                return 'Phone number must contain only digits';
-                              }
-                              return null;
-                            },
-                            style: TextStyle(
-                              color: isDark ? kWhite : kBlack,
-                            ),
-                            dropdownTextStyle: TextStyle(
-                              color: isDark ? kWhite : kBlack,
-                            ),
-                            dropdownIcon: Icon(
-                              Icons.arrow_drop_down,
-                              color: isDark ? kWhite : kBlack,
-                            ),
-                            initialCountryCode: 'KE',
-                            onChanged: (PhoneNumber phone) {
-                              completePhoneNumber = phone.completeNumber;
-                            },
-                            onCountryChanged: (country) {
-                              countryCode = '+${country.dialCode}';
-                            },
-                          ),
-                        ],
-                      ),
+        return SafeArea(
+          bottom: true,
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 20),
+                  Text(
+                    'Purchase Resource',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? kWhite : kBlack,
                     ),
-                    SizedBox(height: 20),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 15),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: CustomButton(
-                          callBackFunction: () {
-                            if (_paymentFormKey.currentState!.validate()) {
-                              phoneNumber = completePhoneNumber ?? '';
-                              Navigator.pop(context);
-                              _payForResource(context, title, price, isDark);
-                            }
-                          },
-                          label: "Confirm Payment",
-                          backgroundColor: kBlue,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? kWhite : kGrey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    'Amount: KES $price',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: kBlue,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Image.asset("images/mpesa.png", height: 50),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 15),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Phone Number *",
+                          style: TextStyle(
+                            color: isDark ? kWhite : kBlack,
+                            fontWeight: FontWeight.bold,
+                            fontSize: kNormalTextSize,
+                          ),
                         ),
+                        SizedBox(height: 8),
+                        IntlPhoneField(
+                          decoration: InputDecoration(
+                            hintText: "7*******",
+                            hintStyle: TextStyle(
+                              color: isDark ? Colors.grey[400] : Colors.grey[700],
+                            ),
+                            counterText: '',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(color: Colors.grey),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(color: kBlue, width: 1.0),
+                            ),
+                          ),
+                          disableLengthCheck: true,
+                          validator: (PhoneNumber? phone) {
+                            if (phone == null || phone.number.isEmpty) {
+                              return 'Please enter a phone number';
+                            }
+                            if (phone.number.length != 9) {
+                              return 'Phone number must be exactly 9 digits';
+                            }
+                            if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                              return 'Phone number must contain only digits';
+                            }
+                            return null;
+                          },
+                          style: TextStyle(
+                            color: isDark ? kWhite : kBlack,
+                          ),
+                          dropdownTextStyle: TextStyle(
+                            color: isDark ? kWhite : kBlack,
+                          ),
+                          dropdownIcon: Icon(
+                            Icons.arrow_drop_down,
+                            color: isDark ? kWhite : kBlack,
+                          ),
+                          initialCountryCode: 'KE',
+                          onChanged: (PhoneNumber phone) {
+                            completePhoneNumber = phone.completeNumber;
+                          },
+                          onCountryChanged: (country) {
+                            countryCode = '+${country.dialCode}';
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 15),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: CustomButton(
+                        callBackFunction: () {
+                          if (completePhoneNumber != null &&
+                              completePhoneNumber!.length >= 10) {
+                            phoneNumber = completePhoneNumber!;
+                            Navigator.pop(context);
+                            _payForResource(context, title, price, isDark);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Please enter a valid phone number'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        label: "Confirm Payment",
+                        backgroundColor: kBlue,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
           ),
@@ -293,9 +271,12 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
   @override
   void initState() {
     super.initState();
+    _currentRating = widget.rating;  // Initialize with widget value
     _fetchPhoneNumberAndUser();
     _resourceKey = GlobalKey();
     _loadData();
+    // Fetch related resources for this resource
+    _resourceController.fetchRelatedResources(widget.resourceID);
   }
 
   @override
@@ -315,8 +296,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
     }
   }
 
-  /// Check if resource is purchased - uses user profile (like events use QR codes)
-  /// Also checks transactions as fallback since backend may not update resources array
+  /// Check if resource is purchased - uses user profile and transactions
   void _checkIfPurchased(String userId) async {
     try {
       debugPrint('=== Checking if resource is purchased ===');
@@ -324,7 +304,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
       
       bool hasResource = false;
       
-      // PRIMARY CHECK: Fetch user profile to get resources list (like events use eventQRCode)
+      // PRIMARY CHECK: Fetch user profile to get resources list
       await _getUserProfileController.fetchUserProfile(userId);
       final userProfile = _getUserProfileController.profile.value;
       
@@ -337,7 +317,6 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
       }
       
       // FALLBACK CHECK: Also check completed transactions
-      // This handles cases where backend doesn't update the resources array
       if (!hasResource) {
         await _transactionController.fetchTransactions();
         final transactions = _transactionController.transactionList;
@@ -356,7 +335,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
             objectIdMatch = (tx.object as ResourceTransactionModel).id == widget.resourceID;
           }
           
-          // Also check raw object_id as fallback (object_id from API response)
+          // Also check raw object_id as fallback
           final rawIdMatch = tx.rawObjectId == widget.resourceID;
           
           final matches = isResource && isCompleted && (objectIdMatch || rawIdMatch);
@@ -409,21 +388,55 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
   }
 
   void _showRatingDialog() async {
+    // Only allow rating if resource has been purchased
+    if (!_hasPurchased && widget.price != 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please purchase this resource first to leave a rating'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     final rating = await showDialog<double>(
       context: context,
       builder: (context) => RatingDialog(),
     );
 
     if (rating != null) {
-      setState(() {
-        _currentRating = rating;
-      });
-
       final ratingModel = RatingModel(rating: rating);
 
-      await _ratingController.submitRating(widget.resourceID, ratingModel);
+      debugPrint('[SelectedResourceScreen] Submitting rating: $rating for resource: ${widget.resourceID}');
+      
+      final newAvgRating = await _ratingController.submitRating(widget.resourceID, ratingModel);
 
       if (_ratingController.success.value) {
+        debugPrint('[SelectedResourceScreen] Rating submitted successfully. API returned: $newAvgRating');
+        
+        // Refresh resources from the server to get the updated averageRating
+        await _resourceController.refreshResources();
+        
+        // Get the updated resource from the refreshed list
+        final updatedResource = _resourceController.resourceList
+            .firstWhereOrNull((r) => r.id == widget.resourceID);
+        
+        // Use server-returned rating, fallback to API response, then user's rating
+        final serverRating = updatedResource?.averageRating;
+        final updatedRating = serverRating ?? newAvgRating ?? rating;
+        
+        debugPrint('[SelectedResourceScreen] Server rating: $serverRating, Final rating: $updatedRating');
+        
+        if (!mounted) return;
+        
+        setState(() {
+          _currentRating = updatedRating;
+        });
+        
+        // Update the resource in the controller for consistency
+        _resourceController.updateResourceRating(widget.resourceID, updatedRating);
+        
         // Show success popup
         showDialog(
           context: context,
@@ -491,32 +504,61 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                                       constraints: BoxConstraints(
                                         maxWidth: 1200,
                                       ),
-                                      child: SelectedResource(
-                                        onRatingUpdated: _showRatingDialog,
-                                        isPaid: _hasPurchased,
-                                        onPressed: (_hasPurchased || widget.price == 0)
-                                            ? () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => PDFViewerPage(
-                                                      title: widget.title,
-                                                      pdfUrl: widget.viewUrl,
+                                      child: GetBuilder<ResourceController>(
+                                        init: _resourceController,
+                                        builder: (controller) {
+                                          // Access the list directly from the controller
+                                          final relatedResources = controller.relatedResources.toList();
+                                          final isLoadingRelated = controller.isLoadingRelated.value;
+                                          debugPrint('GetBuilder rebuild: relatedResources=${relatedResources.length}, isLoadingRelated=$isLoadingRelated');
+                                          return SelectedResource(
+                                            onRatingUpdated: _showRatingDialog,
+                                            isPaid: _hasPurchased,
+                                            onPressed: (_hasPurchased || widget.price == 0)
+                                                ? () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) => PDFViewerPage(
+                                                          title: widget.title,
+                                                          pdfUrl: widget.viewUrl,
+                                                          onBack: () => Navigator.pop(context),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                : () => _showPhoneNumberModal(
+                                                      isDarkMode,
+                                                      widget.title,
+                                                      widget.price,
                                                     ),
-                                                  ),
-                                                );
-                                              }
-                                            : () => _showPhoneNumberModal(
-                                                  isDarkMode,
-                                                  widget.title,
-                                                  widget.price,
+                                            heading: widget.title,
+                                            imageUrl: widget.imageUrl,
+                                            rating: _currentRating,
+                                            price: '${widget.price}',
+                                            description: widget.description,
+                                            priceInt: widget.price,
+                                            relatedResources: relatedResources,
+                                          onRelatedResourceTap: (resource) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => SelectedResourceScreen(
+                                                  title: resource.title,
+                                                  price: resource.price,
+                                                  imageUrl: resource.resourceImageUrl,
+                                                  date: resource.createdAt,
+                                                  rating: resource.averageRating,
+                                                  description: resource.description,
+                                                  viewUrl: resource.resourceLink,
+                                                  isPaid: false,
+                                                  resourceID: resource.id,
                                                 ),
-                                        heading: widget.title,
-                                        imageUrl: widget.imageUrl,
-                                        rating: widget.rating,
-                                        price: '${widget.price}',
-                                        description: widget.description,
-                                        priceInt: widget.price,
+                                              ),
+                                            );
+                                          },
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),

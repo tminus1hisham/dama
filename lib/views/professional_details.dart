@@ -250,100 +250,101 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
           key: _professionalKey,
           child: Stack(
             children: [
-              ListView(
-                children: [
-                  SafeArea(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: kSidePadding,
-                            vertical: 5,
-                          ),
-                          child: Text(
-                            'Step 2 of 3',
-                            style: TextStyle(
-                              color: isDarkMode ? kWhite : kBlue,
-                              fontSize: kNormalTextSize,
-                            ),
+              SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                ),
+                child: SafeArea(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: kSidePadding,
+                          vertical: 5,
+                        ),
+                        child: Text(
+                          'Step 2 of 3',
+                          style: TextStyle(
+                            color: isDarkMode ? kWhite : kBlue,
+                            fontSize: kNormalTextSize,
                           ),
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: kSidePadding,
-                            bottom: 10,
-                          ),
-                          child: Text(
-                            "Fill in your professional details",
-                            style: TextStyle(
-                              color: isDarkMode ? kWhite : kBlack,
-                              fontSize: kBigTextSize,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          left: kSidePadding,
+                          bottom: 10,
+                        ),
+                        child: Text(
+                          "Fill in your professional details",
+                          style: TextStyle(
+                            color: isDarkMode ? kWhite : kBlack,
+                            fontSize: kBigTextSize,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(left: 15),
-                          child: Text(
-                            'We need your personal infomation to setup your profile.',
-                            style: TextStyle(fontSize: kNormalTextSize, color: isDarkMode ? kWhite : kBlack),
-                          ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(left: 15),
+                        child: Text(
+                          'We need your personal infomation to setup your profile.',
+                          style: TextStyle(fontSize: kNormalTextSize, color: isDarkMode ? kWhite : kBlack),
                         ),
-                        InputField(
-                          controller: _titleController,
-                          hintText: "Accountant",
-                          label: "Title:",
-                          isRequired: true,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return "This field is required";
-                            }
-                            return null;
+                      ),
+                      InputField(
+                        controller: _titleController,
+                        hintText: "Accountant",
+                        label: "Professional Title:",
+                        isRequired: true,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return "This field is required";
+                          }
+                          return null;
+                        },
+                      ),
+                      InputField(
+                        controller: _companyController,
+                        hintText: "Karatasi Brands",
+                        label: "Company / Organization",
+                        isRequired: true,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return "This field is required";
+                          }
+                          return null;
+                        },
+                      ),
+                      InputField(
+                        controller: _briefBioController,
+                        hintText: "Type your bio here",
+                        label: "Brief Bio:",
+                        isRequired: true,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return "This field is required";
+                          }
+                          return null;
+                        },
+                        maxLines: 6,
+                      ),
+                      SizedBox(height: 10),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: kSidePadding,
+                        ),
+                        child: CustomButton(
+                          callBackFunction: () {
+                            _submitDetails();
                           },
+                          label: "Finish",
+                          backgroundColor: kBlue,
                         ),
-                        InputField(
-                          controller: _companyController,
-                          hintText: "Karatasi Brands",
-                          label: "Company / Institution",
-                          isRequired: true,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return "This field is required";
-                            }
-                            return null;
-                          },
-                        ),
-                        InputField(
-                          controller: _briefBioController,
-                          hintText: "Type your bio here",
-                          label: "Brief Bio:",
-                          isRequired: true,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return "This field is required";
-                            }
-                            return null;
-                          },
-                          maxLines: 6,
-                        ),
-                        SizedBox(height: 10),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: kSidePadding,
-                          ),
-                          child: CustomButton(
-                            callBackFunction: () {
-                              _submitDetails();
-                            },
-                            label: "Finish",
-                            backgroundColor: kBlue,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
               if (updateUserProfileController.isLoading.value)
                 Container(

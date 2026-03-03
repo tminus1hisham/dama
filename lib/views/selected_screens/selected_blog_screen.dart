@@ -454,7 +454,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                               data: widget.description,
                                               style: {
                                                 "html": Style(
-                                                  fontSize: FontSize(14.0),
+                                                  fontSize: FontSize(16.0),
                                                   backgroundColor:
                                                       isDarkMode
                                                           ? kBlack
@@ -468,7 +468,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                   lineHeight: LineHeight(1.4),
                                                 ),
                                                 "*": Style(
-                                                  fontSize: FontSize(14.0),
+                                                  fontSize: FontSize(16.0),
                                                   color:
                                                       isDarkMode
                                                           ? kWhite
@@ -520,7 +520,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                   ),
                                                 ),
                                                 "p": Style(
-                                                  fontSize: FontSize(14.0),
+                                                  fontSize: FontSize(16.0),
                                                   color:
                                                       isDarkMode
                                                           ? kWhite
@@ -532,7 +532,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                   lineHeight: LineHeight(1.4),
                                                 ),
                                                 "strong": Style(
-                                                  fontSize: FontSize(14.0),
+                                                  fontSize: FontSize(16.0),
                                                   fontWeight: FontWeight.bold,
                                                   color:
                                                       isDarkMode
@@ -541,7 +541,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                   textAlign: TextAlign.justify,
                                                 ),
                                                 "em": Style(
-                                                  fontSize: FontSize(14.0),
+                                                  fontSize: FontSize(16.0),
                                                   fontStyle: FontStyle.italic,
                                                   color:
                                                       isDarkMode

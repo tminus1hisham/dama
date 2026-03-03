@@ -439,11 +439,19 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           }
         }
       } else {
-        // Truly generic notifications
+        // Truly generic notifications - handle gracefully without error
         debugPrint(
-          '  - Branch: ${type ?? 'unknown'} notification',
+          '  - Branch: ${type ?? 'unknown'} notification (unhandled gracefully)',
         );
-        _showErrorSnackbar('Cannot navigate - notification type not supported');
+        // Instead of showing error, just dismiss and log
+        if (needsApiCall) {
+          try {
+            Get.back(); // Dismiss loading dialog
+          } catch (e) {
+            debugPrint('  - Could not dismiss dialog: $e');
+          }
+        }
+        debugPrint('  - Notification type not specifically handled, ignoring gracefully');
       }
     } catch (e, stackTrace) {
       debugPrint('  - EXCEPTION: $e');

@@ -68,7 +68,7 @@ class ResourcesCard extends StatelessWidget {
                 child: Text(
                   heading,
                   style: TextStyle(
-                    fontSize: kMidText,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: isDarkMode ? kWhite : kBlack,
                   ),

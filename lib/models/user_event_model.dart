@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class UserEventModel {
   final String id;
   final String eventTitle;
@@ -25,27 +27,57 @@ class UserEventModel {
     required this.eventImageUrl,
   });
 
+  // factory UserEventModel.fromJson(Map<String, dynamic> json) {
+  //   final eventTitle = json['event_title'] ?? '';
   factory UserEventModel.fromJson(Map<String, dynamic> json) {
+    final eventTitle = json['event_title'] ?? '';
+
+    // Try multiple field name variations to find the date
+    final eventDateValue = json['event_date'] ?? json['eventDate'] ?? json['event_date_time'];
+
     return UserEventModel(
       id: json['_id'] ?? '',
-      eventTitle: json['event_title'] ?? '',
+      eventTitle: eventTitle,
       description: json['description'] ?? '',
       speakers:
           (json['speakers'] as List).map((e) => Speaker.fromJson(e)).toList(),
-      eventDate: DateTime.parse(
-        json['event_date'] ?? DateTime.now().toString(),
-      ),
+      // FIXED: Convert UTC to local time, matching EventModel behavior
+      eventDate: _parseEventDate(eventDateValue, eventTitle),
       attendees: json['attendees'] ?? [],
       location: json['location'] ?? '',
       price: json['price'] ?? 0,
-      createdAt: DateTime.parse(
-        json['created_at'] ?? DateTime.now().toString(),
-      ),
-      updatedAt: DateTime.parse(
-        json['updated_at'] ?? DateTime.now().toString(),
-      ),
+      // FIXED: Convert UTC to local time for consistency
+      createdAt:
+          json['created_at'] != null
+              ? (DateTime.tryParse(json['created_at'])?.toLocal() ?? DateTime.now())
+              : DateTime.now(),
+      updatedAt:
+          json['updated_at'] != null
+              ? (DateTime.tryParse(json['updated_at'])?.toLocal() ?? DateTime.now())
+              : DateTime.now(),
       eventImageUrl: json['event_image_url'] ?? '',
     );
+  }
+
+  // Helper to parse event date with debugging
+  static DateTime _parseEventDate(dynamic dateStr, String eventTitle) {
+    if (dateStr == null) {
+      return DateTime.now();
+    }
+    
+    try {
+      final dateString = dateStr.toString().trim();
+      
+      final parsed = DateTime.tryParse(dateString);
+      if (parsed == null) {
+        return DateTime.now();
+      }
+      
+      final local = parsed.toLocal();
+      return local;
+    } catch (e) {
+      return DateTime.now();
+    }
   }
 }
 

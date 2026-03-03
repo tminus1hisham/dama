@@ -25,6 +25,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../widgets/cards/event_card.dart' show EventCard;
+import '../../widgets/modals/booking_modal.dart';
 
 class Events extends StatefulWidget {
   final VoidCallback onMenuTap;
@@ -54,6 +55,8 @@ class _EventsState extends State<Events>
   String _currentUserId = '';
   List<String> _userRoles = [];
   bool _hasEventVerifyRole = false;
+  EventModel? _bookingEvent;
+  bool _isBookingModalOpen = false;
 
   @override
   void initState() {
@@ -783,6 +786,32 @@ www.damakenya.org
     );
   }
 
+  void _showBookingModal(EventModel event) {
+    setState(() {
+      _bookingEvent = event;
+      _isBookingModalOpen = true;
+    });
+  }
+
+  void _closeBookingModal() {
+    setState(() {
+      _isBookingModalOpen = false;
+      _bookingEvent = null;
+    });
+  }
+
+  void _handleBookingSuccess(String eventId) {
+    // Refresh user events to update the status
+    _userEventsController.fetchUserEvents();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Event booked successfully!'),
+        backgroundColor: kGreen,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _navigateToEvent(EventModel event, bool isPaid) {
     Navigator.push(
       context,
@@ -795,7 +824,8 @@ www.damakenya.org
           description: event.description,
           title: event.eventTitle,
           price: event.price,
-          date: event.createdAt,
+          // date: event.createdAt,
+          date: event.eventDate,
           imageUrl: event.eventImageUrl.isNotEmpty
               ? event.eventImageUrl
               : DEFAULT_IMAGE_URL,
@@ -1062,30 +1092,35 @@ www.damakenya.org
                     ),
                   );
                 }
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final event = filteredEvents[index];
-                      final isPaid = paidEventIds.contains(event.id);
-                      return Center(
-                        child: ConstrainedBox(
-                          constraints:
-                              const BoxConstraints(maxWidth: 800),
-                          child: EventCard(
-                            heading: event.eventTitle,
-                            imageUrl: event.eventImageUrl.isNotEmpty
-                                ? event.eventImageUrl
-                                : DEFAULT_IMAGE_URL,
-                            date: event.createdAt,
-                            location: event.location,
-                            price: event.price,
-                            onPressed: () =>
-                                _navigateToEvent(event, isPaid),
-                          ),
-                        ),
-                      );
-                    },
-                    childCount: filteredEvents.length,
+                
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 2 : 1,
+                      childAspectRatio: 1.0,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final event = filteredEvents[index];
+                        final isPaid = paidEventIds.contains(event.id);
+                        return EventCard(
+                          heading: event.eventTitle,
+                          imageUrl: event.eventImageUrl.isNotEmpty
+                              ? event.eventImageUrl
+                              : DEFAULT_IMAGE_URL,
+                          date: event.eventDate,
+                          location: event.location,
+                          price: event.price,
+                          onCardTap: () => _navigateToEvent(event, isPaid),
+                          onBookPress: () => _showBookingModal(event),
+                          attendees: event.attendees.isNotEmpty ? event.attendees.length : null,
+                        );
+                      },
+                      childCount: filteredEvents.length,
+                    ),
                   ),
                 );
               },
@@ -1206,7 +1241,14 @@ www.damakenya.org
                       ),
                     ),
                   Expanded(
-                    child: ListView.builder(
+                    child: GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 2 : 1,
+                        childAspectRatio: 1.0,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
                       itemCount:
                           _userEventsController.eventsList.length,
                       itemBuilder: (context, index) {
@@ -1217,13 +1259,13 @@ www.damakenya.org
                           imageUrl: event.eventImageUrl.isNotEmpty
                               ? event.eventImageUrl
                               : DEFAULT_IMAGE_URL,
-                          date: event.createdAt,
+                          date: event.eventDate,
                           location: event.location,
                           price: event.price,
                           isConfirmed: true,
                           onViewTicket: () =>
                               _showTicketModal(event, isDarkMode),
-                          onPressed: () {
+                          onCardTap: () {
                             Navigator.push(
                               context,
                               PageRouteBuilder(
@@ -1236,7 +1278,7 @@ www.damakenya.org
                                   description: event.description,
                                   title: event.eventTitle,
                                   price: event.price,
-                                  date: event.createdAt,
+                                  date: event.eventDate,
                                   imageUrl: event
                                           .eventImageUrl.isNotEmpty
                                       ? event.eventImageUrl
@@ -1256,6 +1298,8 @@ www.damakenya.org
                               ),
                             );
                           },
+                          onBookPress: () {},
+                          attendees: event.attendees.isNotEmpty ? event.attendees.length : null,
                         );
                       },
                     ),
@@ -1271,7 +1315,7 @@ www.damakenya.org
 
   Widget _buildTabButton(String text, int index, bool isDarkMode) {
     final bool isSelected = selectedTab == index;
-    final bool isMyEvents = index == 0; // "My Events & Tickets"
+    final bool isMyEvents = index == 1; // "My Events & Tickets"
 
     return GestureDetector(
       onTap: () {
@@ -1329,50 +1373,61 @@ www.damakenya.org
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
 
-    return Container(
-      color: isDarkMode ? kDarkThemeBg : kBGColor,
-      child: Column(
-        children: [
-          const SizedBox(height: 3),
-          // Single horizontal scrollable tab bar
-          Container(
-            color: isDarkMode ? kBlack : kWhite,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  _buildTabButton("My Events & Tickets", 0, isDarkMode),
-                  const SizedBox(width: 8),
-                  _buildTabButton("All", 1, isDarkMode),
-                  const SizedBox(width: 8),
-                  _buildTabButton("Upcoming", 2, isDarkMode),
-                  const SizedBox(width: 8),
-                  _buildTabButton("Past", 3, isDarkMode),
-                  const SizedBox(width: 8),
-                  _buildTabButton("Free", 4, isDarkMode),
-                  const SizedBox(width: 8),
-                  _buildTabButton("Paid", 5, isDarkMode),
-                ],
+    return Stack(
+      children: [
+        Container(
+          color: isDarkMode ? kDarkThemeBg : kBGColor,
+          child: Column(
+            children: [
+              const SizedBox(height: 3),
+              // Single horizontal scrollable tab bar
+              Container(
+                color: isDarkMode ? kBlack : kWhite,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      _buildTabButton("All", 0, isDarkMode),
+                      const SizedBox(width: 8),
+                      _buildTabButton("My Events & Tickets", 1, isDarkMode),
+                      const SizedBox(width: 8),
+                      _buildTabButton("Upcoming", 2, isDarkMode),
+                      const SizedBox(width: 8),
+                      _buildTabButton("Past", 3, isDarkMode),
+                      const SizedBox(width: 8),
+                      _buildTabButton("Free", 4, isDarkMode),
+                      const SizedBox(width: 8),
+                      _buildTabButton("Paid", 5, isDarkMode),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              Expanded(
+                child: IndexedStack(
+                  index: selectedTab,
+                  children: [
+                    _buildEventsTab(isDarkMode, showTrending: true),
+                    _buildMyEventsTab(isDarkMode),
+                    _buildEventsTab(isDarkMode, filter: 'upcoming'),
+                    _buildEventsTab(isDarkMode, filter: 'past'),
+                    _buildEventsTab(isDarkMode, filter: 'free'),
+                    _buildEventsTab(isDarkMode, filter: 'paid'),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: IndexedStack(
-              index: selectedTab,
-              children: [
-                _buildMyEventsTab(isDarkMode),
-                _buildEventsTab(isDarkMode, showTrending: true),
-                _buildEventsTab(isDarkMode, filter: 'upcoming'),
-                _buildEventsTab(isDarkMode, filter: 'past'),
-                _buildEventsTab(isDarkMode, filter: 'free'),
-                _buildEventsTab(isDarkMode, filter: 'paid'),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+        // Booking Modal
+        BookingModal(
+          event: _bookingEvent,
+          isOpen: _isBookingModalOpen,
+          onClose: _closeBookingModal,
+          onSuccess: _handleBookingSuccess,
+        ),
+      ],
     );
   }
 

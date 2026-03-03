@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dama/controller/get_user_data.dart';
 import 'package:dama/controller/payment_controller.dart';
+import 'package:dama/controller/user_event_controller.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
@@ -60,6 +61,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   final GetUserProfileController _getUserProfileController = Get.put(
     GetUserProfileController(),
   );
+  final UserEventsController _userEventsController = Get.put(UserEventsController());
 
   late final GlobalKey<ScaffoldState> _scaffoldKey;
   final GlobalKey<FormState> _paymentFormKey = GlobalKey<FormState>();
@@ -76,6 +78,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   String title = '';
   String bio = '';
   String memberId = '';
+  bool isUserRegistered = false;
 
   @override
   void initState() {
@@ -84,6 +87,48 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
     _scaffoldKey = GlobalKey();
     _checkUserRole();
     _loadData();
+    // Check if user is registered for this event
+    _checkEventRegistration();
+  }
+
+  void _checkEventRegistration() {
+    // Defer to after the build phase to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Fetch user events first if not already loaded
+      if (_userEventsController.eventsList.isEmpty) {
+        _userEventsController.fetchUserEvents().then((_) {
+          if (mounted) {
+            setState(() {
+              isUserRegistered = _userEventsController.isUserRegisteredForEvent(widget.eventID);
+            });
+          }
+        });
+      } else {
+        if (mounted) {
+          setState(() {
+            isUserRegistered = _userEventsController.isUserRegisteredForEvent(widget.eventID);
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _registerForEvent() async {
+    final success = await _userEventsController.registerForEvent(widget.eventID);
+    if (success) {
+      setState(() {
+        isUserRegistered = true;
+      });
+    }
+  }
+
+  Future<void> _unregisterFromEvent() async {
+    final success = await _userEventsController.unregisterFromEvent(widget.eventID);
+    if (success) {
+      setState(() {
+        isUserRegistered = false;
+      });
+    }
   }
 
   void _loadData() async {
@@ -503,6 +548,10 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                             () => _showPhoneNumberModal(
                                               isDarkMode,
                                             ),
+                                        onRegister: _registerForEvent,
+                                        onUnregister: _unregisterFromEvent,
+                                        isRegistered: isUserRegistered,
+                                        isRegistering: _userEventsController.isRegistering.value,
                                         isPaid: widget.isPaid,
                                         description: widget.description,
                                         heading: widget.title,

@@ -313,21 +313,43 @@ class _PlansScreenState extends State<PlansScreen> {
           itemCount: _plansController.plansList.length,
           itemBuilder: (context, index) {
             final plan = _plansController.plansList[index];
-            return _buildPlanCard(context, plan, isDarkMode);
+            return FutureBuilder<bool>(
+              future: _isMembershipExpired(),
+              builder: (context, snapshot) {
+                final isExpired = snapshot.data ?? false;
+                return _buildPlanCard(context, plan, isDarkMode, isExpired);
+              },
+            );
           },
         ),
       );
     });
   }
 
+  // Check if membership has expired
+  Future<bool> _isMembershipExpired() async {
+    try {
+      final membershipExp = await StorageService.getData('membershipExp');
+      if (membershipExp == null || membershipExp.toString().isEmpty) {
+        return false;
+      }
+      final expiryDate = DateTime.parse(membershipExp.toString());
+      return DateTime.now().isAfter(expiryDate);
+    } catch (e) {
+      debugPrint('Error checking membership expiration: $e');
+      return false;
+    }
+  }
+
   // Plan Card Widget - Updated with metallic tier styling
-  Widget _buildPlanCard(BuildContext context, PlanModel plan, bool isDarkMode) {
+  Widget _buildPlanCard(BuildContext context, PlanModel plan, bool isDarkMode, [bool isMembershipExpired = false]) {
     final tierColors = _getTierColors(plan.membership);
     final tierIcon = _getTierIcon(plan.membership);
     final isCurrentPlan = _plansController.hasActivePlan.value &&
         _plansController.currentUserPlan.value.toLowerCase() ==
             plan.membership.toLowerCase();
     final isCorporate = plan.membership.toLowerCase().contains('corporate');
+    final isCurrentPlanExpired = isCurrentPlan && isMembershipExpired;
 
     // Get gradient colors based on tier and dark mode
     LinearGradient _getCardGradient() {
@@ -676,38 +698,47 @@ class _PlansScreenState extends State<PlansScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (isCurrentPlan)
-                      // Current Plan State
+                      // Current Plan State or Expired Membership
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  tierColors['primary']!.withValues(alpha: 0.2),
-                              foregroundColor: tierColors['primary'],
+                              backgroundColor: isCurrentPlanExpired
+                                  ? tierColors['primary']
+                                  : tierColors['primary']!.withValues(alpha: 0.2),
+                              foregroundColor: isCurrentPlanExpired ? Colors.black : tierColors['primary'],
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 side: BorderSide(
-                                  color: tierColors['primary']!
-                                      .withValues(alpha: 0.5),
+                                  color: isCurrentPlanExpired
+                                      ? tierColors['primary']!
+                                      : tierColors['primary']!.withValues(alpha: 0.5),
                                 ),
                               ),
-                              elevation: 0,
+                              elevation: isCurrentPlanExpired ? 2 : 0,
                             ),
-                            onPressed: null,
+                            onPressed: isCurrentPlanExpired ? () {
+                              debugPrint('Membership expired - showing payment modal for: ${plan.membership}');
+                              Navigator.pop(context);
+                              _showPaymentModal(context, plan, isDarkMode);
+                            } : null,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.check_circle_rounded,
-                                    size: 16, color: tierColors['primary']),
+                                Icon(
+                                  isCurrentPlanExpired ? Icons.refresh_rounded : Icons.check_circle_rounded,
+                                  size: 16,
+                                  color: isCurrentPlanExpired ? Colors.black : tierColors['primary'],
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Active',
+                                  isCurrentPlanExpired ? 'Activate' : 'Active',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 13,
-                                    color: tierColors['primary'],
+                                    color: isCurrentPlanExpired ? Colors.black : tierColors['primary'],
                                   ),
                                 ),
                               ],
@@ -777,7 +808,7 @@ class _PlansScreenState extends State<PlansScreen> {
                               ),
                             ),
                             onPressed: () =>
-                                _showPlanDetailsModal(context, plan, isDarkMode),
+                                _showPlanDetailsModal(context, plan, isDarkMode, isMembershipExpired),
                             child: const Text(
                               'View Details',
                               style: TextStyle(
@@ -834,7 +865,7 @@ class _PlansScreenState extends State<PlansScreen> {
                               ),
                             ),
                             onPressed: () =>
-                                _showPlanDetailsModal(context, plan, isDarkMode),
+                                _showPlanDetailsModal(context, plan, isDarkMode, isMembershipExpired),
                             child: const Text(
                               'View Details',
                               style: TextStyle(
@@ -892,7 +923,7 @@ class _PlansScreenState extends State<PlansScreen> {
                               ),
                             ),
                             onPressed: () =>
-                                _showPlanDetailsModal(context, plan, isDarkMode),
+                                _showPlanDetailsModal(context, plan, isDarkMode, isMembershipExpired),
                             child: const Text(
                               'View Details',
                               style: TextStyle(
@@ -914,9 +945,13 @@ class _PlansScreenState extends State<PlansScreen> {
   }
 
   // Plan Details Modal - Enhanced with full features and styling matching React
-  void _showPlanDetailsModal(BuildContext context, PlanModel plan, bool isDarkMode) {
+  void _showPlanDetailsModal(BuildContext context, PlanModel plan, bool isDarkMode, [bool isMembershipExpired = false]) {
     final tierColors = _getTierColors(plan.membership);
     final tierIcon = _getTierIcon(plan.membership);
+    final isCurrentPlan = _plansController.hasActivePlan.value &&
+        _plansController.currentUserPlan.value.toLowerCase() ==
+            plan.membership.toLowerCase();
+    final isCurrentPlanExpired = isCurrentPlan && isMembershipExpired;
     
     showModalBottomSheet(
       context: context,
@@ -1175,6 +1210,11 @@ class _PlansScreenState extends State<PlansScreen> {
                                 Navigator.pop(context);
                                 debugPrint('Showing payment modal for: ${plan.membership}');
                                 _showPaymentModal(context, plan, isDarkMode);
+                              } else if (isProfessional && isCurrentPlanExpired) {
+                                // Professional plan that expired - show payment modal
+                                Navigator.pop(context);
+                                debugPrint('Professional membership expired - showing payment modal');
+                                _showPaymentModal(context, plan, isDarkMode);
                               } else if (isProfessional) {
                                 // Current plan - just close modal
                                 Navigator.pop(context);
@@ -1194,7 +1234,8 @@ class _PlansScreenState extends State<PlansScreen> {
                             const SizedBox(width: 6),
                           if (!_isButtonDisabled(plan.membership))
                             Icon(
-                              plan.membership.toLowerCase().contains('professional')
+                              isCurrentPlanExpired ? Icons.refresh_rounded
+                                  : plan.membership.toLowerCase().contains('professional')
                                   ? Icons.check_circle_rounded
                                   : FontAwesomeIcons.crown,
                               size: 18,
@@ -1203,7 +1244,8 @@ class _PlansScreenState extends State<PlansScreen> {
                           if (!_isButtonDisabled(plan.membership))
                             const SizedBox(width: 6),
                           Text(
-                            _getButtonText(plan.membership),
+                            isCurrentPlanExpired ? 'Activate'
+                                : _getButtonText(plan.membership),
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,

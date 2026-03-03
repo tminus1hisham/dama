@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class EventModel {
   final String id;
   final String eventCreator;
@@ -33,10 +35,23 @@ class EventModel {
                 .trim()
             : 'Unknown';
 
+    final eventTitle = json['event_title'] ?? '';
+
+    // Try multiple field name variations to find the date
+    final eventDateValue = json['event_date'] ?? json['eventDate'] ?? json['event_date_time'];
+
+    final parsedEventDate = _parseEventDate(eventDateValue, eventTitle);
+
+    final parsedPrice = json['price'] is int
+        ? json['price']
+        : int.tryParse(json['price']?.toString() ?? '0') ?? 0;
+    
+    debugPrint('🎫 EventModel.fromJson - Title: $eventTitle, Raw Price: ${json['price']} (type: ${json['price'].runtimeType}), Parsed Price: $parsedPrice');
+
     return EventModel(
       id: json['_id'] ?? '',
       eventCreator: creatorName,
-      eventTitle: json['event_title'] ?? '',
+      eventTitle: eventTitle,
       description: json['description'] ?? '',
       speakers:
           (json['speakers'] as List<dynamic>?)
@@ -49,10 +64,9 @@ class EventModel {
               .toList() ??
           [],
       location: json['location'] ?? '',
-      eventDate:
-          json['event_date'] != null
-              ? DateTime.tryParse(json['event_date']) ?? DateTime.now()
-              : DateTime.now(),
+      // FIX: .toLocal() ensures the date is always in device local time
+      // regardless of whether the API returns UTC (with Z) or no timezone info
+      eventDate: parsedEventDate,
       price:
           json['price'] is int
               ? json['price']
@@ -60,9 +74,30 @@ class EventModel {
       eventImageUrl: json['event_image_url'] ?? '',
       createdAt:
           json['created_at'] != null
-              ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
+              ? (DateTime.tryParse(json['created_at'])?.toLocal() ?? DateTime.now())
               : DateTime.now(),
     );
+  }
+
+  // Helper to parse event date with debugging
+  static DateTime _parseEventDate(dynamic dateStr, String eventTitle) {
+    if (dateStr == null) {
+      return DateTime.now();
+    }
+    
+    try {
+      final dateString = dateStr.toString().trim();
+      
+      final parsed = DateTime.tryParse(dateString);
+      if (parsed == null) {
+        return DateTime.now();
+      }
+      
+      final local = parsed.toLocal();
+      return local;
+    } catch (e) {
+      return DateTime.now();
+    }
   }
 
   Map<String, dynamic> toJson() => {

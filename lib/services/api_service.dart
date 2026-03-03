@@ -71,6 +71,7 @@ class ApiService {
   }) async {
     try {
       final accessToken = await StorageService.getData("access_token");
+      debugPrint('initiatePayment - Token: $accessToken, ObjectId: $objectId');
       final response = await http.post(
         Uri.parse('$BASE_URL/transactions/pay'),
         headers: {
@@ -84,14 +85,16 @@ class ApiService {
           'phoneNumber': phoneNumber,
         }),
       );
-      if (response.statusCode == 201) {
+      debugPrint('initiatePayment response status: ${response.statusCode}');
+      debugPrint('initiatePayment response body: ${response.body}');
+      if (response.statusCode == 201 || response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        throw Exception('Failed to initiate payment: ${response.statusCode}');
+        throw Exception('Failed to initiate payment: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       debugPrint('initiatePayment error: $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -645,9 +648,25 @@ class ApiService {
 
         if (jsonData.containsKey('events')) {
           List<dynamic> eventsData = jsonData['events'];
-          return eventsData
+          debugPrint('\n📡 API getEvents() Response:');
+          debugPrint('   Total events: ${eventsData.length}');
+          for (int i = 0; i < eventsData.length; i++) {
+            final event = eventsData[i];
+            final title = event['event_title'] ?? 'Unknown';
+            final dateStr = event['event_date'];
+            debugPrint('   [$i] "$title"');
+            debugPrint('       event_date field exists: ${event.containsKey('event_date')}');
+            debugPrint('       event_date raw string: "$dateStr"');
+            debugPrint('       event_date type: ${dateStr.runtimeType}');
+            debugPrint('       All keys in event: ${event.keys.toList()}');
+          }
+          debugPrint('');
+          debugPrint('Converting to EventModel objects...');
+          final eventsList = eventsData
               .map((item) => EventModel.fromJson(item as Map<String, dynamic>))
               .toList();
+          debugPrint('Conversion complete! Created ${eventsList.length} EventModel objects');
+          return eventsList;
         } else {
           throw Exception("No events key in response");
         }
@@ -711,6 +730,17 @@ class ApiService {
 
         if (jsonData.containsKey('events')) {
           List<dynamic> eventsData = jsonData['events'];
+          debugPrint('\n📡 API getUserEvents() Response:');
+          debugPrint('   Total user events: ${eventsData.length}');
+          for (int i = 0; i < eventsData.length; i++) {
+            final event = eventsData[i];
+            final title = event['event_title'] ?? 'Unknown';
+            final dateStr = event['event_date'];
+            debugPrint('   [$i] $title');
+            debugPrint('       event_date raw string: "$dateStr"');
+            debugPrint('       event_date type: ${dateStr.runtimeType}');
+          }
+          debugPrint('');
           return eventsData
               .map(
                 (item) => UserEventModel.fromJson(item as Map<String, dynamic>),
@@ -731,6 +761,80 @@ class ApiService {
     } catch (e) {
       debugPrint('Error fetching user events: $e');
       rethrow;
+    }
+  }
+
+  /// Register user for an event
+  Future<Map<String, dynamic>?> registerForEvent(String eventId) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+      debugPrint('registerForEvent - Token: $accessToken, EventId: $eventId');
+
+      final response = await http.post(
+        Uri.parse('$BASE_URL/events/register/$eventId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      debugPrint('registerForEvent response status: ${response.statusCode}');
+      debugPrint('registerForEvent response body: ${response.body}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('Event registration successful: $data');
+        return data;
+      } else if (response.statusCode == 403) {
+        final data = jsonDecode(response.body);
+        final message = data['message'] ?? 'Forbidden';
+        throw Exception(message);
+      } else if (response.statusCode == 401) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        throw Exception('Failed to register for event: ${response.statusCode} - ${response.body}');
+      }
+    } on SocketException catch (_) {
+      NetworkModal.showNetworkDialog();
+      rethrow;
+    } catch (e) {
+      debugPrint('Error registering for event: $e');
+      rethrow;
+    }
+  }
+
+  /// Unregister user from an event
+  Future<Map<String, dynamic>?> unregisterFromEvent(String eventId) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+
+      final response = await http.delete(
+        Uri.parse('$BASE_URL/events/register/$eventId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('Event unregistration successful: $data');
+        return data;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        throw Exception(
+          'Failed to unregister from event: ${response.statusCode}',
+        );
+      }
+    } on SocketException catch (_) {
+      NetworkModal.showNetworkDialog();
+      return null;
+    } catch (e) {
+      debugPrint('Error unregistering from event: $e');
+      return null;
     }
   }
 

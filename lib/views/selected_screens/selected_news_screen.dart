@@ -409,7 +409,7 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                           data: widget.description,
                                           style: {
                                             "html": Style(
-                                              fontSize: FontSize(14.0),
+                                              fontSize: FontSize(16.0),
                                               backgroundColor:
                                                   isDarkMode ? kBlack : kWhite,
                                               color:
@@ -419,7 +419,7 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                               lineHeight: LineHeight(1.4),
                                             ),
                                             "*": Style(
-                                              fontSize: FontSize(14.0),
+                                              fontSize: FontSize(16.0),
                                               color:
                                                   isDarkMode ? kWhite : kBlack,
                                               backgroundColor:
@@ -461,7 +461,7 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                               ),
                                             ),
                                             "p": Style(
-                                              fontSize: FontSize(14.0),
+                                              fontSize: FontSize(16.0),
                                               color:
                                                   isDarkMode ? kWhite : kBlack,
                                               textAlign: TextAlign.justify,
@@ -471,21 +471,21 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                               lineHeight: LineHeight(1.4),
                                             ),
                                             "strong": Style(
-                                              fontSize: FontSize(14.0),
+                                              fontSize: FontSize(16.0),
                                               fontWeight: FontWeight.bold,
                                               color:
                                                   isDarkMode ? kWhite : kBlack,
                                               textAlign: TextAlign.justify,
                                             ),
                                             "em": Style(
-                                              fontSize: FontSize(14.0),
+                                              fontSize: FontSize(16.0),
                                               fontStyle: FontStyle.italic,
                                               color:
                                                   isDarkMode ? kWhite : kBlack,
                                               textAlign: TextAlign.justify,
                                             ),
                                             "li": Style(
-                                              fontSize: FontSize(14.0),
+                                              fontSize: FontSize(16.0),
                                               color:
                                                   isDarkMode ? kWhite : kBlack,
                                               textAlign: TextAlign.justify,
@@ -505,7 +505,7 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                               ),
                                             ),
                                             "blockquote": Style(
-                                              fontSize: FontSize(14.0),
+                                              fontSize: FontSize(16.0),
                                               fontStyle: FontStyle.italic,
                                               color: isDarkMode
                                                   ? Colors.grey[400]
@@ -529,7 +529,7 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                               lineHeight: LineHeight(1.4),
                                             ),
                                             "body": Style(
-                                              fontSize: FontSize(14.0),
+                                              fontSize: FontSize(16.0),
                                               backgroundColor:
                                                   isDarkMode ? kBlack : kWhite,
                                               textAlign: TextAlign.justify,

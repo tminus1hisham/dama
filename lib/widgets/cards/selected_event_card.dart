@@ -19,6 +19,10 @@ class SelectedEventCard extends StatelessWidget {
     required this.description,
     required this.isPaid,
     required this.onPay,
+    required this.onRegister,
+    required this.onUnregister,
+    required this.isRegistered,
+    required this.isRegistering,
   });
 
   final DateTime date;
@@ -29,6 +33,10 @@ class SelectedEventCard extends StatelessWidget {
   final String description;
   final bool isPaid;
   final VoidCallback onPay;
+  final VoidCallback onRegister;
+  final VoidCallback onUnregister;
+  final bool isRegistered;
+  final bool isRegistering;
 
   Uri _mapsUrl(String location) => Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}',
@@ -108,7 +116,7 @@ class SelectedEventCard extends StatelessWidget {
                 heading,
                 style: TextStyle(
                   color: isDarkMode ? kWhite : kBlack,
-                  fontSize: kMidText,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -139,22 +147,27 @@ class SelectedEventCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 20),
-                  Row(
-                    children: [
-                      Icon(Icons.pin_drop_outlined, color: kBlue),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Text(
-                          location,
-                          style: TextStyle(
-                            color: kBlue,
-                            fontSize: kMidText,
-                            fontWeight: FontWeight.w600,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.pin_drop_outlined, color: kBlue, size: 20),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            location,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                              color: kBlue,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -193,69 +206,92 @@ class SelectedEventCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'KES $price',
+                          int.parse(price) == 0 ? 'FREE' : 'KES $price',
                           style: TextStyle(
                             fontSize: kBigTextSize,
                             fontWeight: FontWeight.bold,
-                            color: isDarkMode ? kWhite : kBlue,
+                            color: int.parse(price) == 0 ? kGreen : (isDarkMode ? kWhite : kBlue),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(width: 30),
-                    Expanded(
-                      child: CustomButton(
-                        callBackFunction: isPast ? null : onPay,
-                        label: isPast ? "EVENT PAST" : "RSVP",
-                        backgroundColor: isPast ? Colors.grey : kBlue,
-                        // If CustomButton supports textStyle, use this:
-                        // textStyle: TextStyle(
-                        //   fontSize: kNormalTextSize,     // smaller, like date/location
-                        //   fontWeight: FontWeight.w600,    // semi-bold, matches secondary text
-                        //   color: kWhite,
-                        // ),
-                      ),
-                    ),
+                    // Button section - different behavior for free vs paid events
+                    if (int.parse(price) == 0)
+                      // Free event: Register/Unregister button
+                      Expanded(
+                        child: CustomButton(
+                          callBackFunction: isPast
+                              ? null
+                              : (isRegistered ? onUnregister : onRegister),
+                          label: isPast
+                              ? "EVENT PAST"
+                              : (isRegistered ? "UNREGISTER" : "RSVP"),
+                          backgroundColor: isPast
+                              ? Colors.grey
+                              : (isRegistered ? kRed : kBlue),
+                        ),
+                      )
+                    else
+                      // Paid event: Show RSVP button if not registered, ATTENDING if registered
+                      if (isPaid)
+                        // Paid and attending
+                        Expanded(
+                          child: CustomButton(
+                            callBackFunction: isPast ? null : onUnregister,
+                            label: isPast ? "EVENT PAST" : "UNREGISTER",
+                            backgroundColor: isPast ? Colors.grey : kRed,
+                          ),
+                        )
+                      else
+                        // Paid but not yet purchased
+                        Expanded(
+                          child: CustomButton(
+                            callBackFunction: isPast ? null : onPay,
+                            label: isPast ? "EVENT PAST" : "RSVP",
+                            backgroundColor: isPast ? Colors.grey : kBlue,
+                          ),
+                        ),
                   ],
-
-                  if (isPaid) ...[
-                    Expanded(
-                      child: CustomButton(
-                        callBackFunction: () {},
-                        label: "ATTENDING",
-                        backgroundColor: kGreen,
-                        // textStyle: TextStyle(
-                        //   fontSize: kNormalTextSize,
-                        //   fontWeight: FontWeight.w600,
-                        //   color: kWhite,
-                        // ),
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(width: 10),
-
-                  // Share button
-                  GestureDetector(
-                    onTap: () {
-                      final link = 'https://mydama.damakenya.org/';
-                      Share.share(
-                        'Check out this event on Dama Kenya: $heading\n$link',
-                        subject: 'Dama Kenya',
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: kBlue, width: 1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: Icon(Icons.share, color: kBlue),
-                      ),
-                    ),
-                  ),
                 ],
+              ),
+            ),
+
+            // Divider
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: kSidePadding,
+                vertical: 10,
+              ),
+              child: Container(
+                color: isDarkMode ? kDarkThemeBg : kBGColor,
+                height: 2,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // Share button
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: kSidePadding),
+              child: GestureDetector(
+                onTap: () {
+                  final link = 'https://mydama.damakenya.org/';
+                  Share.share(
+                    'Check out this event on Dama Kenya: $heading\n$link',
+                    subject: 'Dama Kenya',
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: kBlue, width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Icon(Icons.share, color: kBlue),
+                  ),
+                ),
               ),
             ),
 
@@ -279,8 +315,9 @@ class SelectedEventCard extends StatelessWidget {
               child: Text(
                 description,
                 style: TextStyle(
-                  fontSize: kMidText,
+                  fontSize: 14,
                   color: isDarkMode ? kWhite : kGrey,
+                  height: 1.4,
                 ),
               ),
             ),

@@ -7,6 +7,7 @@ import 'package:dama/models/training_model.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
+import 'package:dama/views/dashboard.dart';
 import 'package:dama/views/my_trainings_screen.dart';
 import 'package:dama/views/selected_screens/selected_blog_screen.dart';
 import 'package:dama/views/selected_screens/selected_event_screen.dart';
@@ -130,8 +131,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     }
 
     // Only show loading dialog for types that need an API call
-    final needsApiCall =
-        (type == 'blog' || type == 'news' || type == 'event') &&
+    // Use contains() to match variations like 'new_blog', 'event_registration', etc.
+    final needsApiCall = type != null &&
+        (type.contains('blog') || type.contains('news') || type.contains('event')) &&
         referenceId != null &&
         referenceId.isNotEmpty;
 
@@ -146,8 +148,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     }
 
     try {
-      if (type == 'blog' && referenceId != null && referenceId.isNotEmpty) {
-        debugPrint('  - Branch: Blog notification');
+      // Use contains() to match variations like 'new_blog', 'blog_comment', etc.
+      if (type != null && type.contains('blog') && referenceId != null && referenceId.isNotEmpty) {
+        debugPrint('  - Branch: Blog notification (type: $type)');
         debugPrint('  - Fetching blog with ID: $referenceId');
 
         await _blogController.fetchBlog(referenceId);
@@ -181,12 +184,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         } else {
           Get.back(); // Dismiss loading dialog
           debugPrint('  - ERROR: Blog value is null after fetch');
-          _showErrorSnackbar('Could not load blog content');
+          _showBlogNotFoundDialog();
         }
-      } else if (type == 'news' &&
+      } else if (type != null && type.contains('news') &&
           referenceId != null &&
           referenceId.isNotEmpty) {
-        debugPrint('  - Branch: News notification');
+        debugPrint('  - Branch: News notification (type: $type)');
         debugPrint('  - Fetching news with ID: $referenceId');
 
         await _newsController.fetchNews(referenceId);
@@ -219,12 +222,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         } else {
           Get.back(); // Dismiss loading dialog
           debugPrint('  - ERROR: News value is null after fetch');
-          _showErrorSnackbar('Could not load news content');
+          _showNewsNotFoundDialog();
         }
-      } else if (type == 'event' &&
+      } else if (type != null && type.contains('event') &&
           referenceId != null &&
           referenceId.isNotEmpty) {
-        debugPrint('  - Branch: Event notification');
+        debugPrint('  - Branch: Event notification (type: $type)');
         debugPrint('  - Fetching event with ID: $referenceId');
 
         await _eventController.fetchEvent(referenceId);
@@ -256,12 +259,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         } else {
           Get.back(); // Dismiss loading dialog
           debugPrint('  - ERROR: Event value is null after fetch');
-          _showErrorSnackbar('Could not load event details');
+          _showEventNotFoundDialog();
         }
-      } else if (type == 'training_completed' &&
+      } else if (type != null && type.contains('training') &&
           referenceId != null &&
           referenceId.isNotEmpty) {
-        debugPrint('  - Branch: Training completed notification');
+        debugPrint('  - Branch: Training notification (type: $type)');
         debugPrint('  - Looking for training with ID: $referenceId');
 
         // Try to find training in already-loaded list
@@ -348,10 +351,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             ));
           }
         }
-      } else if (type == 'virtual' &&
+      } else if (type != null && type.contains('virtual') &&
           referenceId != null &&
           referenceId.isNotEmpty) {
-        debugPrint('  - Branch: Virtual session notification');
+        debugPrint('  - Branch: Virtual session notification (type: $type)');
         debugPrint('  - Training/Session ID: $referenceId');
 
         // Try to find training in already-loaded list
@@ -477,6 +480,195 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.red.withOpacity(0.9),
       colorText: Colors.white,
+    );
+  }
+
+  void _showEventNotFoundDialog() {
+    final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDark;
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDarkMode ? kDarkCard : kWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.event_busy,
+              size: 64,
+              color: kGrey,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Event Not Found',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? kWhite : kBlack,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This event may have been removed or is no longer available.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: kGrey,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Get.back(); // Close dialog
+                  Get.offAll(() => const Dashboard(initialTab: 4, initialSubTab: 0));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kBlue,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Browse Events',
+                  style: TextStyle(
+                    color: kWhite,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: true,
+    );
+  }
+
+  void _showBlogNotFoundDialog() {
+    final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDark;
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDarkMode ? kDarkCard : kWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.article_outlined,
+              size: 64,
+              color: kGrey,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Blog Not Found',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? kWhite : kBlack,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This blog post may have been removed or is no longer available.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: kGrey,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Get.back(); // Close dialog
+                  Get.offAll(() => const Dashboard(initialTab: 1, initialSubTab: 0));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kBlue,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Browse Blogs',
+                  style: TextStyle(
+                    color: kWhite,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: true,
+    );
+  }
+
+  void _showNewsNotFoundDialog() {
+    final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDark;
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: isDarkMode ? kDarkCard : kWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.newspaper_outlined,
+              size: 64,
+              color: kGrey,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'News Not Found',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? kWhite : kBlack,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This news article may have been removed or is no longer available.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: kGrey,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Get.back(); // Close dialog
+                  Get.offAll(() => const Dashboard(initialTab: 2, initialSubTab: 0));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kBlue,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Browse News',
+                  style: TextStyle(
+                    color: kWhite,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: true,
     );
   }
 

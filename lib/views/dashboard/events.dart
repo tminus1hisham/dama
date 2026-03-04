@@ -81,21 +81,21 @@ class _EventsState extends State<Events>
   void _loadData() async {
     final url = await StorageService.getData('profile_picture');
     final userId = await StorageService.getData('userId');
-    final rolesRaw = await StorageService.getData('userRoles');
-
-    List<String> roles = [];
-    if (rolesRaw != null && rolesRaw.isNotEmpty) {
-      try {
-        roles = List<String>.from(jsonDecode(rolesRaw));
-      } catch (_) {
-        roles = [rolesRaw];
-      }
-    }
+    
+    // Use the proper getUserRoles() method for consistent role retrieval
+    final roles = await StorageService.getUserRoles();
+    
+    debugPrint('🎫 Events: Loaded user roles: $roles');
+    final canScan = roles.contains('event_verify') || 
+                    roles.contains('admin') ||
+                    roles.contains('manager');
+    debugPrint('🎫 Events: Can scan tickets: $canScan');
 
     setState(() {
       imageUrl = url;
       _currentUserId = userId ?? '';
-      _hasEventVerifyRole = roles.contains('event_verify');
+      // Allow event_verify role OR admin role to scan tickets
+      _hasEventVerifyRole = canScan;
     });
 
     if (userId != null && userId.isNotEmpty) {

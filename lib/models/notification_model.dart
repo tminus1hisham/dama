@@ -82,23 +82,40 @@ class NotificationModel {
   }
   
   // Helper getter to get notification category/type
-  // Infers type from title or data keys if not explicitly set
+  // Returns normalized type - uses contains() pattern for matching
   String? get notificationType {
     // First check explicit type field
     if (type != null && type!.isNotEmpty) {
-      return type!.toLowerCase();
+      final typeLower = type!.toLowerCase();
+      // Normalize to base types for easier matching
+      if (typeLower.contains('blog')) return 'blog';
+      if (typeLower.contains('news')) return 'news';
+      if (typeLower.contains('event')) return 'event';
+      if (typeLower.contains('training')) return 'training';
+      if (typeLower.contains('virtual')) return 'virtual';
+      if (typeLower.contains('session')) return 'session';
+      if (typeLower.contains('certificate')) return 'certificate';
+      if (typeLower.contains('payment')) return 'payment';
+      if (typeLower.contains('membership')) return 'membership';
+      return typeLower;
     }
     // Then check data field keys to infer type
     if (data != null) {
       // Check for specific keys in data that indicate the type
-      if (data!.containsKey('blogPost') || data!.containsKey('blog')) {
+      if (data!.containsKey('blogPost') || data!.containsKey('blog') || data!.containsKey('blogId')) {
         return 'blog';
       }
-      if (data!.containsKey('newsPost') || data!.containsKey('news')) {
+      if (data!.containsKey('newsPost') || data!.containsKey('news') || data!.containsKey('newsId')) {
         return 'news';
       }
       if (data!.containsKey('event') || data!.containsKey('eventId')) {
         return 'event';
+      }
+      if (data!.containsKey('training') || data!.containsKey('trainingId')) {
+        return 'training';
+      }
+      if (data!.containsKey('session') || data!.containsKey('sessionId')) {
+        return 'session';
       }
       // Check for 'type' field in data
       final dataType = data!['type']?.toString();
@@ -111,6 +128,9 @@ class NotificationModel {
     if (titleLower.contains('blog')) return 'blog';
     if (titleLower.contains('news')) return 'news';
     if (titleLower.contains('event')) return 'event';
+    if (titleLower.contains('training')) return 'training';
+    if (titleLower.contains('session')) return 'session';
+    if (titleLower.contains('certificate')) return 'certificate';
     return null;
   }
   
@@ -122,19 +142,31 @@ class NotificationModel {
     }
     if (data != null) {
       // Check for blog post ID
-      final blogId = data!['blogPost'] ?? data!['blog'] ?? data!['blogId'];
+      final blogId = data!['blogPost'] ?? data!['blog'] ?? data!['blogId'] ?? data!['blog_id'];
       if (blogId != null) return blogId.toString();
       
       // Check for news ID
-      final newsId = data!['newsPost'] ?? data!['news'] ?? data!['newsId'];
+      final newsId = data!['newsPost'] ?? data!['news'] ?? data!['newsId'] ?? data!['news_id'];
       if (newsId != null) return newsId.toString();
       
       // Check for event ID
-      final eventId = data!['event'] ?? data!['eventId'];
+      final eventId = data!['event'] ?? data!['eventId'] ?? data!['event_id'];
       if (eventId != null) return eventId.toString();
       
-      // Generic fallback
-      return data!['referenceId'] ?? data!['reference_id'] ?? data!['id'];
+      // Check for training ID
+      final trainingId = data!['training'] ?? data!['trainingId'] ?? data!['training_id'];
+      if (trainingId != null) return trainingId.toString();
+      
+      // Check for session ID
+      final sessionId = data!['session'] ?? data!['sessionId'] ?? data!['session_id'];
+      if (sessionId != null) return sessionId.toString();
+      
+      // Generic fallback - check common ID keys
+      final genericId = data!['referenceId'] ?? 
+                       data!['reference_id'] ?? 
+                       data!['id'] ?? 
+                       data!['_id'];
+      if (genericId != null) return genericId.toString();
     }
     return null;
   }

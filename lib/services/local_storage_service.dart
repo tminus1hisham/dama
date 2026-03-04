@@ -64,12 +64,23 @@ class StorageService {
     }
   }
 
-  static Future<void> storeUserRoles(List<dynamic> roles) async {
+  static Future<void> storeUserRoles(dynamic roles) async {
     try {
-      final rolesJson = jsonEncode(roles);
+      List<String> rolesList = [];
+      
+      if (roles is List) {
+        // Roles is a List (e.g., ["admin", "manager"])
+        rolesList = List<String>.from(roles.map((r) => r.toString().toLowerCase()));
+      } else if (roles is Map) {
+        // Roles is a Map (e.g., {"ADMIN": "admin"}) - extract keys
+        rolesList = roles.keys.map((k) => k.toString().toLowerCase()).toList();
+      }
+      
+      debugPrint('🔐 Storing user roles: $rolesList');
+      final rolesJson = jsonEncode(rolesList);
       await storeData({'roles_json': rolesJson});
     } catch (e) {
-      // Handle error silently
+      debugPrint('🔐 Error storing user roles: $e');
     }
   }
 

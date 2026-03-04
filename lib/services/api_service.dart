@@ -838,6 +838,118 @@ class ApiService {
     }
   }
 
+  /// Get popular events (limited to 10)
+  Future<List<EventModel>> getPopularEvents() async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+
+      final headers = <String, String>{};
+      if (accessToken != null && accessToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $accessToken';
+      }
+
+      final response = await http.get(
+        Uri.parse('$BASE_URL/events/popular'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+
+        if (jsonData.containsKey('events')) {
+          List<dynamic> eventsData = jsonData['events'];
+          debugPrint('\n📡 API getPopularEvents() Response:');
+          debugPrint('   Total popular events: ${eventsData.length}');
+          return eventsData
+              .map((item) => EventModel.fromJson(item as Map<String, dynamic>))
+              .toList();
+        } else {
+          throw Exception("No events key in response");
+        }
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        throw Exception('Failed to load popular events: ${response.statusCode}');
+      }
+    } on SocketException catch (_) {
+      NetworkModal.showNetworkDialog();
+      throw Exception('Network error');
+    } catch (e) {
+      debugPrint('Error fetching popular events: $e');
+      rethrow;
+    }
+  }
+
+  /// Get attendees count for an event
+  Future<int> getEventAttendees(String eventId) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+      debugPrint('[API] Fetching attendees for event: $eventId, token exists: ${accessToken != null}');
+
+      // Try different endpoint formats
+      List<String> endpointVariants = [
+        '$BASE_URL/events/$eventId/attendees',
+        '$BASE_URL/events/event/attendees?eventId=$eventId',
+      ];
+
+      for (String endpoint in endpointVariants) {
+        debugPrint('[API] Trying endpoint: $endpoint');
+        final response = await http.get(
+          Uri.parse(endpoint),
+          headers: {'Authorization': 'Bearer $accessToken'},
+        );
+
+        debugPrint('[API] Response status: ${response.statusCode}, body: ${response.body}');
+
+        if (response.statusCode == 200) {
+          final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+
+          // Try different possible response formats
+          if (jsonData.containsKey('count')) {
+            final count = jsonData['count'] as int;
+            debugPrint('[API] Parsed attendee count (count field): $count');
+            return count;
+          } else if (jsonData.containsKey('attendees')) {
+            final attendees = jsonData['attendees'];
+            if (attendees is List) {
+              debugPrint('[API] Parsed attendee count (list length): ${attendees.length}');
+              return attendees.length;
+            } else if (attendees is int) {
+              debugPrint('[API] Parsed attendee count (int field): $attendees');
+              return attendees;
+            }
+          } else if (jsonData.containsKey('total')) {
+            final total = jsonData['total'] as int;
+            debugPrint('[API] Parsed attendee count (total field): $total');
+            return total;
+          }
+          
+          // If we got a 200 but couldn't parse, return 0
+          debugPrint('[API] getEventAttendees: Could not parse attendee count from response: $jsonData');
+          return 0;
+        } else if (response.statusCode == 401 || response.statusCode == 403) {
+          debugPrint('[API] Unauthorized (${response.statusCode}), showing dialog');
+          HandleUnauthorizedService.showUnauthorizedDialog();
+          return 0;
+        } else {
+          debugPrint('[API] Endpoint failed with status ${response.statusCode}, trying next variant...');
+        }
+        // Continue to next variant on error
+      }
+      
+      // All variants failed, return 0
+      debugPrint('[API] All attendee count endpoints failed, returning 0');
+      return 0;
+    } on SocketException catch (_) {
+      NetworkModal.showNetworkDialog();
+      return 0;
+    } catch (e) {
+      debugPrint('Error fetching event attendees: $e');
+      return 0; // Return 0 on error instead of throwing
+    }
+  }
+
   Future<List<TransactionModel>> getTransactions() async {
     try {
       final accessToken = await StorageService.getData("access_token");

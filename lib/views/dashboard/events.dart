@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
-import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:dama/controller/events_controller.dart';
 import 'package:dama/controller/get_user_data.dart';
 import 'package:dama/controller/user_event_controller.dart';
@@ -21,8 +19,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../widgets/cards/event_card.dart' show EventCard;
 import '../../widgets/modals/booking_modal.dart';
@@ -53,7 +49,6 @@ class _EventsState extends State<Events>
   bool _isLoading = false;
   int selectedTab = 0;
   String _currentUserId = '';
-  List<String> _userRoles = [];
   bool _hasEventVerifyRole = false;
   EventModel? _bookingEvent;
   bool _isBookingModalOpen = false;
@@ -100,478 +95,12 @@ class _EventsState extends State<Events>
     setState(() {
       imageUrl = url;
       _currentUserId = userId ?? '';
-      _userRoles = roles;
       _hasEventVerifyRole = roles.contains('event_verify');
     });
 
     if (userId != null && userId.isNotEmpty) {
       await _getUserProfileController.fetchUserProfile(userId);
     }
-  }
-
-  void _showTicketModal(UserEventModel event, bool isDarkMode) async {
-    final userProfile = _getUserProfileController.profile.value;
-
-    final firstName = await StorageService.getData('firstName') ?? '';
-    final lastName = await StorageService.getData('lastName') ?? '';
-    final attendeeName = '$firstName $lastName'.trim();
-    final ticketId = event.id.substring(0, 8).toUpperCase();
-    final memberId = await StorageService.getData('memberId') ?? '';
-
-    String? qrCode;
-    bool isGeneratedLocally = false;
-
-    if (userProfile?.eventQRCode != null && _currentUserId == userProfile!.id) {
-      final matchingQRCode = userProfile.eventQRCode
-          .where((qr) => qr.eventId == event.id)
-          .firstOrNull;
-      if (matchingQRCode != null) {
-        qrCode = matchingQRCode.qrCode;
-      }
-    }
-
-    if (qrCode == null && memberId.isNotEmpty) {
-      final qrData = jsonEncode({'memberId': memberId, 'eventId': event.id});
-      qrCode = 'data:image/png;base64,${base64Encode(utf8.encode(qrData))}';
-      isGeneratedLocally = true;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return SafeArea(
-          bottom: true,
-          child: Container(
-            height: MediaQuery.of(context).size.height * 0.85,
-            decoration: BoxDecoration(
-              color: isDarkMode ? kDarkThemeBg : kWhite,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                // Handle bar
-                Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: kGrey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Your Event Ticket',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? kWhite : kBlack,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          'Done',
-                          style: TextStyle(
-                            color: kBlue,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: [
-                        // Event details card
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? kBlack : kBGColor,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isDarkMode
-                                  ? kGrey.withOpacity(0.2)
-                                  : kLightGrey,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  event.eventImageUrl.isNotEmpty
-                                      ? event.eventImageUrl
-                                      : DEFAULT_IMAGE_URL,
-                                  height: 150,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) =>
-                                          Container(
-                                    height: 150,
-                                    color: kGrey.withOpacity(0.2),
-                                    child: const Icon(Icons.broken_image,
-                                        size: 50),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                event.eventTitle,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? kWhite : kBlack,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Icon(Icons.calendar_today,
-                                      color: kGrey, size: 18),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    DateFormat('EEEE, MMMM dd, yyyy')
-                                        .format(event.eventDate),
-                                    style: TextStyle(
-                                      color: isDarkMode ? kWhite : kBlack,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(Icons.access_time,
-                                      color: kGrey, size: 18),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    DateFormat('h:mm a')
-                                        .format(event.eventDate),
-                                    style: TextStyle(
-                                      color: isDarkMode ? kWhite : kBlack,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(Icons.location_on,
-                                      color: kBlue, size: 18),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      event.location,
-                                      style: TextStyle(
-                                          color: kBlue, fontSize: 14),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: kGreen.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.check_circle,
-                                        color: kGreen, size: 16),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Confirmed',
-                                      style: TextStyle(
-                                        color: kGreen,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // QR Code section
-                        if (qrCode != null) ...[
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: kWhite,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: kLightGrey),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'Scan to check in',
-                                  style: TextStyle(
-                                      color: kGrey, fontSize: 14),
-                                ),
-                                const SizedBox(height: 16),
-                                if (isGeneratedLocally) ...[
-                                  QrImageView(
-                                    data: jsonEncode({
-                                      'memberId': memberId,
-                                      'eventId': event.id,
-                                    }),
-                                    version: QrVersions.auto,
-                                    size: 200.0,
-                                    backgroundColor: Colors.white,
-                                  ),
-                                ] else ...[
-                                  Image.memory(
-                                    base64Decode(qrCode!.split(',').last),
-                                    height: 200,
-                                    width: 200,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ] else ...[
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: isDarkMode ? kBlack : kBGColor,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isDarkMode
-                                    ? kGrey.withOpacity(0.2)
-                                    : kLightGrey,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Icon(Icons.qr_code_2,
-                                    size: 80,
-                                    color: kGrey.withOpacity(0.5)),
-                                const SizedBox(height: 12),
-                                Text('QR code not available',
-                                    style: TextStyle(
-                                        color: kGrey, fontSize: 14)),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Please contact support if this issue persists.',
-                                  style: TextStyle(
-                                      color: kGrey, fontSize: 12),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        // Attendee info section
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? kBlack : kBGColor,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isDarkMode
-                                  ? kGrey.withOpacity(0.2)
-                                  : kLightGrey,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Attendee',
-                                      style: TextStyle(
-                                          color: kGrey, fontSize: 14)),
-                                  Text(
-                                    attendeeName.isNotEmpty
-                                        ? attendeeName
-                                        : 'N/A',
-                                    style: TextStyle(
-                                      color: isDarkMode ? kWhite : kBlack,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Divider(
-                                  color: kGrey.withOpacity(0.2), height: 1),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Ticket ID',
-                                      style: TextStyle(
-                                          color: kGrey, fontSize: 14)),
-                                  Text(
-                                    ticketId,
-                                    style: TextStyle(
-                                      color: isDarkMode ? kWhite : kBlack,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      fontFamily: 'monospace',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
-                ),
-                // Action buttons fixed at bottom
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // Add to Calendar
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                final calendarEvent = Event(
-                                  title: event.eventTitle,
-                                  description: event.description,
-                                  location: event.location,
-                                  startDate: event.eventDate,
-                                  endDate: event.eventDate
-                                      .add(const Duration(hours: 2)),
-                                  iosParams: const IOSParams(
-                                      reminder: Duration(hours: 1)),
-                                );
-                                Add2Calendar.addEvent2Cal(calendarEvent);
-                              },
-                              icon:
-                                  Icon(Icons.calendar_month, color: kBlue),
-                              label: Text(
-                                'Add to Calendar',
-                                style: TextStyle(
-                                    color: kBlue,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: kBlue),
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      // Download and Share row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () =>
-                                  _downloadTicketAsPdf(event, qrCode),
-                              icon: Icon(Icons.download, color: kWhite),
-                              label: Text(
-                                'Download PDF',
-                                style: TextStyle(
-                                    color: kWhite,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kBlue,
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () => _shareTicket(
-                                  event, attendeeName, ticketId),
-                              icon: Icon(Icons.share, color: kWhite),
-                              label: Text(
-                                'Share',
-                                style: TextStyle(
-                                    color: kWhite,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kGreen,
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _shareTicket(
-      UserEventModel event, String attendeeName, String ticketId) async {
-    final shareText = '''
-🎟️ *${event.eventTitle}*
-
-📅 ${DateFormat('EEEE, MMMM dd, yyyy').format(event.eventDate)}
-🕐 ${DateFormat('h:mm a').format(event.eventDate)}
-📍 ${event.location}
-
-👤 Attendee: $attendeeName
-🎫 Ticket ID: $ticketId
-✅ Status: Confirmed
-
-Join me at this DAMA Kenya event!
-www.damakenya.org
-''';
-
-    await Share.share(shareText, subject: 'My Ticket - ${event.eventTitle}');
   }
 
   Future<void> _downloadTicketAsPdf(
@@ -587,6 +116,7 @@ www.damakenya.org
     if (qrCode != null) {
       qrBytes = base64Decode(qrCode.split(',').last);
     }
+
 
     pdf.addPage(
       pw.Page(
@@ -959,7 +489,7 @@ www.damakenya.org
   }
 
   Widget _buildEventsTab(bool isDarkMode,
-      {String? filter, bool showTrending = false}) {
+      {String? filter, bool showPopular = false}) {
     return RefreshIndicator(
       color: kWhite,
       backgroundColor: kBlue,
@@ -1007,8 +537,8 @@ www.damakenya.org
 
         return CustomScrollView(
           slivers: [
-            if (showTrending &&
-                _eventsController.trendingEvents.isNotEmpty)
+            if (showPopular &&
+                _eventsController.popularEvents.isNotEmpty)
               SliverToBoxAdapter(
                 child: Container(
                   color: isDarkMode ? kBlack : kWhite,
@@ -1024,15 +554,15 @@ www.damakenya.org
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: kOrange.withOpacity(0.15),
+                                color: kBlue.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Text('🔥',
-                                  style: TextStyle(fontSize: 14)),
+                              child: const Icon(Icons.trending_up,
+                                  size: 18, color: kBlue),
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'Trending Events',
+                              'Popular Events',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -1049,10 +579,10 @@ www.damakenya.org
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12),
                           itemCount:
-                              _eventsController.trendingEvents.length,
+                              _eventsController.popularEvents.length,
                           itemBuilder: (context, index) {
                             final event = _eventsController
-                                .trendingEvents[index];
+                                .popularEvents[index];
                             final isPaid =
                                 paidEventIds.contains(event.id);
                             return _buildTrendingCard(
@@ -1094,18 +624,21 @@ www.damakenya.org
                 }
                 
                 return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   sliver: SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: MediaQuery.of(context).size.width > 600 ? 2 : 1,
                       childAspectRatio: 1.0,
                       crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
+                      mainAxisSpacing: 12,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final event = filteredEvents[index];
                         final isPaid = paidEventIds.contains(event.id);
+                        final isReserved = _userEventsController.eventsList
+                            .any((e) => e.id == event.id);
+                        
                         return EventCard(
                           heading: event.eventTitle,
                           imageUrl: event.eventImageUrl.isNotEmpty
@@ -1114,9 +647,17 @@ www.damakenya.org
                           date: event.eventDate,
                           location: event.location,
                           price: event.price,
+                          eventId: event.id,
+                          isConfirmed: isReserved,
+                          attendees: event.attendees.length,
                           onCardTap: () => _navigateToEvent(event, isPaid),
                           onBookPress: () => _showBookingModal(event),
-                          attendees: event.attendees.isNotEmpty ? event.attendees.length : null,
+                          onViewTicket: () {
+                            // Navigate to My Events tab
+                            setState(() {
+                              selectedTab = 1;
+                            });
+                          },
                         );
                       },
                       childCount: filteredEvents.length,
@@ -1242,12 +783,12 @@ www.damakenya.org
                     ),
                   Expanded(
                     child: GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: MediaQuery.of(context).size.width > 600 ? 2 : 1,
                         childAspectRatio: 1.0,
                         crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+                        mainAxisSpacing: 12,
                       ),
                       itemCount:
                           _userEventsController.eventsList.length,
@@ -1263,8 +804,30 @@ www.damakenya.org
                           location: event.location,
                           price: event.price,
                           isConfirmed: true,
-                          onViewTicket: () =>
-                              _showTicketModal(event, isDarkMode),
+                          onViewTicket: () async {
+                            // Download ticket as PDF in My Events tab
+                            final userProfile = _getUserProfileController.profile.value;
+                            String? qrCode;
+                            
+                            if (userProfile?.eventQRCode != null && _currentUserId == userProfile!.id) {
+                              final matchingQRCode = userProfile.eventQRCode
+                                  .where((qr) => qr.eventId == event.id)
+                                  .firstOrNull;
+                              if (matchingQRCode != null) {
+                                qrCode = matchingQRCode.qrCode;
+                              }
+                            }
+                            
+                            if (qrCode == null) {
+                              final memberId = await StorageService.getData('memberId') ?? '';
+                              if (memberId.isNotEmpty) {
+                                final qrData = jsonEncode({'memberId': memberId, 'eventId': event.id});
+                                qrCode = 'data:image/png;base64,${base64Encode(utf8.encode(qrData))}';
+                              }
+                            }
+                            
+                            await _downloadTicketAsPdf(event, qrCode);
+                          },
                           onCardTap: () {
                             Navigator.push(
                               context,
@@ -1299,7 +862,43 @@ www.damakenya.org
                             );
                           },
                           onBookPress: () {},
-                          attendees: event.attendees.isNotEmpty ? event.attendees.length : null,
+                          eventId: event.id,
+                          showTicketNumber: true,
+                          showConfirmedTag: true,
+                          viewTicketColor: const Color(0xFF3778E0),
+                          onViewEvent: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation,
+                                        secondaryAnimation) =>
+                                    SelectedEventScreen(
+                                  isPaid: true,
+                                  eventID: event.id,
+                                  speakers: event.speakers,
+                                  description: event.description,
+                                  title: event.eventTitle,
+                                  price: event.price,
+                                  date: event.eventDate,
+                                  imageUrl: event
+                                          .eventImageUrl.isNotEmpty
+                                      ? event.eventImageUrl
+                                      : DEFAULT_IMAGE_URL,
+                                  location: event.location,
+                                ),
+                                transitionsBuilder: (context,
+                                    animation,
+                                    secondaryAnimation,
+                                    child) {
+                                  return FadeTransition(
+                                      opacity: animation,
+                                      child: child);
+                                },
+                                transitionDuration:
+                                    const Duration(milliseconds: 200),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -1315,7 +914,7 @@ www.damakenya.org
 
   Widget _buildTabButton(String text, int index, bool isDarkMode) {
     final bool isSelected = selectedTab == index;
-    final bool isMyEvents = index == 1; // "My Events & Tickets"
+    final bool isMyEvents = index == 1; // "My Events"
 
     return GestureDetector(
       onTap: () {
@@ -1391,7 +990,7 @@ www.damakenya.org
                     children: [
                       _buildTabButton("All", 0, isDarkMode),
                       const SizedBox(width: 8),
-                      _buildTabButton("My Events & Tickets", 1, isDarkMode),
+                      _buildTabButton("My Events", 1, isDarkMode),
                       const SizedBox(width: 8),
                       _buildTabButton("Upcoming", 2, isDarkMode),
                       const SizedBox(width: 8),
@@ -1408,7 +1007,7 @@ www.damakenya.org
                 child: IndexedStack(
                   index: selectedTab,
                   children: [
-                    _buildEventsTab(isDarkMode, showTrending: true),
+                    _buildEventsTab(isDarkMode, showPopular: true),
                     _buildMyEventsTab(isDarkMode),
                     _buildEventsTab(isDarkMode, filter: 'upcoming'),
                     _buildEventsTab(isDarkMode, filter: 'past'),

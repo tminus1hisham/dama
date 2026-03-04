@@ -5,7 +5,6 @@ import 'package:dama/widgets/buttons/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SelectedEventCard extends StatelessWidget {
@@ -23,6 +22,7 @@ class SelectedEventCard extends StatelessWidget {
     required this.onUnregister,
     required this.isRegistered,
     required this.isRegistering,
+    this.onViewTicket,
   });
 
   final DateTime date;
@@ -37,6 +37,7 @@ class SelectedEventCard extends StatelessWidget {
   final VoidCallback onUnregister;
   final bool isRegistered;
   final bool isRegistering;
+  final VoidCallback? onViewTicket;
 
   Uri _mapsUrl(String location) => Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}',
@@ -271,29 +272,76 @@ class SelectedEventCard extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // Share button
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-              child: GestureDetector(
-                onTap: () {
-                  final link = 'https://mydama.damakenya.org/';
-                  Share.share(
-                    'Check out this event on Dama Kenya: $heading\n$link',
-                    subject: 'Dama Kenya',
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: kBlue, width: 1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Padding(
-                    padding: EdgeInsets.all(10),
-                    child: Icon(Icons.share, color: kBlue),
-                  ),
-                ),
+            // RSVP / View Ticket button
+            if (!isPast)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: kSidePadding),
+                child: isRegistered
+                    ? GestureDetector(
+                        onTap: onViewTicket,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3778E0),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                Icons.confirmation_number,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'View Ticket',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: isPaid ? null : (int.tryParse(price) ?? 0) > 0 ? onPay : onRegister,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: kBlue,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                Icons.local_offer_outlined,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'RSVP now',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
               ),
-            ),
 
             const SizedBox(height: 20),
 

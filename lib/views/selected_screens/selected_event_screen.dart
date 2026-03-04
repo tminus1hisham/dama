@@ -1,30 +1,25 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:dama/controller/get_user_data.dart';
 import 'package:dama/controller/payment_controller.dart';
 import 'package:dama/controller/user_event_controller.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
-import 'package:dama/views/drawer_screen/QRscanner.dart';
 import 'package:dama/widgets/buttons/custom_button.dart';
 import 'package:dama/widgets/cards/profile_card.dart';
 import 'package:dama/widgets/cards/selected_event_card.dart';
 import 'package:dama/widgets/custom_spinner.dart';
-import 'package:dama/widgets/inputs/custom_input.dart';
 import 'package:dama/widgets/modals/success_bottomsheet.dart';
 import 'package:dama/widgets/profile_avatar.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class SelectedEventScreen extends StatefulWidget {
   final String title;
@@ -164,6 +159,130 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
     return rolesData;
   }
 
+  Future<void> _downloadTicketAsPdf() async {
+    final pdf = pw.Document();
+    final attendeeName = '$firstName $lastName'.trim();
+    final ticketId = widget.eventID.length >= 8 
+        ? widget.eventID.substring(0, 8).toUpperCase() 
+        : widget.eventID.toUpperCase();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Text(
+                'DAMA Kenya',
+                style: pw.TextStyle(
+                  fontSize: 28,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue,
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Text(
+                'Event Ticket',
+                style: pw.TextStyle(fontSize: 20, color: PdfColors.grey700),
+              ),
+              pw.SizedBox(height: 30),
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(20),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: pw.BorderRadius.circular(12),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      widget.title,
+                      style: pw.TextStyle(
+                          fontSize: 22, fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.SizedBox(height: 20),
+                    pw.Row(children: [
+                      pw.Text('Date: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text(DateFormat('EEEE, MMMM dd, yyyy')
+                          .format(widget.date)),
+                    ]),
+                    pw.SizedBox(height: 8),
+                    pw.Row(children: [
+                      pw.Text('Time: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text(DateFormat('h:mm a').format(widget.date)),
+                    ]),
+                    pw.SizedBox(height: 8),
+                    pw.Row(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Location: ',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Expanded(child: pw.Text(widget.location)),
+                      ],
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Row(children: [
+                      pw.Text('Price: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text(widget.price == 0 ? 'FREE' : 'Kes ${widget.price}'),
+                    ]),
+                    pw.SizedBox(height: 16),
+                    pw.Divider(color: PdfColors.grey300),
+                    pw.SizedBox(height: 16),
+                    pw.Row(children: [
+                      pw.Text('Attendee: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text(attendeeName.isNotEmpty ? attendeeName : 'N/A'),
+                    ]),
+                    pw.SizedBox(height: 8),
+                    pw.Row(children: [
+                      pw.Text('Ticket ID: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text(ticketId),
+                    ]),
+                    pw.SizedBox(height: 20),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.green50,
+                        borderRadius: pw.BorderRadius.circular(20),
+                      ),
+                      child: pw.Text(
+                        'CONFIRMED',
+                        style: pw.TextStyle(
+                          color: PdfColors.green700,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.Spacer(),
+              pw.Text(
+                'Thank you for your registration!',
+                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600),
+              ),
+              pw.SizedBox(height: 5),
+              pw.Text('www.damakenya.org',
+                  style: pw.TextStyle(fontSize: 12, color: PdfColors.blue)),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'DAMA_Ticket_${widget.title.replaceAll(' ', '_')}.pdf',
+    );
+  }
+
   void _showPhoneNumberModal(bool isDark) {
     showModalBottomSheet(
       context: context,
@@ -299,7 +418,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
       ..object_id.value = widget.eventID
       ..phoneNumber.value = phoneNumber;
 
-    final result = await _paymentController.pay(context);
+    await _paymentController.pay(context);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = _scaffoldKey.currentContext;
@@ -311,167 +430,6 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
         ).showSnackBar(SnackBar(content: Text('Payment successful!')));
       }
     });
-  }
-
-  void _showQRCodeModal(BuildContext context, String qrCode, bool isDarkMode) {
-    final Uint8List qrBytes = base64Decode(qrCode.split(',').last);
-
-    showDialog(
-      context: context,
-      builder:
-          (context) => Dialog(
-            backgroundColor: isDarkMode ? kBlack : kWhite,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Your Event Ticket',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? kWhite : kBlack,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(
-                          Icons.close,
-                          color: isDarkMode ? kWhite : kBlack,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    widget.title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDarkMode ? kGrey : kGrey,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: kWhite,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Image.memory(
-                      qrBytes,
-                      height: 250,
-                      width: 250,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _shareQRCode(qrBytes),
-                          icon: Icon(Icons.share, color: kBlue),
-                          label: Text('Share', style: TextStyle(color: kBlue)),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: kBlue),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _downloadQRCode(qrBytes),
-                          icon: Icon(Icons.download, color: kWhite),
-                          label: Text(
-                            'Download',
-                            style: TextStyle(color: kWhite),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kBlue,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
-  }
-
-  Future<void> _downloadQRCode(Uint8List qrBytes) async {
-    try {
-      if (kIsWeb) {
-        Get.snackbar(
-          'Info',
-          'Use the Share option on web to save the QR code',
-          backgroundColor: kBlue.withOpacity(0.9),
-          colorText: kWhite,
-          margin: const EdgeInsets.all(15),
-        );
-        return;
-      }
-
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName =
-          'ticket_${widget.eventID}_${DateTime.now().millisecondsSinceEpoch}.png';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsBytes(qrBytes);
-
-      Get.snackbar(
-        'Success',
-        'QR code saved to $fileName',
-        backgroundColor: kGreen.withOpacity(0.9),
-        colorText: kWhite,
-        margin: const EdgeInsets.all(15),
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to save QR code',
-        backgroundColor: kRed.withOpacity(0.9),
-        colorText: kWhite,
-        margin: const EdgeInsets.all(15),
-      );
-    }
-  }
-
-  Future<void> _shareQRCode(Uint8List qrBytes) async {
-    try {
-      final directory = await getTemporaryDirectory();
-      final fileName = 'event_ticket_${widget.eventID}.png';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsBytes(qrBytes);
-
-      await Share.shareXFiles([
-        XFile(file.path),
-      ], text: 'My ticket for ${widget.title}');
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to share QR code',
-        backgroundColor: kRed.withOpacity(0.9),
-        colorText: kWhite,
-        margin: const EdgeInsets.all(15),
-      );
-    }
   }
 
   @override
@@ -486,24 +444,6 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
     bool kIsWeb = MediaQuery.of(context).size.width > 1100;
 
     return Obx(() {
-      final userProfile = _getUserProfileController.profile.value;
-
-      bool showQRCode = false;
-      String? qrCode;
-
-      if (userProfile?.eventQRCode != null &&
-          fetchedUserId == userProfile!.id) {
-        final matchingQRCode =
-            userProfile.eventQRCode
-                .where((qr) => qr.eventId == widget.eventID)
-                .firstOrNull;
-
-        if (matchingQRCode != null) {
-          showQRCode = true;
-          qrCode = matchingQRCode.qrCode;
-        }
-      }
-
       return Scaffold(
         key: _scaffoldKey,
         backgroundColor: isDarkMode ? kDarkThemeBg : kBGColor,
@@ -559,6 +499,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                         date: widget.date,
                                         location: widget.location,
                                         price: '${widget.price}',
+                                        onViewTicket: _downloadTicketAsPdf,
                                       ),
                                       Container(
                                         color: isDarkMode ? kBlack : kWhite,
@@ -709,213 +650,6 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                           ],
                                         ),
                                       ),
-                                      if (showQRCode && qrCode != null) ...[
-                                        Container(
-                                          color:
-                                              isDarkMode
-                                                  ? kDarkThemeBg
-                                                  : kBGColor,
-                                          height: 3,
-                                        ),
-                                        Container(
-                                          color: isDarkMode ? kBlack : kWhite,
-                                          child: Center(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                SizedBox(height: 20),
-                                                Text(
-                                                  "Ticket",
-                                                  style: TextStyle(
-                                                    color:
-                                                        isDarkMode
-                                                            ? kWhite
-                                                            : kBlack,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: kBigTextSize,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                                Text(
-                                                  "Scan to view details",
-                                                  style: TextStyle(
-                                                    color:
-                                                        isDarkMode
-                                                            ? kWhite
-                                                            : kBlack,
-                                                    fontSize: kNormalTextSize,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                                SizedBox(height: 10),
-                                                if (roles.contains(
-                                                  'event_verify',
-                                                )) ...[
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 15,
-                                                        ),
-                                                    child: CustomButton(
-                                                      callBackFunction: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder:
-                                                                (
-                                                                  context,
-                                                                ) => QRScannerScreen(
-                                                                  eventId:
-                                                                      widget
-                                                                          .eventID,
-                                                                ),
-                                                          ),
-                                                        );
-                                                      },
-                                                      label: "Verify Ticket",
-                                                      backgroundColor: kBlue,
-                                                    ),
-                                                  ),
-                                                ] else ...[
-                                                  GestureDetector(
-                                                    onTap:
-                                                        () => _showQRCodeModal(
-                                                          context,
-                                                          qrCode!,
-                                                          isDarkMode,
-                                                        ),
-                                                    child: Column(
-                                                      children: [
-                                                        Image.memory(
-                                                          base64Decode(
-                                                            qrCode
-                                                                .split(',')
-                                                                .last,
-                                                          ),
-                                                          height: 200,
-                                                          width: 200,
-                                                          fit: BoxFit.contain,
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 8,
-                                                        ),
-                                                        Text(
-                                                          'Tap to enlarge',
-                                                          style: TextStyle(
-                                                            color: kBlue,
-                                                            fontSize: 12,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 15),
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 40,
-                                                        ),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Expanded(
-                                                          child: OutlinedButton.icon(
-                                                            onPressed:
-                                                                () => _shareQRCode(
-                                                                  base64Decode(
-                                                                    qrCode!
-                                                                        .split(
-                                                                          ',',
-                                                                        )
-                                                                        .last,
-                                                                  ),
-                                                                ),
-                                                            icon: Icon(
-                                                              Icons.share,
-                                                              color: kBlue,
-                                                              size: 18,
-                                                            ),
-                                                            label: Text(
-                                                              'Share',
-                                                              style: TextStyle(
-                                                                color: kBlue,
-                                                              ),
-                                                            ),
-                                                            style: OutlinedButton.styleFrom(
-                                                              side: BorderSide(
-                                                                color: kBlue,
-                                                              ),
-                                                              padding:
-                                                                  const EdgeInsets.symmetric(
-                                                                    vertical:
-                                                                        10,
-                                                                  ),
-                                                              shape: RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      8,
-                                                                    ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 12,
-                                                        ),
-                                                        Expanded(
-                                                          child: ElevatedButton.icon(
-                                                            onPressed:
-                                                                () => _downloadQRCode(
-                                                                  base64Decode(
-                                                                    qrCode!
-                                                                        .split(
-                                                                          ',',
-                                                                        )
-                                                                        .last,
-                                                                  ),
-                                                                ),
-                                                            icon: Icon(
-                                                              Icons.download,
-                                                              color: kWhite,
-                                                              size: 18,
-                                                            ),
-                                                            label: Text(
-                                                              'Download',
-                                                              style: TextStyle(
-                                                                color: kWhite,
-                                                              ),
-                                                            ),
-                                                            style: ElevatedButton.styleFrom(
-                                                              backgroundColor:
-                                                                  kBlue,
-                                                              padding:
-                                                                  const EdgeInsets.symmetric(
-                                                                    vertical:
-                                                                        10,
-                                                                  ),
-                                                              shape: RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      8,
-                                                                    ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-
-                                                SizedBox(height: 30),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
                                     ],
                                   ),
                                 ),

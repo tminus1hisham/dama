@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 class EventsController extends GetxController {
   var eventsList = <EventModel>[].obs;
   var trendingEvents = <EventModel>[].obs;
+  var popularEvents = <EventModel>[].obs;
   var isLoading = false.obs;
   
   // Current filter for trending events
@@ -17,6 +18,7 @@ class EventsController extends GetxController {
   void onInit() {
     super.onInit();
     fetchEvents();
+    fetchPopularEvents();
   }
 
   Future<void> fetchEvents() async {
@@ -43,6 +45,17 @@ class EventsController extends GetxController {
       trendingEvents.clear();
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchPopularEvents() async {
+    try {
+      final fetchedEvents = await _eventService.getPopularEvents();
+      debugPrint('\n✅ EventsController.fetchPopularEvents: API returned ${fetchedEvents.length} popular events');
+      popularEvents.assignAll(fetchedEvents);
+    } catch (e) {
+      debugPrint("Error fetching popular events: $e");
+      popularEvents.clear();
     }
   }
 

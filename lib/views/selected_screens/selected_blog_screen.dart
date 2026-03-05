@@ -94,11 +94,11 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
     String? fetchedBio = await StorageService.getData('brief');
 
     setState(() {
-      imageUrl = url;
-      firstName = fetchedFirstName;
-      memberId = fetchedMemberId;
-      lastName = fetchedLastName;
-      title = fetchedTitle;
+      imageUrl = url ?? '';
+      firstName = fetchedFirstName ?? '';
+      memberId = fetchedMemberId ?? '';
+      lastName = fetchedLastName ?? '';
+      title = fetchedTitle ?? '';
       bio = fetchedBio ?? '';
     });
   }

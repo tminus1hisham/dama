@@ -1,5 +1,5 @@
 import 'package:dama/controller/plans_controller.dart';
-import 'package:dama/controller/payment_controller.dart';
+import 'package:dama/services/unified_payment_service.dart';
 import 'package:dama/models/plans_model.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
@@ -1287,13 +1287,14 @@ class _PlansScreenState extends State<PlansScreen> {
   void _showPaymentModal(BuildContext _, PlanModel plan, bool isDarkMode) {
     debugPrint('_showPaymentModal called for: ${plan.membership}');
     final correctPrice = _getCorrectPrice(plan);
+    final isIOS = UnifiedPaymentService.isIOS;
     
     // Use the State's context instead of passed context
     final ctx = this.context;
     
-    // Pre-populate phone number from storage
+    // Pre-populate phone number from storage (Android only)
     String initialPhoneNumber = '';
-    if (fetchedPhoneNumber != null && fetchedPhoneNumber!.isNotEmpty) {
+    if (!isIOS && fetchedPhoneNumber != null && fetchedPhoneNumber!.isNotEmpty) {
       // Extract just the number part (without country code)
       if (fetchedPhoneNumber!.startsWith('+254')) {
         initialPhoneNumber = fetchedPhoneNumber!.substring(4);
@@ -1352,75 +1353,102 @@ class _PlansScreenState extends State<PlansScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Image.asset("images/mpesa.png", height: 50),
+                      // Payment method icon - platform specific
+                      if (isIOS)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.apple, color: Colors.white, size: 28),
+                              SizedBox(width: 8),
+                              Text(
+                                'Pay',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Image.asset("images/mpesa.png", height: 50),
                       const SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Phone Number *",
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                                fontWeight: FontWeight.bold,
-                                fontSize: kNormalTextSize,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            IntlPhoneField(
-                              initialValue: initialPhoneNumber,
-                              enabled: !isProcessing,
-                              decoration: InputDecoration(
-                                hintText: "7*******",
-                                hintStyle: TextStyle(
-                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                                ),
-                                counterText: '',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(color: Colors.grey),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(color: kBlue, width: 1.0),
+                      // Phone number field - Android only (M-Pesa)
+                      if (!isIOS)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Phone Number *",
+                                style: TextStyle(
+                                  color: isDarkMode ? kWhite : kBlack,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: kNormalTextSize,
                                 ),
                               ),
-                              disableLengthCheck: true,
-                              validator: (PhoneNumber? phone) {
-                                if (phone == null || phone.number.isEmpty) {
-                                  return 'Please enter a phone number';
-                                }
-                                if (phone.number.length != 9) {
-                                  return 'Phone number must be exactly 9 digits';
-                                }
-                                if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
-                                  return 'Phone number must contain only digits';
-                                }
-                                return null;
-                              },
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
+                              const SizedBox(height: 8),
+                              IntlPhoneField(
+                                initialValue: initialPhoneNumber,
+                                enabled: !isProcessing,
+                                decoration: InputDecoration(
+                                  hintText: "7*******",
+                                  hintStyle: TextStyle(
+                                    color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                                  ),
+                                  counterText: '',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(color: Colors.grey),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(color: kBlue, width: 1.0),
+                                  ),
+                                ),
+                                disableLengthCheck: true,
+                                validator: (PhoneNumber? phone) {
+                                  if (phone == null || phone.number.isEmpty) {
+                                    return 'Please enter a phone number';
+                                  }
+                                  if (phone.number.length != 9) {
+                                    return 'Phone number must be exactly 9 digits';
+                                  }
+                                  if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                                    return 'Phone number must contain only digits';
+                                  }
+                                  return null;
+                                },
+                                style: TextStyle(
+                                  color: isDarkMode ? kWhite : kBlack,
+                                ),
+                                dropdownTextStyle: TextStyle(
+                                  color: isDarkMode ? kWhite : kBlack,
+                                ),
+                                dropdownIcon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: isDarkMode ? kWhite : kBlack,
+                                ),
+                                initialCountryCode: 'KE',
+                                onChanged: (PhoneNumber phone) {
+                                  completePhoneNumber = phone.completeNumber;
+                                },
+                                onCountryChanged: (country) {
+                                  countryCode = '+${country.dialCode}';
+                                },
                               ),
-                              dropdownTextStyle: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                              ),
-                              dropdownIcon: Icon(
-                                Icons.arrow_drop_down,
-                                color: isDarkMode ? kWhite : kBlack,
-                              ),
-                              initialCountryCode: 'KE',
-                              onChanged: (PhoneNumber phone) {
-                                completePhoneNumber = phone.completeNumber;
-                              },
-                              onCountryChanged: (country) {
-                                countryCode = '+${country.dialCode}';
-                              },
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
+                      if (!isIOS) const SizedBox(height: 20),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15),
                         child: SizedBox(
@@ -1429,10 +1457,10 @@ class _PlansScreenState extends State<PlansScreen> {
                             ? Container(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 decoration: BoxDecoration(
-                                  color: kBlue.withValues(alpha: 0.5),
+                                  color: isIOS ? Colors.black.withValues(alpha: 0.7) : kBlue.withValues(alpha: 0.5),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     SizedBox(
@@ -1443,10 +1471,10 @@ class _PlansScreenState extends State<PlansScreen> {
                                         strokeWidth: 2,
                                       ),
                                     ),
-                                    SizedBox(width: 12),
+                                    const SizedBox(width: 12),
                                     Text(
-                                      'Processing Payment...',
-                                      style: TextStyle(
+                                      isIOS ? 'Processing Apple Pay...' : 'Processing Payment...',
+                                      style: const TextStyle(
                                         color: kWhite,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
@@ -1455,7 +1483,70 @@ class _PlansScreenState extends State<PlansScreen> {
                                   ],
                                 ),
                               )
-                            : CustomButton(
+                            : isIOS
+                              // Apple Pay button for iOS
+                              ? GestureDetector(
+                                  onTap: () async {
+                                    setModalState(() {
+                                      isProcessing = true;
+                                    });
+                                    
+                                    final result = await _processPayment(plan);
+                                    
+                                    setModalState(() {
+                                      isProcessing = false;
+                                    });
+                                    
+                                    if (result['success'] == true) {
+                                      if (modalContext.mounted) {
+                                        Navigator.pop(modalContext);
+                                      }
+                                      if (context.mounted) {
+                                        showSuccessBottomSheet(
+                                          context,
+                                          plan.membership,
+                                          'Payment completed',
+                                          'KES ${_formatPrice(correctPrice)}',
+                                          isDarkMode,
+                                        );
+                                      }
+                                    } else {
+                                      Get.snackbar(
+                                        'Payment Error',
+                                        result['error'] ?? 'Payment failed. Please try again.',
+                                        snackPosition: SnackPosition.TOP,
+                                        backgroundColor: Colors.red,
+                                        colorText: Colors.white,
+                                        duration: const Duration(seconds: 4),
+                                        margin: const EdgeInsets.all(10),
+                                      );
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.apple, color: Colors.white, size: 24),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Pay with Apple Pay',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              // M-Pesa button for Android
+                              : CustomButton(
                                 callBackFunction: () async {
                                   if (completePhoneNumber != null &&
                                       completePhoneNumber!.length >= 10) {
@@ -1533,40 +1624,34 @@ class _PlansScreenState extends State<PlansScreen> {
   /// Process payment and return result with success status and error message
   Future<Map<String, dynamic>> _processPayment(PlanModel plan) async {
     try {
-      final paymentController = Get.find<PaymentController>();
       final correctPrice = _getCorrectPrice(plan);
+      final isIOS = UnifiedPaymentService.isIOS;
       
-      // Validate phone number format
-      if (phoneNumber.isEmpty) {
+      // Validate phone number for Android (M-Pesa)
+      if (!isIOS && phoneNumber.isEmpty) {
         return {'success': false, 'error': 'Please enter a phone number'};
       }
       
-      // Format phone number - remove any non-digit characters except '+'
-      String formattedPhone = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
-      
-      // Validate it's a Kenyan number
-      if (!formattedPhone.startsWith('+254') && !formattedPhone.startsWith('254') && !formattedPhone.startsWith('0')) {
-        return {'success': false, 'error': 'Please enter a valid Kenyan phone number'};
+      debugPrint('[PlansScreen] Processing ${UnifiedPaymentService.paymentMethodName} payment for ${plan.membership} - KES $correctPrice');
+      if (!isIOS) {
+        debugPrint('[PlansScreen] Phone: $phoneNumber');
       }
       
-      debugPrint('[PlansScreen] Processing M-Pesa payment for ${plan.membership} - KES $correctPrice');
-      debugPrint('[PlansScreen] Phone: $formattedPhone');
+      // Use UnifiedPaymentService for platform-specific payment
+      final result = await UnifiedPaymentService.pay(
+        objectId: plan.id,
+        model: 'Plan',
+        amount: correctPrice,
+        itemName: plan.membership,
+        phoneNumber: isIOS ? null : phoneNumber,
+      );
       
-      paymentController.object_id.value = plan.id;
-      paymentController.model.value = 'Plan';
-      paymentController.amountToPay.value = correctPrice;
-      paymentController.phoneNumber.value = formattedPhone;
-      
-      final success = await paymentController.pay(context);
-      
-      if (success) {
+      if (result.success) {
         return {'success': true};
       } else {
-        // Get error message from controller
-        final errorMsg = paymentController.errorMessage.value;
         return {
           'success': false,
-          'error': errorMsg.isNotEmpty ? errorMsg : 'Payment failed. Please try again.'
+          'error': result.errorMessage ?? 'Payment failed. Please try again.'
         };
       }
     } catch (e) {

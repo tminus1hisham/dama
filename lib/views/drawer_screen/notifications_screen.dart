@@ -519,9 +519,17 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Get.back(); // Close dialog
-                  Get.offAll(() => const Dashboard(initialTab: 4, initialSubTab: 0));
+                onPressed: () async {
+                  debugPrint('🎯 Browse Events button pressed');
+                  // Close all dialogs first
+                  while (Get.isDialogOpen ?? false) {
+                    Get.back();
+                  }
+                  // Small delay to ensure dialog is fully dismissed
+                  await Future.delayed(const Duration(milliseconds: 100));
+                  // Navigate to Events tab (index 4)
+                  debugPrint('🎯 Navigating to Dashboard with initialTab: 4');
+                  Get.offAll(() => Dashboard(initialTab: 4, initialSubTab: 0));
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kBlue,

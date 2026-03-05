@@ -1,6 +1,6 @@
 import 'package:dama/controller/get_user_data.dart';
-import 'package:dama/controller/payment_controller.dart';
 import 'package:dama/controller/user_event_controller.dart';
+import 'package:dama/services/unified_payment_service.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
@@ -52,11 +52,11 @@ class SelectedEventScreen extends StatefulWidget {
 }
 
 class _SelectedEventScreenState extends State<SelectedEventScreen> {
-  final PaymentController _paymentController = Get.put(PaymentController());
   final GetUserProfileController _getUserProfileController = Get.put(
     GetUserProfileController(),
   );
   final UserEventsController _userEventsController = Get.put(UserEventsController());
+  bool _isPaymentProcessing = false;
 
   late final GlobalKey<ScaffoldState> _scaffoldKey;
   final GlobalKey<FormState> _paymentFormKey = GlobalKey<FormState>();
@@ -284,6 +284,9 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   }
 
   void _showPhoneNumberModal(bool isDark) {
+    final isIOS = UnifiedPaymentService.isIOS;
+    bool isProcessing = false;
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -291,115 +294,227 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       backgroundColor: isDark ? kDarkThemeBg : kWhite,
-      builder: (context) {
-        return Form(
-          key: _paymentFormKey,
-          child: SafeArea(
-            bottom: true,
-            child: Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 10),
-                    Image.asset("images/mpesa.png", height: 50),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Phone Number *",
-                            style: TextStyle(
-                              color: isDark ? kWhite : kBlack,
-                              fontWeight: FontWeight.bold,
-                              fontSize: kNormalTextSize,
+      builder: (modalContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Form(
+              key: _paymentFormKey,
+              child: SafeArea(
+                bottom: true,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 10),
+                        // Payment method icon - platform specific
+                        if (isIOS)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.apple, color: Colors.white, size: 28),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Pay',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Image.asset("images/mpesa.png", height: 50),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Amount: KES ${widget.price}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: kBlue,
                           ),
-                          SizedBox(height: 8),
-                          IntlPhoneField(
-                            decoration: InputDecoration(
-                              hintText: "7*******",
-                              hintStyle: TextStyle(
-                                color: isDark ? Colors.grey[400] : Colors.grey[700],
-                              ),
-                              counterText: '',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                                borderSide: BorderSide(color: Colors.grey),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                                borderSide: BorderSide(color: kBlue, width: 1.0),
-                              ),
-                            ),
-                            disableLengthCheck: true,
-                            validator: (PhoneNumber? phone) {
-                              if (phone == null || phone.number.isEmpty) {
-                                return 'Please enter a phone number';
-                              }
-                              if (phone.number.length != 9) {
-                                return 'Phone number must be exactly 9 digits';
-                              }
-                              if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
-                                return 'Phone number must contain only digits';
-                              }
-                              return null;
-                            },
-                            style: TextStyle(
-                              color: isDark ? kWhite : kBlack,
-                            ),
-                            dropdownTextStyle: TextStyle(
-                              color: isDark ? kWhite : kBlack,
-                            ),
-                            dropdownIcon: Icon(
-                              Icons.arrow_drop_down,
-                              color: isDark ? kWhite : kBlack,
-                            ),
-                            initialCountryCode: 'KE',
-                            onChanged: (PhoneNumber phone) {
-                              completePhoneNumber = phone.completeNumber;
-                            },
-                            onCountryChanged: (country) {
-                              countryCode = '+${country.dialCode}';
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: CustomButton(
-                          callBackFunction: () {
-                            if (_paymentFormKey.currentState!.validate()) {
-                              phoneNumber = completePhoneNumber ?? '';
-                              Navigator.pop(context);
-                              _payForEvent(
-                                context,
-                                widget.title,
-                                widget.date.toLocal().toString().split(' ')[0],
-                                widget.location,
-                                isDark,
-                              );
-                            }
-                          },
-                          label: "Confirm Payment",
-                          backgroundColor: kBlue,
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                        // Phone number field - Android only (M-Pesa)
+                        if (!isIOS)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Phone Number *",
+                                  style: TextStyle(
+                                    color: isDark ? kWhite : kBlack,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: kNormalTextSize,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                IntlPhoneField(
+                                  enabled: !isProcessing,
+                                  decoration: InputDecoration(
+                                    hintText: "7*******",
+                                    hintStyle: TextStyle(
+                                      color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                    ),
+                                    counterText: '',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      borderSide: BorderSide(color: Colors.grey),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      borderSide: BorderSide(color: kBlue, width: 1.0),
+                                    ),
+                                  ),
+                                  disableLengthCheck: true,
+                                  validator: (PhoneNumber? phone) {
+                                    if (phone == null || phone.number.isEmpty) {
+                                      return 'Please enter a phone number';
+                                    }
+                                    if (phone.number.length != 9) {
+                                      return 'Phone number must be exactly 9 digits';
+                                    }
+                                    if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                                      return 'Phone number must contain only digits';
+                                    }
+                                    return null;
+                                  },
+                                  style: TextStyle(
+                                    color: isDark ? kWhite : kBlack,
+                                  ),
+                                  dropdownTextStyle: TextStyle(
+                                    color: isDark ? kWhite : kBlack,
+                                  ),
+                                  dropdownIcon: Icon(
+                                    Icons.arrow_drop_down,
+                                    color: isDark ? kWhite : kBlack,
+                                  ),
+                                  initialCountryCode: 'KE',
+                                  onChanged: (PhoneNumber phone) {
+                                    completePhoneNumber = phone.completeNumber;
+                                  },
+                                  onCountryChanged: (country) {
+                                    countryCode = '+${country.dialCode}';
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: isProcessing
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    decoration: BoxDecoration(
+                                      color: isIOS ? Colors.black.withValues(alpha: 0.7) : kBlue.withValues(alpha: 0.5),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            color: kWhite,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          isIOS ? 'Processing Apple Pay...' : 'Processing Payment...',
+                                          style: const TextStyle(
+                                            color: kWhite,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : isIOS
+                                    // Apple Pay button for iOS
+                                    ? GestureDetector(
+                                        onTap: () {
+                                          setModalState(() {
+                                            isProcessing = true;
+                                          });
+                                          Navigator.pop(modalContext);
+                                          _payForEvent(
+                                            context,
+                                            widget.title,
+                                            widget.date.toLocal().toString().split(' ')[0],
+                                            widget.location,
+                                            isDark,
+                                          );
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.apple, color: Colors.white, size: 24),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'Pay with Apple Pay',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      )
+                                    // M-Pesa button for Android
+                                    : CustomButton(
+                                        callBackFunction: () {
+                                          if (_paymentFormKey.currentState!.validate()) {
+                                            phoneNumber = completePhoneNumber ?? '';
+                                            Navigator.pop(modalContext);
+                                            _payForEvent(
+                                              context,
+                                              widget.title,
+                                              widget.date.toLocal().toString().split(' ')[0],
+                                              widget.location,
+                                              isDark,
+                                            );
+                                          }
+                                        },
+                                        label: "Confirm Payment",
+                                        backgroundColor: kBlue,
+                                      ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
-                    const SizedBox(height: 20),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -412,24 +527,36 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
     String location,
     bool isDark,
   ) async {
-    _paymentController
-      ..amountToPay.value = widget.price
-      ..model.value = 'Event'
-      ..object_id.value = widget.eventID
-      ..phoneNumber.value = phoneNumber;
-
-    await _paymentController.pay(context);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _scaffoldKey.currentContext;
-      if (context != null && context.mounted) {
-        showSuccessBottomSheet(context, title, date, location, isDark);
-      } else {
-        ScaffoldMessenger.of(
-          _scaffoldKey.currentContext!,
-        ).showSnackBar(SnackBar(content: Text('Payment successful!')));
-      }
+    setState(() {
+      _isPaymentProcessing = true;
     });
+    
+    final isIOS = UnifiedPaymentService.isIOS;
+    
+    final paymentResult = await UnifiedPaymentService.pay(
+      objectId: widget.eventID,
+      model: 'Event',
+      amount: widget.price,
+      itemName: widget.title,
+      phoneNumber: isIOS ? null : phoneNumber,
+    );
+    
+    setState(() {
+      _isPaymentProcessing = false;
+    });
+    
+    if (paymentResult.success) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final context = _scaffoldKey.currentContext;
+        if (context != null && context.mounted) {
+          showSuccessBottomSheet(context, title, date, location, isDark);
+        } else {
+          ScaffoldMessenger.of(
+            _scaffoldKey.currentContext!,
+          ).showSnackBar(SnackBar(content: Text('Payment successful!')));
+        }
+      });
+    }
   }
 
   @override
@@ -663,7 +790,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                 ),
               ],
             ),
-            if (_paymentController.isLoading.value)
+            if (_isPaymentProcessing)
               Container(
                 color: Colors.black.withOpacity(0.5),
                 child: Center(child: customSpinner),

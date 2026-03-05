@@ -1,4 +1,6 @@
 import 'package:dama/app.dart';
+import 'package:dama/services/update_service.dart';
+import 'package:dama/services/unified_payment_service.dart';
 import 'package:dama/utils/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import 'controller/auth_controller.dart';
 import 'controller/global_search_controller.dart';
+import 'controller/plans_controller.dart';
 import 'controller/register_controller.dart';
 import 'controller/training_controller.dart';
 import 'controller/user_training_controller.dart';
@@ -24,6 +27,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Get.put(GlobalSearchController());
   Get.put(RegisterController());  // Make RegisterController available throughout the app
+  Get.put(PlansController());     // Make PlansController available globally
 
   if (!kIsWeb) {
     try {
@@ -38,6 +42,9 @@ void main() async {
     Get.put(DeepLinkService());
     Get.put(ApiService());
     Get.put(LinkedInController());
+    
+    // Initialize payment services (Apple Pay on iOS)
+    await UnifiedPaymentService.initialize();
   }
 
   Get.put(AuthController());
@@ -45,6 +52,17 @@ void main() async {
   Get.put(UserTrainingController());
   Get.put(UserProgressController());
   Get.put(PaymentController());
+
+  // Initialize in-app update service (Android/iOS only)
+  if (!kIsWeb) {
+    final updateService = await UpdateServiceExtension.initialize();
+    Get.put(updateService);
+    // Check for updates after app starts (with slight delay for better UX)
+    Future.delayed(const Duration(seconds: 3), () {
+      updateService.checkForUpdate();
+    });
+  }
+
   runApp(
     MultiProvider(
       providers: [

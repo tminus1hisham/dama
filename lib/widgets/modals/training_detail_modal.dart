@@ -1,7 +1,7 @@
-import 'package:dama/controller/payment_controller.dart';
 import 'package:dama/controller/user_training_controller.dart';
 import 'package:dama/models/training_model.dart';
 import 'package:dama/services/api_service.dart';
+import 'package:dama/services/unified_payment_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -633,16 +633,12 @@ class _PaymentBottomSheet extends StatefulWidget {
 class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
   String? completePhoneNumber;
   String? countryCode = '+254';
-  final PaymentController _paymentController = Get.put(PaymentController());
-
-  @override
-  void dispose() {
-    Get.delete<PaymentController>();
-    super.dispose();
-  }
+  bool _isPaymentProcessing = false;
+  final bool isIOS = UnifiedPaymentService.isIOS;
 
   Future<void> _processPayment() async {
-    if (completePhoneNumber == null || completePhoneNumber!.isEmpty) {
+    // Phone validation only required for M-Pesa (Android)
+    if (!isIOS && (completePhoneNumber == null || completePhoneNumber!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a phone number'),
@@ -652,15 +648,24 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
       return;
     }
 
-    _paymentController.amountToPay.value = widget.amount;
-    _paymentController.model.value = 'Training';
-    _paymentController.object_id.value = widget.trainingId;
-    _paymentController.phoneNumber.value = completePhoneNumber!;
+    setState(() => _isPaymentProcessing = true);
 
-    final success = await _paymentController.pay(context);
-    
-    if (success && widget.onPaymentComplete != null) {
-      widget.onPaymentComplete!();
+    try {
+      final result = await UnifiedPaymentService.pay(
+        objectId: widget.trainingId,
+        model: 'Training',
+        amount: widget.amount,
+        itemName: widget.trainingName,
+        phoneNumber: isIOS ? null : completePhoneNumber,
+      );
+
+      if (result.success && widget.onPaymentComplete != null) {
+        widget.onPaymentComplete!();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isPaymentProcessing = false);
+      }
     }
   }
 
@@ -738,69 +743,94 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                   ),
                   const SizedBox(height: 20),
 
-                  // M-Pesa logo
+                  // Payment method logo
                   Center(
-                    child: Image.asset("images/mpesa.png", height: 50),
+                    child: isIOS
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.apple, color: Colors.white, size: 24),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Pay',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Image.asset("images/mpesa.png", height: 50),
                   ),
                   const SizedBox(height: 20),
 
-                  // Phone number field
-                  Text(
-                    "Phone Number *",
-                    style: TextStyle(
-                      color: widget.isDarkMode ? kWhite : kBlack,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  IntlPhoneField(
-                    decoration: InputDecoration(
-                      hintText: "7*******",
-                      hintStyle: TextStyle(
-                        color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                      ),
-                      counterText: '',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                        borderSide: const BorderSide(color: Colors.grey),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                        borderSide: const BorderSide(color: kBlue, width: 1.0),
+                  // Phone number field - only for M-Pesa (Android)
+                  if (!isIOS) ...[
+                    Text(
+                      "Phone Number *",
+                      style: TextStyle(
+                        color: widget.isDarkMode ? kWhite : kBlack,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
                       ),
                     ),
-                    disableLengthCheck: true,
-                    validator: (PhoneNumber? phone) {
-                      if (phone == null || phone.number.isEmpty) {
-                        return 'Please enter a phone number';
-                      }
-                      if (phone.number.length != 9) {
-                        return 'Phone number must be exactly 9 digits';
-                      }
-                      if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
-                        return 'Phone number must contain only digits';
-                      }
-                      return null;
-                    },
-                    style: TextStyle(
-                      color: widget.isDarkMode ? kWhite : kBlack,
+                    const SizedBox(height: 8),
+                    IntlPhoneField(
+                      decoration: InputDecoration(
+                        hintText: "7*******",
+                        hintStyle: TextStyle(
+                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                        ),
+                        counterText: '',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: const BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: const BorderSide(color: kBlue, width: 1.0),
+                        ),
+                      ),
+                      disableLengthCheck: true,
+                      validator: (PhoneNumber? phone) {
+                        if (phone == null || phone.number.isEmpty) {
+                          return 'Please enter a phone number';
+                        }
+                        if (phone.number.length != 9) {
+                          return 'Phone number must be exactly 9 digits';
+                        }
+                        if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                          return 'Phone number must contain only digits';
+                        }
+                        return null;
+                      },
+                      style: TextStyle(
+                        color: widget.isDarkMode ? kWhite : kBlack,
+                      ),
+                      dropdownTextStyle: TextStyle(
+                        color: widget.isDarkMode ? kWhite : kBlack,
+                      ),
+                      dropdownIcon: Icon(
+                        Icons.arrow_drop_down,
+                        color: widget.isDarkMode ? kWhite : kBlack,
+                      ),
+                      initialCountryCode: 'KE',
+                      onChanged: (PhoneNumber phone) {
+                        completePhoneNumber = phone.completeNumber;
+                      },
+                      onCountryChanged: (country) {
+                        countryCode = '+${country.dialCode}';
+                      },
                     ),
-                    dropdownTextStyle: TextStyle(
-                      color: widget.isDarkMode ? kWhite : kBlack,
-                    ),
-                    dropdownIcon: Icon(
-                      Icons.arrow_drop_down,
-                      color: widget.isDarkMode ? kWhite : kBlack,
-                    ),
-                    initialCountryCode: 'KE',
-                    onChanged: (PhoneNumber phone) {
-                      completePhoneNumber = phone.completeNumber;
-                    },
-                    onCountryChanged: (country) {
-                      countryCode = '+${country.dialCode}';
-                    },
-                  ),
+                  ],
 
                   const SizedBox(height: 16),
 
@@ -910,17 +940,17 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
               child: SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: Obx(() => ElevatedButton(
-                  onPressed: _paymentController.isLoading.value ? null : _processPayment,
+                child: ElevatedButton(
+                  onPressed: _isPaymentProcessing ? null : _processPayment,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: kBlue,
+                    backgroundColor: isIOS ? Colors.black : kBlue,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     disabledBackgroundColor: Colors.grey,
                   ),
-                  child: _paymentController.isLoading.value
+                  child: _isPaymentProcessing
                     ? const SizedBox(
                         width: 20,
                         height: 20,
@@ -929,14 +959,30 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                           color: Colors.white,
                         ),
                       )
-                    : Text(
-                        'Pay KES ${widget.amount}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (isIOS) ...[
+                            const Icon(Icons.apple, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Pay KES ${widget.amount}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ] else
+                            Text(
+                              'Pay KES ${widget.amount}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
                       ),
-                )),
+                ),
               ),
             ),
           ),

@@ -991,9 +991,15 @@ class _BookingModalState extends State<BookingModal>
                             _phoneNumber = value;
                           });
                         },
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
                         decoration: InputDecoration(
                           hintText: '0712345678',
-                          prefixIcon: const Icon(Icons.phone, size: 18),
+                          hintStyle: TextStyle(
+                            color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                          ),
+                          prefixIcon: Icon(Icons.phone, size: 18, color: isDarkMode ? Colors.white70 : Colors.grey.shade600),
                           suffixIcon: _phoneNumber.isNotEmpty
                               ? Icon(
                                   _isPhoneValid()

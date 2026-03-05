@@ -1043,6 +1043,71 @@ class ApiService {
     }
   }
 
+  /// Create Apple Pay payment intent via Stripe
+  /// Backend should create a Stripe PaymentIntent and return:
+  /// { clientSecret, paymentIntentId, transactionId }
+  Future<Map<String, dynamic>?> createApplePayIntent({
+    required String objectId,
+    required String model,
+    required int amount,
+  }) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+
+      debugPrint('=== APPLE PAY INTENT DEBUG ===');
+      debugPrint('Model: $model');
+      debugPrint('ObjectId: $objectId');
+      debugPrint('Amount: $amount');
+
+      // TODO: Update endpoint when backend is ready
+      final url = '$BASE_URL/transactions/apple-pay';
+      final body = jsonEncode({
+        'objectId': objectId,
+        'model': model,
+        'amount': amount,
+        'currency': 'KES',
+      });
+
+      debugPrint('Apple Pay URL: $url');
+      debugPrint('Request Body: $body');
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: body,
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        try {
+          final errorData = json.decode(response.body);
+          final errorMessage =
+              errorData['message'] ?? errorData['error'] ?? 'Unknown error';
+          throw Exception('Apple Pay setup failed: $errorMessage');
+        } catch (_) {
+          throw Exception('Failed to create payment intent: ${response.statusCode}');
+        }
+      }
+    } on SocketException catch (_) {
+      NetworkModal.showNetworkDialog();
+      return null;
+    } catch (e) {
+      debugPrint('Apple Pay intent error: $e');
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>?> addComment(
     CommentModel request,
     String blogID,

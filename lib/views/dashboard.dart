@@ -87,7 +87,7 @@ class _DashboardState extends State<Dashboard>
   String memberId = '';
   bool hasMembership = false;
   String membershipExiryDate = '';
-  final PlansController _plansController = Get.put(PlansController());
+  final PlansController _plansController = Get.find<PlansController>();
   String membershipName = 'No Active Membership';
   String membershipId = '';
   List<String> userRoles = [];
@@ -100,9 +100,11 @@ class _DashboardState extends State<Dashboard>
   @override
   void initState() {
     super.initState();
+    debugPrint('🏠 Dashboard initState: initialTab=${widget.initialTab}, initialSubTab=${widget.initialSubTab}');
     _selectedIndex = widget.initialTab;
     _pageController = PageController(initialPage: _selectedIndex);
     _searchController = TextEditingController();
+    debugPrint('🏠 Dashboard _selectedIndex set to: $_selectedIndex');
 
     // Pulse animation controller for avatar glow in drawer
     _pulseController = AnimationController(
@@ -323,7 +325,7 @@ class _DashboardState extends State<Dashboard>
       });
     }
 
-    _getMembershipStatus();
+    await _getMembershipStatus();
     _checkRoleApproval();
   }
 
@@ -380,34 +382,21 @@ class _DashboardState extends State<Dashboard>
         }
       }
 
+      // Always fetch plans and get current user plan first to initialize controller state
+      if (_plansController.plansList.isEmpty) {
+        await _plansController.fetchPlans();
+      }
+      await _plansController.getCurrentUserPlan();
+
       if (hasStoredMembership && storedMembershipId != null) {
         setState(() {
           hasMembership = true;
           membershipId = storedMembershipId;
           membershipName = _plansController.getMembershipName();
         });
-        if (!_hasShownOfflineNotification) {
-          _hasShownOfflineNotification = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Offline mode - using cached data'),
-                  duration: Duration(seconds: 2),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            }
-          });
-        }
         return;
       }
 
-      if (_plansController.plansList.isEmpty) {
-        await _plansController.fetchPlans();
-      }
-
-      final currentPlan = await _plansController.getCurrentUserPlan();
       final hasActivePlan = _plansController.hasActivePlan.value;
       final membershipIdFromController = _plansController.currentMembershipId.value;
 
@@ -568,7 +557,8 @@ class _DashboardState extends State<Dashboard>
     _pageController.dispose();
     _searchController.dispose();
     _pulseController.dispose();
-    Get.delete<PlansController>();
+    // Don't delete PlansController here - it may be needed by incoming Dashboard
+    // GetX will handle cleanup automatically when app is fully disposed
     super.dispose();
   }
 
@@ -969,7 +959,7 @@ class _DashboardState extends State<Dashboard>
                                       const SizedBox(width: 6),
                                       // Check if expired using FutureBuilder
                                       FutureBuilder<bool>(
-                                        future: Get.find<PlansController>().isMembershipExpired(),
+                                        future: _plansController.isMembershipExpired(),
                                         builder: (context, expiredSnapshot) {
                                           final isExpired = expiredSnapshot.data ?? false;
                                           return Container(
@@ -1003,8 +993,7 @@ class _DashboardState extends State<Dashboard>
                                 if (hasMembership &&
                                     membershipExiryDate.isNotEmpty)
                                   FutureBuilder<bool>(
-                                    future: Get.find<PlansController>()
-                                        .isMembershipExpired(),
+                                    future: _plansController.isMembershipExpired(),
                                     builder: (context, snapshot) {
                                       final isExpired = snapshot.data ?? false;
                                       if (isExpired) {

@@ -435,7 +435,9 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                           );
                         }
 
-                        return Obx(() {
+                        return KeyedSubtree(
+                          key: ValueKey('blog_$blogID'),
+                          child: Obx(() {
                           final isLiked =
                               _likeController.likedStatus[blogID] ?? false;
                           final likeCount =
@@ -511,7 +513,8 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                               );
                             },
                           );
-                        });
+                        }),
+                        );
                       },
                     ),
                   ),

@@ -1,6 +1,6 @@
 import 'package:dama/controller/get_user_data.dart';
-import 'package:dama/controller/payment_controller.dart';
 import 'package:dama/controller/rating_controller.dart';
+import 'package:dama/services/unified_payment_service.dart';
 import 'package:dama/controller/resource_controller.dart';
 import 'package:dama/controller/transaction_controller.dart';
 import 'package:dama/models/rating_model.dart';
@@ -57,7 +57,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
   final TransactionController _transactionController = Get.put(TransactionController());
   final ResourceController _resourceController = Get.put(ResourceController());
   bool _hasPurchased = false;
-  final PaymentController _paymentController = Get.put(PaymentController());
+  bool _isPaymentProcessing = false;
   final RatingController _ratingController = Get.put(RatingController());
   late final GlobalKey<ScaffoldState> _resourceKey;
   // Flag to prevent multiple modal shows
@@ -86,13 +86,25 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
     debugPrint('Phone: $phoneNumber');
     debugPrint('Has Purchased (before): $_hasPurchased');
     
-    _paymentController
-      ..amountToPay.value = widget.price
-      ..model.value = 'Resource'
-      ..object_id.value = widget.resourceID
-      ..phoneNumber.value = phoneNumber;
-
-    final result = await _paymentController.pay(context);
+    setState(() {
+      _isPaymentProcessing = true;
+    });
+    
+    final isIOS = UnifiedPaymentService.isIOS;
+    
+    final paymentResult = await UnifiedPaymentService.pay(
+      objectId: widget.resourceID,
+      model: 'Resource',
+      amount: widget.price,
+      itemName: widget.title,
+      phoneNumber: isIOS ? null : phoneNumber,
+    );
+    
+    setState(() {
+      _isPaymentProcessing = false;
+    });
+    
+    final result = paymentResult.success;
     
     debugPrint('Payment result: $result');
 
@@ -117,6 +129,8 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
     // Prevent showing multiple modals
     if (_hasShownPaymentModal) return;
     _hasShownPaymentModal = true;
+    
+    final isIOS = UnifiedPaymentService.isIOS;
 
     showModalBottomSheet(
       context: context,
@@ -125,141 +139,238 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       backgroundColor: isDark ? kDarkThemeBg : kWhite,
-      builder: (context) {
-        return SafeArea(
-          bottom: true,
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 20),
-                  Text(
-                    'Purchase Resource',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? kWhite : kBlack,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? kWhite : kGrey,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  Text(
-                    'Amount: KES $price',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: kBlue,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Image.asset("images/mpesa.png", height: 50),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 15),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Phone Number *",
-                          style: TextStyle(
-                            color: isDark ? kWhite : kBlack,
-                            fontWeight: FontWeight.bold,
-                            fontSize: kNormalTextSize,
-                          ),
+      builder: (modalContext) {
+        bool isProcessing = false;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              bottom: true,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 20),
+                      Text(
+                        'Purchase Resource',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? kWhite : kBlack,
                         ),
-                        SizedBox(height: 8),
-                        IntlPhoneField(
-                          decoration: InputDecoration(
-                            hintText: "7*******",
-                            hintStyle: TextStyle(
-                              color: isDark ? Colors.grey[400] : Colors.grey[700],
-                            ),
-                            counterText: '',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              borderSide: BorderSide(color: Colors.grey),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              borderSide: BorderSide(color: kBlue, width: 1.0),
-                            ),
-                          ),
-                          disableLengthCheck: true,
-                          validator: (PhoneNumber? phone) {
-                            if (phone == null || phone.number.isEmpty) {
-                              return 'Please enter a phone number';
-                            }
-                            if (phone.number.length != 9) {
-                              return 'Phone number must be exactly 9 digits';
-                            }
-                            if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
-                              return 'Phone number must contain only digits';
-                            }
-                            return null;
-                          },
-                          style: TextStyle(
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                          dropdownTextStyle: TextStyle(
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                          dropdownIcon: Icon(
-                            Icons.arrow_drop_down,
-                            color: isDark ? kWhite : kBlack,
-                          ),
-                          initialCountryCode: 'KE',
-                          onChanged: (PhoneNumber phone) {
-                            completePhoneNumber = phone.completeNumber;
-                          },
-                          onCountryChanged: (country) {
-                            countryCode = '+${country.dialCode}';
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 15),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: CustomButton(
-                        callBackFunction: () {
-                          if (completePhoneNumber != null &&
-                              completePhoneNumber!.length >= 10) {
-                            phoneNumber = completePhoneNumber!;
-                            Navigator.pop(context);
-                            _payForResource(context, title, price, isDark);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Please enter a valid phone number'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
-                        label: "Confirm Payment",
-                        backgroundColor: kBlue,
                       ),
-                    ),
+                      const SizedBox(height: 10),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? kWhite : kGrey,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        'Amount: KES $price',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: kBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Payment method icon - platform specific
+                      if (isIOS)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.apple, color: Colors.white, size: 28),
+                              SizedBox(width: 8),
+                              Text(
+                                'Pay',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Image.asset("images/mpesa.png", height: 50),
+                      const SizedBox(height: 20),
+                      // Phone number field - Android only (M-Pesa)
+                      if (!isIOS)
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 15),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Phone Number *",
+                                style: TextStyle(
+                                  color: isDark ? kWhite : kBlack,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: kNormalTextSize,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              IntlPhoneField(
+                                enabled: !isProcessing,
+                                decoration: InputDecoration(
+                                  hintText: "7*******",
+                                  hintStyle: TextStyle(
+                                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                  ),
+                                  counterText: '',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: BorderSide(color: Colors.grey),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: BorderSide(color: kBlue, width: 1.0),
+                                  ),
+                                ),
+                                disableLengthCheck: true,
+                                validator: (PhoneNumber? phone) {
+                                  if (phone == null || phone.number.isEmpty) {
+                                    return 'Please enter a phone number';
+                                  }
+                                  if (phone.number.length != 9) {
+                                    return 'Phone number must be exactly 9 digits';
+                                  }
+                                  if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                                    return 'Phone number must contain only digits';
+                                  }
+                                  return null;
+                                },
+                                style: TextStyle(
+                                  color: isDark ? kWhite : kBlack,
+                                ),
+                                dropdownTextStyle: TextStyle(
+                                  color: isDark ? kWhite : kBlack,
+                                ),
+                                dropdownIcon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: isDark ? kWhite : kBlack,
+                                ),
+                                initialCountryCode: 'KE',
+                                onChanged: (PhoneNumber phone) {
+                                  completePhoneNumber = phone.completeNumber;
+                                },
+                                onCountryChanged: (country) {
+                                  countryCode = '+${country.dialCode}';
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (!isIOS) const SizedBox(height: 20),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 15),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: isProcessing
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: isIOS ? Colors.black.withValues(alpha: 0.7) : kBlue.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: kWhite,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        isIOS ? 'Processing Apple Pay...' : 'Processing Payment...',
+                                        style: const TextStyle(
+                                          color: kWhite,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : isIOS
+                                  // Apple Pay button for iOS
+                                  ? GestureDetector(
+                                      onTap: () async {
+                                        setModalState(() {
+                                          isProcessing = true;
+                                        });
+                                        Navigator.pop(modalContext);
+                                        _payForResource(context, title, price, isDark);
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.apple, color: Colors.white, size: 24),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Pay with Apple Pay',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  // M-Pesa button for Android
+                                  : CustomButton(
+                                      callBackFunction: () {
+                                        if (completePhoneNumber != null &&
+                                            completePhoneNumber!.length >= 10) {
+                                          phoneNumber = completePhoneNumber!;
+                                          Navigator.pop(modalContext);
+                                          _payForResource(context, title, price, isDark);
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Please enter a valid phone number'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      label: "Confirm Payment",
+                                      backgroundColor: kBlue,
+                                    ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          }
         );
       },
     ).then((_) {
@@ -574,7 +685,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
               ],
             ),
           ),
-          if (_paymentController.isLoading.value)
+          if (_isPaymentProcessing)
             Container(
               color: Colors.black.withOpacity(0.5),
               child: Center(child: customSpinner),

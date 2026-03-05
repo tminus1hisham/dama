@@ -458,6 +458,7 @@ class PlansController extends GetxController {
   // Method to get membership name (similar to your existing function)
   String getMembershipName() {
     try {
+      // First try by ID
       if (currentMembershipId.value.isNotEmpty) {
         final plan = plansList.firstWhereOrNull(
           (plan) => plan.id == currentMembershipId.value,
@@ -466,6 +467,24 @@ class PlansController extends GetxController {
           return plan.membership;
         }
       }
+      
+      // Fallback: try by currentUserPlan name (set by getCurrentUserPlan)
+      if (currentUserPlan.value.isNotEmpty) {
+        final plan = plansList.firstWhereOrNull(
+          (plan) => plan.membership.toLowerCase() == currentUserPlan.value.toLowerCase(),
+        );
+        if (plan != null) {
+          return plan.membership;
+        }
+        // If we have a plan type but can't find it in list, capitalize and return it
+        return currentUserPlan.value[0].toUpperCase() + currentUserPlan.value.substring(1);
+      }
+      
+      // Final fallback: check hasActivePlan
+      if (hasActivePlan.value) {
+        return 'Professional'; // Default to Professional if active but unknown
+      }
+      
       return 'No Active Membership';
     } catch (e) {
       return 'No Active Membership';

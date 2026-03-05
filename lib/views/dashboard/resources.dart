@@ -1,6 +1,6 @@
 import 'package:dama/controller/get_user_data.dart';
-import 'package:dama/controller/payment_controller.dart';
 import 'package:dama/controller/resource_controller.dart';
+import 'package:dama/services/unified_payment_service.dart';
 import 'package:dama/controller/user_resources_controller.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
@@ -34,7 +34,6 @@ class _ResourcesState extends State<Resources>
   final UserResourceController _userResourceController = Get.put(
     UserResourceController(),
   );
-  final PaymentController _paymentController = Get.put(PaymentController());
   final GetUserProfileController _getUserProfileController = Get.put(
     GetUserProfileController(),
   );
@@ -157,6 +156,7 @@ class _ResourcesState extends State<Resources>
     
     // Local variable to track loading state within the modal
     bool isProcessing = false;
+    final isIOS = UnifiedPaymentService.isIOS;
     
     showModalBottomSheet(
       context: context,
@@ -207,10 +207,37 @@ class _ResourcesState extends State<Resources>
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Image.asset("images/mpesa.png", height: 50),
+                      // Payment method icon - platform specific
+                      if (isIOS)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.apple, color: Colors.white, size: 28),
+                              SizedBox(width: 8),
+                              Text(
+                                'Pay',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Image.asset("images/mpesa.png", height: 50),
                       const SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                      // Phone number field - Android only (M-Pesa)
+                      if (!isIOS)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -275,7 +302,7 @@ class _ResourcesState extends State<Resources>
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      if (!isIOS) const SizedBox(height: 20),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15),
                         child: SizedBox(
@@ -284,13 +311,13 @@ class _ResourcesState extends State<Resources>
                             ? Container(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 decoration: BoxDecoration(
-                                  color: kBlue.withValues(alpha: 0.5),
+                                  color: isIOS ? Colors.black.withValues(alpha: 0.7) : kBlue.withValues(alpha: 0.5),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    SizedBox(
+                                    const SizedBox(
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
@@ -300,8 +327,8 @@ class _ResourcesState extends State<Resources>
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
-                                      'Processing Payment...',
-                                      style: TextStyle(
+                                      isIOS ? 'Processing Apple Pay...' : 'Processing Payment...',
+                                      style: const TextStyle(
                                         color: kWhite,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
@@ -310,7 +337,69 @@ class _ResourcesState extends State<Resources>
                                   ],
                                 ),
                               )
-                            : CustomButton(
+                            : isIOS
+                              // Apple Pay button for iOS
+                              ? GestureDetector(
+                                  onTap: () async {
+                                    setModalState(() {
+                                      isProcessing = true;
+                                    });
+                                    
+                                    final success = await _processPayment(context, resource);
+                                    
+                                    if (modalContext.mounted) {
+                                      Navigator.pop(modalContext);
+                                    }
+                                    
+                                    if (success && context.mounted) {
+                                      showSuccessBottomSheet(
+                                        context,
+                                        resource.title,
+                                        'Resource purchased',
+                                        'KES ${resource.price}',
+                                        isDarkMode,
+                                      );
+                                      Future.delayed(const Duration(seconds: 3), () {
+                                        if (context.mounted) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => PDFViewerPage(
+                                                title: resource.title,
+                                                pdfUrl: resource.resourceLink,
+                                                onBack: () => Navigator.pop(context),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      });
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.apple, color: Colors.white, size: 24),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Pay with Apple Pay',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              // M-Pesa button for Android
+                              : CustomButton(
                                 callBackFunction: () async {
                                   if (completePhoneNumber != null &&
                                       completePhoneNumber!.length >= 10) {
@@ -396,13 +485,17 @@ class _ResourcesState extends State<Resources>
       return false;
     }
 
-    _paymentController
-      ..amountToPay.value = resource.price
-      ..model.value = 'Resource'
-      ..object_id.value = resource.id
-      ..phoneNumber.value = phoneNumber;
-
-    final success = await _paymentController.pay(context);
+    final isIOS = UnifiedPaymentService.isIOS;
+    
+    final result = await UnifiedPaymentService.pay(
+      objectId: resource.id,
+      model: 'Resource',
+      amount: resource.price,
+      itemName: resource.title,
+      phoneNumber: isIOS ? null : phoneNumber,
+    );
+    
+    final success = result.success;
 
     if (success) {
       // Refresh user resources list after successful payment

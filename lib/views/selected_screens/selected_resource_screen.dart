@@ -575,8 +575,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
     bool isDarkMode = themeProvider.isDark;
     bool kIsWeb = MediaQuery.of(context).size.width > 1100;
 
-    return Obx(
-      () => Stack(
+    return Stack(
         children: [
           Scaffold(
             key: _resourceKey,
@@ -691,7 +690,6 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
               child: Center(child: customSpinner),
             ),
         ],
-      ),
     );
   }
 }

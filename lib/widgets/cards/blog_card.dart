@@ -108,26 +108,20 @@ class blogCard extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
 
-// Check if author has official role (admin, news editor, or blogger)
-// This is informational only - all posts show DAMA logo since only these roles can post
-bool isOfficialAuthor = roles.isNotEmpty && roles.any(
+// Check if author has admin or manager role - only these show as "DAMA KENYA"
+// All other roles (blogger, news_editor, etc.) show their actual name and profile picture
+bool isAdminOrManager = roles.isNotEmpty && roles.any(
   (role) {
     final roleStr = role.toString().toLowerCase();
-    return roleStr == 'admin' || 
-           roleStr == 'news editor' || 
-           roleStr == 'news_editor' || 
-           roleStr == 'newseditor' || 
-           roleStr == 'blogger';
+    return roleStr == 'admin' || roleStr == 'manager';
   },
 );
 
-debugPrint('\n=== [BlogCard Build] ===');
-debugPrint('Author: "$fullName" (length: ${fullName.length})');
-debugPrint('Profile Image URL: "$profileImageUrl" (length: ${profileImageUrl?.length ?? 0})');
-debugPrint('Raw Roles: $roles');
-debugPrint('Roles Count: ${roles.length}');
-debugPrint('isOfficialAuthor: $isOfficialAuthor');
-debugPrint('=== [End BlogCard Build] ===\n');
+// Determine display name and image
+final String displayName = isAdminOrManager ? 'DAMA KENYA' : (fullName.isNotEmpty ? fullName : 'DAMA KENYA');
+final ImageProvider displayImage = isAdminOrManager 
+    ? kDamaLogo 
+    : (profileImageUrl?.isNotEmpty == true ? NetworkImage(profileImageUrl!) : kDamaLogo);
     // Get category-specific colors
     final categoryColors = _getCategoryColors(category);
 
@@ -136,6 +130,9 @@ debugPrint('=== [End BlogCard Build] ===\n');
       decoration: BoxDecoration(
         color: isDarkMode ? kBlack : kWhite,
         borderRadius: BorderRadius.circular(16),
+        border: isDarkMode 
+            ? Border.all(color: const Color(0xFF1D2839), width: 1)
+            : null,
         boxShadow: [
           BoxShadow(
             color:
@@ -161,33 +158,39 @@ debugPrint('=== [End BlogCard Build] ===\n');
                   Expanded(
                     child: Row(
                       children: [
-                        ProfileAvatar(
-                          radius: 32,
-                          backgroundColor:
-                              isDarkMode ? Color(0xFF2a3040) : kLightGrey,
-                          backgroundImage: kDamaLogo,
-                          borderWidth: 0,
-                          borderColor: Colors.transparent,
+                        GestureDetector(
+                          onTap: isAdminOrManager ? null : onProfileClicked,
+                          child: ProfileAvatar(
+                            radius: 40,
+                            backgroundColor:
+                                isDarkMode ? Color(0xFF2a3040) : kLightGrey,
+                            backgroundImage: displayImage,
+                            borderWidth: 0,
+                            borderColor: Colors.transparent,
+                          ),
                         ),
                         SizedBox(width: 10),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "DAMA KENYA",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDarkMode ? kWhite : kBlack,
+                          child: GestureDetector(
+                            onTap: isAdminOrManager ? null : onProfileClicked,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  displayName,
+                                  style: TextStyle(
+                                    fontSize: kTitleTextSize,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDarkMode ? kWhite : kBlack,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                time,
-                                style: TextStyle(color: kGrey, fontSize: 12),
-                              ),
-                            ],
+                                SizedBox(height: 2),
+                                Text(
+                                  time,
+                                  style: TextStyle(color: kGrey, fontSize: kBadgeTextSize),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -205,7 +208,7 @@ debugPrint('=== [End BlogCard Build] ===\n');
                       style: TextStyle(
                         color: categoryColors.textColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: kNormalTextSize,
                       ),
                     ),
                   ),
@@ -227,7 +230,7 @@ debugPrint('=== [End BlogCard Build] ===\n');
                       heading,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                        fontSize: kTitleTextSize,
                         color: isDarkMode ? kWhite : kBlack,
                         height: 1.3,
                       ),
@@ -246,7 +249,7 @@ debugPrint('=== [End BlogCard Build] ===\n');
                         overflow: TextOverflow.ellipsis,
                         softWrap: true,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: kNormalTextSize,
                           color:
                               isDarkMode ? Color(0xFFa0a8b8) : Color(0xFF6b7280),
                           height: 1.4,

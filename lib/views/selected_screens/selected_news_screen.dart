@@ -1,6 +1,8 @@
 import 'package:dama/controller/article_count_controller.dart';
 import 'package:dama/controller/fetchUserProfile.dart';
 import 'package:dama/controller/news_comment_contoller.dart';
+import 'package:dama/controller/news_like_controller.dart';
+import 'package:flutter/services.dart';
 import 'package:dama/models/blogs_model.dart' show SourceReference;
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
@@ -32,6 +34,7 @@ class SelectedNewsScreen extends StatefulWidget {
     required this.comments,
     required this.roles,
     this.sources = const [],
+    this.likes = const [],
   });
 
   final String title;
@@ -46,6 +49,7 @@ class SelectedNewsScreen extends StatefulWidget {
   final List<dynamic> comments;
   final List roles;
   final List<SourceReference> sources;
+  final List<dynamic> likes;
 
   @override
   State<SelectedNewsScreen> createState() => _SelectedNewsScreenState();
@@ -69,6 +73,10 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
     NewsCommentController(),
   );
 
+  final NewsLikeController _likeController = Get.put(
+    NewsLikeController(),
+  );
+
   final ArticleCountController _articleCountController = Get.put(
     ArticleCountController(),
   );
@@ -81,6 +89,10 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
     }
     // _checkArticleLimit();
     _loadData();
+    // Only initialize if not already tracked to preserve state from list view
+    if (!_likeController.likedStatus.containsKey(widget.newsId)) {
+      _likeController.initializeLikeStatus(widget.newsId, widget.likes);
+    }
   }
 
   void _loadData() async {
@@ -322,7 +334,7 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                                                 : kBlack,
                                                         fontWeight:
                                                             FontWeight.w600,
-                                                        fontSize: 14,
+                                                        fontSize: kTitleTextSize,
                                                       ),
                                                     ),
                                                     Text(
@@ -335,42 +347,6 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                                 ),
                                               ],
                                             ),
-                                            Obx(() {
-                                              final commentCount =
-                                                  _commentController
-                                                      .comments[widget.newsId]
-                                                      ?.length ??
-                                                  0;
-                                              return GestureDetector(
-                                                onTap: () {
-                                                  _showCommentsBottomSheet(
-                                                    context,
-                                                    isDarkTheme: isDarkMode,
-                                                    newsId: widget.newsId,
-                                                    initialComments:
-                                                        widget.comments,
-                                                  );
-                                                },
-                                                child: Container(
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        FontAwesomeIcons
-                                                            .comment,
-                                                        color: kGrey,
-                                                      ),
-                                                      const SizedBox(width: 5),
-                                                      Text(
-                                                        'Comments $commentCount',
-                                                        style: TextStyle(
-                                                          color: kGrey,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              );
-                                            }),
                                           ],
                                         ),
                                       ),
@@ -395,7 +371,7 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                         child: Text(
                                           widget.title,
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: kLargeHeaderSize,
                                             fontWeight: FontWeight.bold,
                                             color: isDarkMode ? kWhite : kBlack,
                                           ),
@@ -558,6 +534,71 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                             isDarkMode: isDarkMode,
                                           ),
                                         ),
+                                      
+                                      // Interaction Section (Like, Comment, Share)
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: kSidePadding,
+                                          vertical: 16,
+                                        ),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                          decoration: BoxDecoration(
+                                            color: isDarkMode ? kDarkCard : kLightGrey,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Obx(() {
+                                            final isLiked = _likeController.likedStatus[widget.newsId] ?? false;
+                                            final likeCount = _likeController.likeCount[widget.newsId] ?? widget.likes.length;
+                                            final commentCount = _commentController.comments[widget.newsId]?.length ?? widget.comments.length;
+                                            
+                                            return Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                              children: [
+                                                // Like Button
+                                                _buildInteractionButton(
+                                                  icon: isLiked ? FontAwesomeIcons.solidThumbsUp : FontAwesomeIcons.thumbsUp,
+                                                  label: '$likeCount',
+                                                  color: isLiked ? kBlue : (isDarkMode ? kWhite : kGrey),
+                                                  onTap: () => _likeController.toggleLike(widget.newsId),
+                                                ),
+                                                // Comment Button
+                                                _buildInteractionButton(
+                                                  icon: FontAwesomeIcons.comment,
+                                                  label: '$commentCount',
+                                                  color: isDarkMode ? kWhite : kGrey,
+                                                  onTap: () {
+                                                    _showCommentsBottomSheet(
+                                                      context,
+                                                      isDarkTheme: isDarkMode,
+                                                      newsId: widget.newsId,
+                                                      initialComments: widget.comments,
+                                                    );
+                                                  },
+                                                ),
+                                                // Share Button
+                                                _buildInteractionButton(
+                                                  icon: Icons.share,
+                                                  label: 'Share',
+                                                  color: isDarkMode ? kWhite : kGrey,
+                                                  onTap: () {
+                                                    final link = 'https://mydama.damakenya.org/news/${widget.newsId}';
+                                                    Clipboard.setData(ClipboardData(text: link));
+                                                    Get.snackbar(
+                                                      'Link Copied',
+                                                      'News link copied to clipboard',
+                                                      snackPosition: SnackPosition.BOTTOM,
+                                                      margin: EdgeInsets.all(15),
+                                                      backgroundColor: isDarkMode ? kDarkCard : kWhite,
+                                                      colorText: isDarkMode ? kWhite : kBlack,
+                                                    );
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          }),
+                                        ),
+                                      ),
                                       SizedBox(height: 20),
                                     ],
                                   ),
@@ -574,6 +615,35 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInteractionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: kNormalTextSize,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

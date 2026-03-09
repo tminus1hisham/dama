@@ -90,7 +90,7 @@ class ProfileCard extends StatelessWidget {
             '$firstName $lastName',
             style: TextStyle(
               color: isDarkMode ? kWhite : kBlack,
-              fontSize: 16,
+              fontSize: kTitleTextSize,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -99,7 +99,7 @@ class ProfileCard extends StatelessWidget {
 
           Text(
             title.isNotEmpty ? title : 'Sr. UX Designer',
-            style: TextStyle(color: kGrey, fontSize: 14),
+            style: TextStyle(color: kGrey, fontSize: kNormalTextSize),
           ),
 
           SizedBox(height: 5),

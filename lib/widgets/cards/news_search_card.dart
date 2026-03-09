@@ -93,7 +93,7 @@ class NewsSearchCard extends StatelessWidget {
                     title,
                     style: TextStyle(
                       color: isDarkMode ? kWhite : kBlack,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

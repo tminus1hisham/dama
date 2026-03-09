@@ -340,7 +340,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                         Text(
                           'Amount: KES ${widget.price}',
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: kLargeHeaderSize,
                             fontWeight: FontWeight.bold,
                             color: kBlue,
                           ),
@@ -442,7 +442,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                           style: const TextStyle(
                                             color: kWhite,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                            fontSize: kLargeHeaderSize,
                                           ),
                                         ),
                                       ],
@@ -480,7 +480,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                                 style: TextStyle(
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
+                                                  fontSize: kLargeHeaderSize,
                                                 ),
                                               ),
                                             ],
@@ -755,7 +755,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                                                 TextAlign
                                                                     .center,
                                                             style: TextStyle(
-                                                              fontSize: 12,
+                                                              fontSize: kSmallTextSize,
                                                               color:
                                                                   isDarkMode
                                                                       ? kWhite

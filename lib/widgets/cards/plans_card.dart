@@ -332,7 +332,7 @@ class plansCard extends StatelessWidget {
                     "Ksh ",
                     style: TextStyle(
                       color: secondaryTextColor,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

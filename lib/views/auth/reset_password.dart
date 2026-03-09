@@ -100,7 +100,7 @@ class _ResetPasswordState extends State<ResetPassword> {
                                   child: Text(
                                     "Please enter the OTP sent to your registered phone number",
                                     style: TextStyle(
-                                      fontSize: 15,
+                                      fontSize: kTitleTextSize,
                                       color: isDarkMode ? kWhite : kBlack,
                                     ),
                                   ),

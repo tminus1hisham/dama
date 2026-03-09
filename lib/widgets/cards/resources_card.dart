@@ -31,7 +31,12 @@ class ResourcesCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onPressed,
         child: Container(
-          color: isDarkMode ? kBlack : kWhite,
+          decoration: BoxDecoration(
+            color: isDarkMode ? kBlack : kWhite,
+            border: isDarkMode 
+                ? Border.all(color: const Color(0xFF1D2839), width: 1)
+                : null,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -68,7 +73,7 @@ class ResourcesCard extends StatelessWidget {
                 child: Text(
                   heading,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: kTitleTextSize,
                     fontWeight: FontWeight.bold,
                     color: isDarkMode ? kWhite : kBlack,
                   ),
@@ -116,7 +121,7 @@ class ResourcesCard extends StatelessWidget {
                       style: TextStyle(
                         color: kGreen,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: kNormalTextSize,
                       ),
                     ),
                   ],

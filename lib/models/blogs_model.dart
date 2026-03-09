@@ -171,6 +171,15 @@ class BlogPostModel {
   }
 
   factory BlogPostModel.fromJson(Map<String, dynamic> json) {
+    // Debug: Check if sources/references exists in API response
+    if (json['sources'] != null || json['references'] != null || json['source_references'] != null) {
+      print('=== BLOG SOURCES DEBUG ===');
+      print('sources: ${json['sources']}');
+      print('references: ${json['references']}');
+      print('source_references: ${json['source_references']}');
+      print('=========================');
+    }
+    
     // Handle 'categories' field - can be array or string
     String? categoryValue;
     final categories = json['categories'];
@@ -221,7 +230,7 @@ class BlogPostModel {
           DateTime.tryParse(json['updated_at'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       sources:
-          (json['sources'] as List<dynamic>?)
+          ((json['sources'] ?? json['references'] ?? json['source_references']) as List<dynamic>?)
               ?.map((e) => SourceReference.fromJson(e))
               .toList() ??
           [],

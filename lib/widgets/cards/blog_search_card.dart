@@ -103,7 +103,7 @@ class BlogSearchCard extends StatelessWidget {
                     truncateText(title, 80),
                     style: TextStyle(
                       color: isDarkMode ? kWhite : kBlack,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

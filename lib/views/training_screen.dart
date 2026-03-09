@@ -172,7 +172,7 @@ class _TrainingScreenState extends State<TrainingScreen>
                     child: Text(
                       _formatStatus(status),
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: kBadgeTextSize,
                         color: _statusColors[status],
                         fontWeight: FontWeight.w500,
                       ),
@@ -194,7 +194,7 @@ class _TrainingScreenState extends State<TrainingScreen>
                       child: Text(
                         training.learningTracks.first.type,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: kBadgeTextSize,
                           color: isDarkMode ? kWhite : kBlack,
                         ),
                       ),
@@ -207,7 +207,7 @@ class _TrainingScreenState extends State<TrainingScreen>
               Text(
                 training.title,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: kTitleTextSize,
                   fontWeight: FontWeight.bold,
                   color: isDarkMode ? kWhite : kBlack,
                   height: 1.2,
@@ -221,7 +221,7 @@ class _TrainingScreenState extends State<TrainingScreen>
               Text(
                 training.description,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: kNormalTextSize,
                   color: kGrey,
                   height: 1.3,
                 ),
@@ -270,11 +270,11 @@ class _TrainingScreenState extends State<TrainingScreen>
                 children: [
                   Text('Progress',
                       style:
-                          const TextStyle(fontSize: 11, color: kGrey)),
+                          const TextStyle(fontSize: kBadgeTextSize, color: kGrey)),
                   Text(
                     '${progress.toStringAsFixed(0)}%',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: kBadgeTextSize,
                       fontWeight: FontWeight.bold,
                       color: isDarkMode ? kWhite : kBlack,
                     ),
@@ -328,7 +328,7 @@ class _TrainingScreenState extends State<TrainingScreen>
                               training.learningTracks.first.price > 0
                           ? 'Enroll Now - ${training.learningTracks.first.currency} ${training.learningTracks.first.price.toStringAsFixed(0)}'
                           : 'Enroll Now - Free',
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(fontSize: kNormalTextSize),
                     ),
                   ),
                 ),
@@ -350,7 +350,7 @@ class _TrainingScreenState extends State<TrainingScreen>
           child: Text(
             text,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: kBadgeTextSize,
               color: c,
               fontWeight: color != null ? FontWeight.w600 : FontWeight.normal,
             ),
@@ -412,7 +412,7 @@ class _TrainingScreenState extends State<TrainingScreen>
               child: Text(
                 _formatStatus(status),
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: kBadgeTextSize,
                   fontWeight: FontWeight.w600,
                   color: _statusColors[status],
                 ),
@@ -424,7 +424,7 @@ class _TrainingScreenState extends State<TrainingScreen>
             Text(
               training.title,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: kTitleTextSize,
                 fontWeight: FontWeight.bold,
                 color: isDarkMode ? kWhite : kBlack,
               ),
@@ -436,7 +436,7 @@ class _TrainingScreenState extends State<TrainingScreen>
             // Description
             Text(
               training.description,
-              style: const TextStyle(fontSize: 12, color: kGrey, height: 1.3),
+              style: const TextStyle(fontSize: kNormalTextSize, color: kGrey, height: 1.3),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -479,11 +479,11 @@ class _TrainingScreenState extends State<TrainingScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Progress',
-                    style: TextStyle(fontSize: 12, color: kGrey)),
+                    style: TextStyle(fontSize: kNormalTextSize, color: kGrey)),
                 Text(
                   '${progress.toInt()}%',
                   style: TextStyle(
-                      fontSize: 12,
+                      fontSize: kNormalTextSize,
                       fontWeight: FontWeight.bold,
                       color: isDarkMode ? kWhite : kBlack),
                 ),
@@ -518,7 +518,7 @@ class _TrainingScreenState extends State<TrainingScreen>
                   style: TextStyle(
                       color: kWhite,
                       fontWeight: FontWeight.w600,
-                      fontSize: 13),
+                      fontSize: kNormalTextSize),
                 ),
               ),
             ),
@@ -590,13 +590,33 @@ class _TrainingScreenState extends State<TrainingScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Trainings',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? kWhite : kBlack,
-                    ),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Get.back(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? kDarkThemeBg : kBGColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.arrow_back_ios_new,
+                            color: isDarkMode ? kWhite : kBlack,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Trainings',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? kWhite : kBlack,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
 
@@ -721,7 +741,7 @@ class _TrainingScreenState extends State<TrainingScreen>
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: kNormalTextSize,
                 fontWeight:
                     isActive ? FontWeight.w600 : FontWeight.normal,
                 color: isActive
@@ -810,13 +830,13 @@ class _TrainingScreenState extends State<TrainingScreen>
           const SizedBox(height: 16),
           Text('No available trainings',
               style: TextStyle(
-                  fontSize: 16,
+                  fontSize: kLargeHeaderSize,
                   fontWeight: FontWeight.bold,
                   color: isDarkMode ? kWhite : kBlack)),
           const SizedBox(height: 8),
           const Text(
               "You've enrolled in all available trainings! Check back soon for new opportunities.",
-              style: TextStyle(fontSize: 14, color: kGrey),
+              style: TextStyle(fontSize: kNormalTextSize, color: kGrey),
               textAlign: TextAlign.center),
         ]),
       ),
@@ -834,13 +854,13 @@ class _TrainingScreenState extends State<TrainingScreen>
           const SizedBox(height: 16),
           Text('No trainings yet',
               style: TextStyle(
-                  fontSize: 16,
+                  fontSize: kLargeHeaderSize,
                   fontWeight: FontWeight.bold,
                   color: isDarkMode ? kWhite : kBlack)),
           const SizedBox(height: 8),
           const Text(
               "You haven't enrolled in any trainings yet. Browse available trainings and start your learning journey!",
-              style: TextStyle(fontSize: 14, color: kGrey),
+              style: TextStyle(fontSize: kNormalTextSize, color: kGrey),
               textAlign: TextAlign.center),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -883,7 +903,7 @@ class _TrainingScreenState extends State<TrainingScreen>
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: kLargeHeaderSize,
                   fontWeight: FontWeight.bold,
                   color: isDarkMode ? kWhite : kBlack,
                 ),
@@ -893,7 +913,7 @@ class _TrainingScreenState extends State<TrainingScreen>
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: kGrey),
+            style: const TextStyle(fontSize: kBadgeTextSize, color: kGrey),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

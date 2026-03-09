@@ -55,14 +55,20 @@ class _LoginScreenState extends State<LoginScreen> {
   String fcmToken = '';
 
   void _fetchFcmToken() async {
+    debugPrint('📱 [Login Screen] Fetching FCM token...');
     try {
       String? token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
+        debugPrint('📱 [Login Screen] FCM token obtained: ${token.substring(0, 20)}...');
         setState(() {
           fcmToken = token;
         });
+      } else {
+        debugPrint('⚠️ [Login Screen] FCM token is null!');
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('⚠️ [Login Screen] Error fetching FCM token: $e');
+    }
   }
 
   @override
@@ -82,6 +88,11 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    debugPrint('📱 [Login Screen] ================================');
+    debugPrint('📱 [Login Screen] Login button pressed');
+    debugPrint('📱 [Login Screen] Email: ${_emailController.text}');
+    debugPrint('📱 [Login Screen] FCM Token status: ${fcmToken.isNotEmpty ? "present (${fcmToken.substring(0, 20)}...)" : "EMPTY!"}');
+    
     authController.email.value = _emailController.text;
     authController.password.value = _passwordController.text;
     authController.fcmToken.value = fcmToken;
@@ -143,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: Text(
                                       "Stay updated in your professional world",
                                       style: TextStyle(
-                                        fontSize: 15,
+                                        fontSize: kTitleTextSize,
                                         color: isDarkMode ? kWhite : kBlack,
                                       ),
                                     ),
@@ -177,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 authController.emailError.value,
                                                 style: TextStyle(
                                                   color: kRed,
-                                                  fontSize: 12,
+                                                  fontSize: kSmallTextSize,
                                                 ),
                                               ),
                                             )
@@ -215,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                     .value,
                                                 style: TextStyle(
                                                   color: kRed,
-                                                  fontSize: 12,
+                                                  fontSize: kSmallTextSize,
                                                 ),
                                               ),
                                             )

@@ -144,7 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     child: Text(
                                       "Stay updated in your professional world",
                                       style: TextStyle(
-                                        fontSize: 15,
+                                        fontSize: kTitleTextSize,
                                         color: isDarkMode ? kWhite : kBlack,
                                       ),
                                     ),

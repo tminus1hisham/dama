@@ -127,17 +127,23 @@ class AuthService {
 
   Future<Map<String, dynamic>?> login(LoginModel request) async {
     try {
+      debugPrint('📱 [Login] FCM Token being sent: ${request.fcmToken.isNotEmpty ? "present (${request.fcmToken.substring(0, 20)}...)" : "EMPTY!"}');
+      debugPrint('📱 [Login] Calling POST /user/login');
+      
       final response = await http.post(
         Uri.parse('$BASE_URL/user/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(request.toJson()),
       );
 
+      debugPrint('📱 [Login] Response status: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         await AuthService.storeTokens(data);
         await secureStorage.write(key: 'email', value: request.email);
         await secureStorage.write(key: 'password', value: request.password);
+        debugPrint('📱 [Login] Login successful, tokens stored');
         return data;
       } else {
         final errorBody = json.decode(response.body);

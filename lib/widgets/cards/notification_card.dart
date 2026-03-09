@@ -90,7 +90,7 @@ class NotoficationCard extends StatelessWidget {
                               title,
                               style: TextStyle(
                                 color: _getTitleColor(isDarkMode),
-                                fontSize: 16,
+                                fontSize: 15,
                                 fontWeight:
                                     isRead ? FontWeight.w500 : FontWeight.w600,
                               ),
@@ -344,7 +344,7 @@ class NotificationDetailModal extends StatelessWidget {
                           child: Text(
                             "Notification Details",
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: isDarkMode ? Colors.white : Colors.black87,
                             ),
@@ -382,7 +382,7 @@ class NotificationDetailModal extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: isDarkMode ? Colors.white : Colors.black87,
                         height: 1.3,

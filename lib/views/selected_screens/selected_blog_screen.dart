@@ -1,6 +1,9 @@
 import 'package:dama/controller/article_count_controller.dart';
 import 'package:dama/controller/comment_controller.dart';
 import 'package:dama/controller/fetchUserProfile.dart';
+import 'package:dama/controller/get_blog_by_id.dart';
+import 'package:dama/controller/like_controller.dart';
+import 'package:flutter/services.dart';
 import 'package:dama/models/blogs_model.dart' show SourceReference;
 import 'package:dama/routes/routes.dart';
 import 'package:dama/services/local_storage_service.dart';
@@ -35,6 +38,7 @@ class SelectedBlogScreen extends StatefulWidget {
     required this.comments,
     required this.roles,
     this.sources = const [],
+    this.likes = const [],
   });
 
   final String title;
@@ -49,6 +53,7 @@ class SelectedBlogScreen extends StatefulWidget {
   final List<dynamic> comments;
   final List roles;
   final List<SourceReference> sources;
+  final List<dynamic> likes;
 
   @override
   State<SelectedBlogScreen> createState() => _SelectedBlogScreenState();
@@ -64,6 +69,8 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
   );
 
   final CommentController _commentController = Get.put(CommentController());
+  final LikeController _likeController = Get.put(LikeController());
+  final FetchBlogByIdController _blogByIdController = Get.put(FetchBlogByIdController());
   String comment = '';
   bool _isScrollingBlocked = false;
   String imageUrl = '';
@@ -72,6 +79,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
   String title = '';
   String bio = '';
   String memberId = '';
+  List<SourceReference> _sources = [];
 
   @override
   void initState() {
@@ -81,8 +89,31 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
     }
 
     _loadData();
+    // Only initialize if not already tracked to preserve state from list view
+    if (!_likeController.likedStatus.containsKey(widget.blogId)) {
+      _likeController.initializeLikeStatus(widget.blogId, widget.likes);
+    }
+    
+    // Initialize with widget sources, then fetch full blog for sources
+    _sources = widget.sources.toList();
+    _fetchBlogSources();
 
     // _checkArticleLimit();
+  }
+
+  /// Fetch full blog data from individual endpoint to get sources
+  Future<void> _fetchBlogSources() async {
+    try {
+      await _blogByIdController.fetchBlog(widget.blogId);
+      final blog = _blogByIdController.blog.value;
+      if (blog != null && blog.sources.isNotEmpty) {
+        setState(() {
+          _sources = blog.sources;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching blog sources: $e');
+    }
   }
 
   void _loadData() async {
@@ -346,7 +377,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                                 isDarkMode
                                                                     ? kWhite
                                                                     : kBlack,
-                                                            fontSize: 14,
+                                                            fontSize: kTitleTextSize,
                                                             fontWeight:
                                                                 FontWeight.w600,
                                                           ),
@@ -365,45 +396,6 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                     ),
                                                   ],
                                                 ),
-
-                                                // Comments button
-                                                Obx(() {
-                                                  final commentCount =
-                                                      _commentController
-                                                          .comments[widget
-                                                              .blogId]
-                                                          ?.length ??
-                                                      0;
-                                                  return GestureDetector(
-                                                    onTap: () {
-                                                      _showCommentsBottomSheet(
-                                                        context,
-                                                        isDarkTheme: isDarkMode,
-                                                        blogID: widget.blogId,
-                                                        initialComments:
-                                                            widget.comments,
-                                                      );
-                                                    },
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(
-                                                          FontAwesomeIcons
-                                                              .comment,
-                                                          color: kGrey,
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 5,
-                                                        ),
-                                                        Text(
-                                                          'Comments $commentCount',
-                                                          style: TextStyle(
-                                                            color: kGrey,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                }),
                                               ],
                                             ),
                                           ),
@@ -438,7 +430,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                     isDarkMode
                                                         ? kWhite
                                                         : kBlack,
-                                                fontSize: 16,
+                                                fontSize: kLargeHeaderSize,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -616,16 +608,81 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                             ),
                                           ),
                                           // Sources & References section
-                                          if (widget.sources.isNotEmpty)
+                                          if (_sources.isNotEmpty)
                                             Padding(
                                               padding: EdgeInsets.symmetric(
                                                 horizontal: kSidePadding,
                                               ),
                                               child: SourcesReferencesSection(
-                                                sources: widget.sources,
+                                                sources: _sources,
                                                 isDarkMode: isDarkMode,
                                               ),
                                             ),
+                                          
+                                          // Interaction Section (Like, Comment, Share)
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: kSidePadding,
+                                              vertical: 16,
+                                            ),
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                              decoration: BoxDecoration(
+                                                color: isDarkMode ? kDarkCard : kLightGrey,
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Obx(() {
+                                                final isLiked = _likeController.likedStatus[widget.blogId] ?? false;
+                                                final likeCount = _likeController.likeCount[widget.blogId] ?? widget.likes.length;
+                                                final commentCount = _commentController.comments[widget.blogId]?.length ?? widget.comments.length;
+                                                
+                                                return Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                  children: [
+                                                    // Like Button
+                                                    _buildInteractionButton(
+                                                      icon: isLiked ? FontAwesomeIcons.solidThumbsUp : FontAwesomeIcons.thumbsUp,
+                                                      label: '$likeCount',
+                                                      color: isLiked ? kBlue : (isDarkMode ? kWhite : kGrey),
+                                                      onTap: () => _likeController.toggleLike(widget.blogId),
+                                                    ),
+                                                    // Comment Button
+                                                    _buildInteractionButton(
+                                                      icon: FontAwesomeIcons.comment,
+                                                      label: '$commentCount',
+                                                      color: isDarkMode ? kWhite : kGrey,
+                                                      onTap: () {
+                                                        _showCommentsBottomSheet(
+                                                          context,
+                                                          isDarkTheme: isDarkMode,
+                                                          blogID: widget.blogId,
+                                                          initialComments: widget.comments,
+                                                        );
+                                                      },
+                                                    ),
+                                                    // Share Button
+                                                    _buildInteractionButton(
+                                                      icon: Icons.share,
+                                                      label: 'Share',
+                                                      color: isDarkMode ? kWhite : kGrey,
+                                                      onTap: () {
+                                                        final link = 'https://mydama.damakenya.org/blog/${widget.blogId}';
+                                                        Clipboard.setData(ClipboardData(text: link));
+                                                        Get.snackbar(
+                                                          'Link Copied',
+                                                          'Blog link copied to clipboard',
+                                                          snackPosition: SnackPosition.BOTTOM,
+                                                          margin: EdgeInsets.all(15),
+                                                          backgroundColor: isDarkMode ? kDarkCard : kWhite,
+                                                          colorText: isDarkMode ? kWhite : kBlack,
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                              }),
+                                            ),
+                                          ),
                                           SizedBox(height: 20),
                                         ],
                                       ),
@@ -644,6 +701,35 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInteractionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: kNormalTextSize,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

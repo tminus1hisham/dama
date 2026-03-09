@@ -77,6 +77,7 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
               description: blog.description,
               comments: blog.comments,
               sources: blog.sources,
+              likes: blog.likes,
             ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);

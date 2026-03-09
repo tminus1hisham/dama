@@ -45,15 +45,22 @@ class NotificationController extends GetxController {
 
   Future<void> fetchnotifications() async {
     isLoading.value = true;
+    debugPrint('📱 [Notifications] Starting fetch...');
     try {
       // Always load locally read IDs to ensure we have the latest
       await _loadLocallyReadIds();
-      debugPrint('Local read IDs count: ${_locallyReadIds.length}');
+      debugPrint('📱 [Notifications] Local read IDs count: ${_locallyReadIds.length}');
 
       List<NotificationModel> fetchedNotifications =
           await _notificationService.getNotifications();
 
-      debugPrint('=== FETCHED ${fetchedNotifications.length} NOTIFICATIONS ===');
+      debugPrint('📱 [Notifications] === FETCHED ${fetchedNotifications.length} NOTIFICATIONS ===');
+      if (fetchedNotifications.isEmpty) {
+        debugPrint('⚠️ [Notifications] No notifications returned from API!');
+        debugPrint('   - This could mean: User has no notifications, OR');
+        debugPrint('   - API authorization issue, OR');
+        debugPrint('   - Backend not sending notifications to this user');
+      }
       for (var n in fetchedNotifications) {
         debugPrint('Notification: ${n.title}');
         debugPrint('  - type: ${n.type}');

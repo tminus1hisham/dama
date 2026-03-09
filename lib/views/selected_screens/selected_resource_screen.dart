@@ -157,7 +157,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                       Text(
                         'Purchase Resource',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: kLargeHeaderSize,
                           fontWeight: FontWeight.bold,
                           color: isDark ? kWhite : kBlack,
                         ),
@@ -166,7 +166,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                       Text(
                         title,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: kNormalTextSize,
                           color: isDark ? kWhite : kGrey,
                         ),
                         textAlign: TextAlign.center,
@@ -174,7 +174,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                       Text(
                         'Amount: KES $price',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: kLargeHeaderSize,
                           fontWeight: FontWeight.bold,
                           color: kBlue,
                         ),
@@ -303,7 +303,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                                         style: const TextStyle(
                                           color: kWhite,
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 16,
+                                          fontSize: kLargeHeaderSize,
                                         ),
                                       ),
                                     ],
@@ -335,7 +335,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 16,
+                                                fontSize: kLargeHeaderSize,
                                               ),
                                             ),
                                           ],

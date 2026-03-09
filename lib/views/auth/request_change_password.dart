@@ -83,7 +83,7 @@ class _RequestChangePasswordState extends State<RequestChangePassword> {
                                 child: Text(
                                   "Enter your number to request for OTP",
                                   style: TextStyle(
-                                    fontSize: 15,
+                                    fontSize: kTitleTextSize,
                                     color: isDarkMode ? kWhite : kBlack,
                                   ),
                                 ),

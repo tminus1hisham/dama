@@ -201,7 +201,7 @@ class _EventCardState extends State<EventCard>
                               widget.category!,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 12,
+                                fontSize: kBadgeTextSize,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -297,7 +297,7 @@ class _EventCardState extends State<EventCard>
                               child: const Text(
                                 'Confirmed',
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: kBadgeTextSize,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
@@ -310,7 +310,7 @@ class _EventCardState extends State<EventCard>
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: kTitleTextSize,
                             fontWeight: FontWeight.bold,
                             color: isPast
                                 ? (isDarkMode
@@ -383,7 +383,7 @@ class _EventCardState extends State<EventCard>
                                 child: Text(
                                   'Event Ended',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: kBadgeTextSize,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.grey[600],
                                   ),
@@ -396,7 +396,7 @@ class _EventCardState extends State<EventCard>
                                     ? 'FREE'
                                     : 'KES ${widget.price.toStringAsFixed(0)}',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: kNormalTextSize,
                                   fontWeight: FontWeight.bold,
                                   color: isFree
                                       ? const Color(0xFF5CB338)
@@ -428,7 +428,7 @@ class _EventCardState extends State<EventCard>
                                       Text(
                                         'RSVP now',
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: kBadgeTextSize,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.white,
                                         ),
@@ -472,7 +472,7 @@ class _EventCardState extends State<EventCard>
                                           Text(
                                             'View Ticket',
                                             style: TextStyle(
-                                              fontSize: 12,
+                                              fontSize: kBadgeTextSize,
                                               fontWeight: FontWeight.w600,
                                               color: Colors.white,
                                             ),
@@ -511,7 +511,7 @@ class _EventCardState extends State<EventCard>
                                             Text(
                                               'View Event',
                                               style: TextStyle(
-                                                fontSize: 12,
+                                                fontSize: kBadgeTextSize,
                                                 fontWeight: FontWeight.w600,
                                                 color: Colors.white,
                                               ),
@@ -530,7 +530,7 @@ class _EventCardState extends State<EventCard>
                                     ? 'FREE'
                                     : 'KES ${widget.price.toStringAsFixed(0)}',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: kNormalTextSize,
                                   fontWeight: FontWeight.bold,
                                   color: isFree
                                       ? const Color(0xFF5CB338)
@@ -586,7 +586,7 @@ class _EventCardState extends State<EventCard>
             maxLines: maxLines,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: kNormalTextSize,
               color: isPast
                   ? (isDarkMode
                       ? Colors.white.withOpacity(0.6)

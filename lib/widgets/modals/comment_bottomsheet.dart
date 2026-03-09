@@ -1,7 +1,9 @@
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/utils/utils.dart';
+import 'package:dama/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
 class CommentData {
@@ -73,154 +75,325 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
 
-    return SafeArea(
-      child: Padding(
-        padding: MediaQuery.of(context).viewInsets,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Drag handle
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Container(
-                  height: 5,
-                  width: 40,
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? kBlack : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? kDarkCard : kWhite,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with drag handle, title and close button
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDarkMode ? kGlassBorder : Colors.grey.shade200,
+                    width: 1,
                   ),
                 ),
               ),
-
-              widget.comments.isEmpty
-                  ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.chat_outlined,
-                            size: 48,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            "No comments yet",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Be the first to comment",
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  : ListView.builder(
-                    controller: widget.scrollController,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: widget.comments.length,
-                    itemBuilder: (context, index) {
-                      final comment = widget.comments[index];
-                      return ListTile(
-                        leading:
-                            comment.profileImageUrl.isEmpty
-                                ? const CircleAvatar(
-                                  backgroundColor: kGrey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                  ),
-                                )
-                                : CircleAvatar(
-                                  backgroundImage: NetworkImage(
-                                    comment.profileImageUrl,
-                                  ),
-                                ),
-                        title: Text(
-                          comment.name,
+              child: Row(
+                children: [
+                  // Drag handle indicator
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          FontAwesomeIcons.comments,
+                          size: 20,
+                          color: kBlue,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Comments',
                           style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                             color: isDarkMode ? kWhite : kBlack,
                           ),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              comment.comment,
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                              ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: kBlue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${widget.comments.length}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: kBlue,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _utils.timeAgo(comment.createdAt),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      );
-                    },
+                      ],
+                    ),
                   ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: Colors.grey[300]!)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-                        cursorColor: isDarkMode ? kWhite : kBlue,
-                        controller: _controller,
-                        decoration: InputDecoration(
-                          hintText: 'Type a comment...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide(color: Colors.blue, width: 2),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        maxLines: null,
-                        minLines: 1,
-                        keyboardType: TextInputType.multiline,
+                  // Close button
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? kGrey.withOpacity(0.3) : Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        size: 20,
+                        color: isDarkMode ? kWhite : kGrey,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    widget.isLoading
-                        ? const CircularProgressIndicator()
-                        : IconButton(
-                          icon: const Icon(Icons.send, color: Colors.blue),
-                          onPressed: _handleSend,
-                        ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Comments list
+            Flexible(
+              child: widget.comments.isEmpty
+                  ? _buildEmptyState(isDarkMode)
+                  : _buildCommentsList(isDarkMode),
+            ),
+
+            // Input field
+            _buildInputField(isDarkMode),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool isDarkMode) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: kBlue.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                FontAwesomeIcons.commentDots,
+                size: 40,
+                color: kBlue.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "No comments yet",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDarkMode ? kWhite : kBlack,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Be the first to share your thoughts!",
+              style: TextStyle(
+                fontSize: 14,
+                color: kGrey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommentsList(bool isDarkMode) {
+    return ListView.separated(
+      controller: widget.scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      itemCount: widget.comments.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final comment = widget.comments[index];
+        return _buildCommentItem(comment, isDarkMode);
+      },
+    );
+  }
+
+  Widget _buildCommentItem(CommentData comment, bool isDarkMode) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Avatar
+        ProfileAvatar(
+          radius: 20,
+          backgroundColor: kBlue.withOpacity(0.2),
+          backgroundImage: comment.profileImageUrl.isNotEmpty 
+              ? NetworkImage(comment.profileImageUrl) 
+              : null,
+          child: comment.profileImageUrl.isEmpty
+              ? Text(
+                  comment.name.isNotEmpty ? comment.name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: kBlue,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                )
+              : null,
+        ),
+        const SizedBox(width: 12),
+        // Comment bubble
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Name and time
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      comment.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: isDarkMode ? kWhite : kBlack,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    _utils.timeAgo(comment.createdAt),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: kGrey,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              // Comment text in bubble
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? kDarkThemeBg : Colors.grey.shade100,
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  comment.comment,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDarkMode ? kWhite.withOpacity(0.9) : kBlack.withOpacity(0.85),
+                    height: 1.4,
+                  ),
                 ),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildInputField(bool isDarkMode) {
+    return Container(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+      ),
+      decoration: BoxDecoration(
+        color: isDarkMode ? kDarkCard : kWhite,
+        border: Border(
+          top: BorderSide(
+            color: isDarkMode ? kGlassBorder : Colors.grey.shade200,
+            width: 1,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDarkMode ? kDarkThemeBg : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TextField(
+                style: TextStyle(
+                  color: isDarkMode ? kWhite : kBlack,
+                  fontSize: 15,
+                ),
+                cursorColor: kBlue,
+                controller: _controller,
+                decoration: InputDecoration(
+                  hintText: 'Write a comment...',
+                  hintStyle: TextStyle(
+                    color: kGrey,
+                    fontSize: 15,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
+                ),
+                maxLines: null,
+                minLines: 1,
+                keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          widget.isLoading
+              ? Container(
+                  width: 44,
+                  height: 44,
+                  padding: const EdgeInsets.all(10),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: kBlue,
+                  ),
+                )
+              : GestureDetector(
+                  onTap: _handleSend,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: kBlue,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.send_rounded,
+                      color: kWhite,
+                      size: 20,
+                    ),
+                  ),
+                ),
+        ],
       ),
     );
   }

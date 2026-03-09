@@ -28,7 +28,7 @@ class LinkedInWebView extends StatefulWidget {
 class _LinkedInWebViewState extends State<LinkedInWebView> {
   late final WebViewController _controller;
   bool _hasHandledCallback = false;
-  final String _callbackUrlPart = "api.damakenya.org/v1/user/linkedin/callback";
+  final String _callbackUrlPart = "api.damakenya.org/v1/user/linkedin/mobile/callback";
 
   @override
   void initState() {
@@ -203,7 +203,7 @@ class _LinkedInWebViewState extends State<LinkedInWebView> {
 
       print('[LinkedIn WebView] Extracted code: $code, state: $state');
 
-      final callbackUrl = Uri.parse('$BASE_URL/user/linkedin/callback').replace(
+      final callbackUrl = Uri.parse('$BASE_URL/user/linkedin/mobile/callback').replace(
         queryParameters: {
           'code': code,
           if (state != null) 'state': state,

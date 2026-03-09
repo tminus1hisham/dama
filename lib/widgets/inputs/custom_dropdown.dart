@@ -92,7 +92,7 @@ class CustomDropdown extends StatelessWidget {
               color: (value == null || value == items[0])
                   ? (isDarkMode ? Colors.grey[400] : kGrey)
                   : (isDarkMode ? Colors.white : Colors.black),
-              fontSize: 15,
+              fontSize: kTitleTextSize,
               fontWeight: FontWeight.w400,
             ),
             icon: Icon(

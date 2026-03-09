@@ -149,7 +149,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         _stepIndicator,
                         style: TextStyle(
                           color: isDarkMode ? kWhite : kBlue,
-                          fontSize: 14,
+                          fontSize: kNormalTextSize,
                         ),
                       ),
                     ),

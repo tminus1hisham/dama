@@ -254,30 +254,57 @@ class _DashboardState extends State<Dashboard>
   }
 
   /// Role badge widget (mirrors React getRoleBadge)
+  /// Tappable for blogger/news_editor to access admin panel
   Widget? _roleBadgeWidget() {
     final roles = userRoles.map((r) => r.toLowerCase()).toList();
-    if (roles.contains('admin')) return _drawerChip('Admin', Colors.red);
-    if (roles.contains('news_editor')) return _drawerChip('Editor', Colors.blue);
-    if (roles.contains('blogger')) return _drawerChip('Blogger', Colors.purple);
+    if (roles.contains('admin')) return _drawerChip('Admin', Colors.red, tappable: true);
+    if (roles.contains('news_editor')) return _drawerChip('Editor', Colors.blue, tappable: true);
+    if (roles.contains('blogger')) return _drawerChip('Blogger', Colors.purple, tappable: true);
     return null;
   }
 
-  Widget _drawerChip(String label, Color color) {
-    return Container(
+  Widget _drawerChip(String label, Color color, {bool tappable = false}) {
+    final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (tappable) ...[
+            const SizedBox(width: 3),
+            const Icon(
+              Icons.open_in_new,
+              color: Colors.white,
+              size: 9,
+            ),
+          ],
+        ],
       ),
     );
+    
+    if (tappable) {
+      return GestureDetector(
+        onTap: () {
+          launchUrl(
+            Uri.parse('https://admin.damakenya.org'),
+            mode: LaunchMode.externalApplication,
+          );
+        },
+        child: chip,
+      );
+    }
+    return chip;
   }
 
   String _formatExpiry(String isoDate) {
@@ -478,9 +505,12 @@ class _DashboardState extends State<Dashboard>
 
   Future<void> _checkAuthStatus() async {
     final token = await StorageService.getData('access_token');
+    debugPrint('📱 [Dashboard] Checking auth status...');
+    debugPrint('📱 [Dashboard] Token present: ${token != null && token.isNotEmpty}');
     if (token == null || token.isEmpty) {
       Get.offAllNamed(AppRoutes.login);
     } else {
+      debugPrint('📱 [Dashboard] User authenticated, loading data...');
       _loadData();
       Get.put(AlertController());
       _blogController.pagingController.addListener(() {
@@ -488,6 +518,7 @@ class _DashboardState extends State<Dashboard>
       });
       _blogController.fetchBlogs();
       _fetchAllData();
+      debugPrint('📱 [Dashboard] Fetching notifications...');
       _notificationController.fetchnotifications();
       Future.delayed(Duration(milliseconds: 500), () {
         if (mounted) {
@@ -651,10 +682,14 @@ class _DashboardState extends State<Dashboard>
     required VoidCallback onTap,
     Widget? badge,
     bool isDestructive = false,
+    bool isSelected = false,
   }) {
+    // Selected state uses blue, otherwise default colors
     final Color fg = isDestructive
         ? const Color(0xFFEF4444)
-        : (isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151));
+        : isSelected
+            ? kBlue
+            : (isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151));
 
     return InkWell(
       onTap: onTap,
@@ -663,6 +698,12 @@ class _DashboardState extends State<Dashboard>
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? kBlue.withOpacity(0.1) 
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: Row(
             children: [
               Icon(icon, size: 18, color: fg),
@@ -672,8 +713,8 @@ class _DashboardState extends State<Dashboard>
                   title,
                   style: TextStyle(
                     color: fg,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontSize: kNormalTextSize,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
               ),
@@ -789,7 +830,7 @@ class _DashboardState extends State<Dashboard>
                             child: child,
                           ),
                           child: CircleAvatar(
-                            radius: 26,
+                            radius: 22,
                             backgroundImage: imageUrl.isNotEmpty
                                 ? NetworkImage(imageUrl)
                                 : null,
@@ -797,12 +838,16 @@ class _DashboardState extends State<Dashboard>
                                 ? const Color(0xFF1E1E1E)
                                 : const Color(0xFFEEF2FF),
                             child: imageUrl.isEmpty
-                                ? Text(
-                                    _initials,
-                                    style: const TextStyle(
-                                      color: Color(0xFF6366F1),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                ? SizedBox.expand(
+                                    child: FittedBox(
+                                      fit: BoxFit.contain,
+                                      child: Text(
+                                        _initials,
+                                        style: const TextStyle(
+                                          color: Color(0xFF6366F1),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                   )
                                 : null,
@@ -826,7 +871,7 @@ class _DashboardState extends State<Dashboard>
                                         : 'User',
                                     style: TextStyle(
                                       color: isDark ? Colors.white : Colors.black,
-                                      fontSize: 15,
+                                      fontSize: kTitleTextSize,
                                       fontWeight: FontWeight.w600,
                                     ),
                                     maxLines: 1,
@@ -847,7 +892,7 @@ class _DashboardState extends State<Dashboard>
                                   color: isDark
                                       ? Colors.grey[400]
                                       : Colors.grey[500],
-                                  fontSize: 12,
+                                  fontSize: kSmallTextSize,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -948,7 +993,7 @@ class _DashboardState extends State<Dashboard>
                                             : 'No Plan',
                                         style: TextStyle(
                                           color: _planTextColor(isDark),
-                                          fontSize: 13,
+                                          fontSize: kSmallTextSize,
                                           fontWeight: FontWeight.bold,
                                         ),
                                         maxLines: 1,
@@ -1114,9 +1159,9 @@ class _DashboardState extends State<Dashboard>
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
-                                  'View Certificate',
+                                  'Membership Certificate',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: kSmallTextSize,
                                     fontWeight: FontWeight.w600,
                                     color: isDark
                                         ? const Color(0xFFFBBF24) // amber-400
@@ -1207,6 +1252,7 @@ class _DashboardState extends State<Dashboard>
                     title: 'Profile',
                     icon: Icons.person_outline, // User in lucide
                     isDarkMode: isDark,
+                    isSelected: _currentRoute == AppRoutes.profile,
                     onTap: () => _onMenuItemTap(AppRoutes.profile, 'Profile'),
                   ),
                   _buildDrawerNavItem(
@@ -1215,31 +1261,37 @@ class _DashboardState extends State<Dashboard>
                     isDarkMode: isDark,
                     badge: _menuBadge(
                       'Premium',
-                      Color(0xFF1D2839),
+                      isDark 
+                        ? Color(0xFF1D2839)  // Dark mode background
+                        : Color(0xFFF5F5F5), // Light mode: RGB(245, 245, 245)
                       isDark 
                         ? Color(0xFFFFFFFF)  // White text in dark mode
                         : Color(0xFF000000), // Black text in light mode
                     ),
+                    isSelected: _currentRoute == AppRoutes.plans,
                     onTap: () => _onMenuItemTap(AppRoutes.plans, 'Membership'),
                   ),
                   _buildDrawerNavItem(
                     title: 'Trainings',
                     icon: Icons.school_outlined, // GraduationCap in lucide
                     isDarkMode: isDark,
+                    isSelected: _currentRoute == AppRoutes.trainings,
                     onTap: () =>
                         _onMenuItemTap(AppRoutes.trainings, 'Trainings'),
                   ),
                   _buildDrawerNavItem(
-                    title: 'View Certificate',
+                    title: 'Training Certificate',
                     icon: Icons.military_tech_outlined, // Award in lucide
                     isDarkMode: isDark,
+                    isSelected: _currentRoute == AppRoutes.myTrainings,
                     onTap: () =>
-                        _onMenuItemTap(AppRoutes.myTrainings, 'View Certificate'),
+                        _onMenuItemTap(AppRoutes.myTrainings, 'Training Certificate'),
                   ),
                   _buildDrawerNavItem(
                     title: 'Notifications',
                     icon: Icons.notifications_outlined, // Bell in lucide
                     isDarkMode: isDark,
+                    isSelected: _currentRoute == AppRoutes.notifications,
                     onTap: () => _onMenuItemTap(
                         AppRoutes.notifications, 'Notifications'),
                   ),
@@ -1247,6 +1299,7 @@ class _DashboardState extends State<Dashboard>
                     title: 'Transaction History',
                     icon: Icons.history, // History in lucide
                     isDarkMode: isDark,
+                    isSelected: _currentRoute == AppRoutes.transcation,
                     onTap: () => _onMenuItemTap(
                         AppRoutes.transcation, 'Transaction History'),
                   ),
@@ -1254,6 +1307,7 @@ class _DashboardState extends State<Dashboard>
                     title: 'About DAMA',
                     icon: Icons.info_outline, // Info in lucide
                     isDarkMode: isDark,
+                    isSelected: _currentRoute == AppRoutes.aboutDama,
                     onTap: () =>
                         _onMenuItemTap(AppRoutes.aboutDama, 'About DAMA'),
                   ),
@@ -1261,6 +1315,7 @@ class _DashboardState extends State<Dashboard>
                     title: 'Settings',
                     icon: Icons.settings_outlined, // Settings in lucide
                     isDarkMode: isDark,
+                    isSelected: _currentRoute == AppRoutes.settingsPage,
                     onTap: () => _onMenuItemTap(
                         AppRoutes.settingsPage, 'Settings'),
                   ),
@@ -1596,7 +1651,7 @@ class _DashboardState extends State<Dashboard>
                         titleGetter(item),
                         style: TextStyle(
                           color: isDarkMode ? kWhite : kBlack,
-                          fontSize: 14,
+                          fontSize: kNormalTextSize,
                           fontWeight: FontWeight.w500,
                           height: 1.3,
                         ),
@@ -1829,12 +1884,12 @@ class _DashboardState extends State<Dashboard>
               Icons.calendar_month,
             ],
             tabSize: 50,
-            tabBarHeight: 55,
-            textStyle: TextStyle(fontSize: 14, color: kGrey, fontWeight: FontWeight.w500),
+            tabBarHeight: 60,
+            textStyle: TextStyle(fontSize: 12, color: kGrey, fontWeight: FontWeight.w500, height: 1.8),
             tabIconColor: kGrey,
             tabSelectedColor: kBlue,
-            tabIconSize: 28.0,
-            tabIconSelectedSize: 26.0,
+            tabIconSize: 24.0,
+            tabIconSelectedSize: 22.0,
             onTabItemSelected: (int value) {
               _pageController.jumpToPage(value);
             },

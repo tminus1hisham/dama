@@ -349,7 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 'Edit Profile',
                 style: TextStyle(
                   color: isDarkMode ? kWhite : kBlack,
-                  fontSize: 16,
+                  fontSize: kLargeHeaderSize,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -418,7 +418,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   'Delete Account',
                   style: TextStyle(
                     color: isDarkMode ? kWhite : kBlack,
-                    fontSize: 16,
+                    fontSize: kLargeHeaderSize,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -430,7 +430,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 'Are you sure you want to request account deletion? This action cannot be undone and all your data will be permanently removed.',
                 style: TextStyle(
                   color: isDarkMode ? kWhite.withOpacity(0.8) : kBlack.withOpacity(0.7),
-                  fontSize: 16,
+                  fontSize: kLargeHeaderSize,
                   height: 1.4,
                 ),
               ),
@@ -513,7 +513,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   'Edit Bio',
                   style: TextStyle(
                     color: isDarkMode ? kWhite : kBlack,
-                    fontSize: 16,
+                    fontSize: kLargeHeaderSize,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -597,7 +597,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     'Edit Contact Information',
                     style: TextStyle(
                       color: isDarkMode ? kWhite : kBlack,
-                      fontSize: 16,
+                      fontSize: kLargeHeaderSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -616,14 +616,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: 16),
+                        style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: kLargeHeaderSize),
                         decoration: _inputDecoration('Email Address', isDarkMode),
                       ),
                       SizedBox(height: 16),
                       TextFormField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
-                        style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: 16),
+                        style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: kLargeHeaderSize),
                         decoration: _inputDecoration('Phone Number', isDarkMode,
                             hint: 'Enter your phone number (9 digits)'),
                         validator: (value) {
@@ -1095,7 +1095,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                           SizedBox(height: 10),
 
-                          // Dark mode + Change password
+                          // Change password
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
@@ -1103,35 +1103,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Dark Mode',
-                                            style: TextStyle(
-                                              color: isDarkMode ? kWhite : kBlack,
-                                              fontSize: kNormalTextSize,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Text(
-                                            isDarkMode ? "Light" : "Dark",
-                                            style: TextStyle(color: isDarkMode ? kWhite : kGrey),
-                                          ),
-                                        ],
-                                      ),
-                                      Switch(
-                                        value: isDarkMode,
-                                        onChanged: (value) => themeProvider.toggleTheme(),
-                                        activeThumbColor: kBlue,
-                                        inactiveThumbColor: isDarkMode ? Colors.grey[600]! : kGrey,
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 10),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [

@@ -72,7 +72,7 @@ class UserSearchCard extends StatelessWidget {
                     fullName,
                     style: TextStyle(
                       color: isDarkMode ? kWhite : kBlack,
-                      fontSize: 16,
+                      fontSize: kTitleTextSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -80,7 +80,7 @@ class UserSearchCard extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: kNormalTextSize,
                       color: isDarkMode ? kWhite : Colors.grey,
                     ),
                   ),

@@ -8,11 +8,10 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-// Keep this in case you want signing later
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))  // ← Add "new"
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -49,7 +48,6 @@ android {
 
     buildTypes {
         release {
-            // Use release signing if key.properties exists, otherwise use debug
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
             } else {
@@ -66,8 +64,17 @@ flutter {
     source = "../.."
 }
 
+configurations.all {
+    exclude group: "com.google.android.play", module: "core"
+    exclude group: "com.google.android.play", module: "core-ktx"
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
     implementation("com.google.firebase:firebase-analytics")
-} 
+    implementation 'com.google.android.play:app-update:2.1.0'
+    implementation 'com.google.android.play:app-update-ktx:2.1.0'
+    implementation 'com.google.android.play:feature-delivery:2.1.0'
+    implementation 'com.google.android.play:feature-delivery-ktx:2.1.0'
+}

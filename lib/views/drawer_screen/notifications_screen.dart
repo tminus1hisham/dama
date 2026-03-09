@@ -511,7 +511,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               'This event may have been removed or is no longer available.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: kNormalTextSize,
                 color: kGrey,
               ),
             ),

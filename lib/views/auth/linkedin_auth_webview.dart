@@ -24,7 +24,7 @@ class _LinkedInAuthWebViewState extends State<LinkedInAuthWebView> {
         NavigationDelegate(
           onNavigationRequest: (NavigationRequest request) {
             // Check if this is the callback URL
-            if (request.url.startsWith('https://api.damakenya.org/v1/user/linkedin/callback') ||
+            if (request.url.startsWith('https://api.damakenya.org/v1/user/linkedin/mobile/callback') ||
                 request.url.contains('linkedin') && request.url.contains('code=')) {
               // Extract parameters and handle
               final uri = Uri.parse(request.url);

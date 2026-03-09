@@ -93,26 +93,20 @@ class NewsCard extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
 
-    // Check if author has official role (admin, news editor, or blogger)
-    // This is informational only - all posts show DAMA logo since only these roles can post
-    bool isOfficialAuthor = roles.isNotEmpty && roles.any(
+    // Check if author has admin or manager role - only these show as "DAMA KENYA"
+    // All other roles (blogger, news_editor, etc.) show their actual name and profile picture
+    bool isAdminOrManager = roles.isNotEmpty && roles.any(
       (role) {
         final roleStr = role.toString().toLowerCase();
-        return roleStr == 'admin' || 
-               roleStr == 'news editor' || 
-               roleStr == 'news_editor' || 
-               roleStr == 'newseditor' || 
-               roleStr == 'blogger';
+        return roleStr == 'admin' || roleStr == 'manager';
       },
     );
     
-    debugPrint('\n=== [NewsCard Build] ===');
-    debugPrint('Author: "$fullName" (length: ${fullName.length})');
-    debugPrint('Profile Image URL: "$profileImageUrl" (length: ${profileImageUrl?.length ?? 0})');
-    debugPrint('Raw Roles: $roles');
-    debugPrint('Roles Count: ${roles.length}');
-    debugPrint('isOfficialAuthor: $isOfficialAuthor');
-    debugPrint('=== [End NewsCard Build] ===\n');
+    // Determine display name and image
+    final String displayName = isAdminOrManager ? 'DAMA KENYA' : (fullName.isNotEmpty ? fullName : 'DAMA KENYA');
+    final ImageProvider displayImage = isAdminOrManager 
+        ? kDamaLogo 
+        : (profileImageUrl?.isNotEmpty == true ? NetworkImage(profileImageUrl!) : kDamaLogo);
     
     final categoryColors = _getCategoryColors(category);
 
@@ -122,6 +116,9 @@ class NewsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDarkMode ? kBlack : kWhite,
         borderRadius: BorderRadius.circular(16),
+        border: isDarkMode 
+            ? Border.all(color: const Color(0xFF1D2839), width: 1)
+            : null,
         boxShadow: [
           BoxShadow(
             color:
@@ -148,33 +145,39 @@ class NewsCard extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ProfileAvatar(
-                          radius: 32,
-                          backgroundColor: kLightGrey,
-                          backgroundImage: kDamaLogo,
-                          borderWidth: 0,
-                          borderColor: Colors.transparent,
+                        GestureDetector(
+                          onTap: isAdminOrManager ? null : onProfileClicked,
+                          child: ProfileAvatar(
+                            radius: 40,
+                            backgroundColor: kLightGrey,
+                            backgroundImage: displayImage,
+                            borderWidth: 0,
+                            borderColor: Colors.transparent,
+                          ),
                         ),
                         SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "DAMA KENYA",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: isDarkMode ? kWhite : kBlack,
+                        GestureDetector(
+                          onTap: isAdminOrManager ? null : onProfileClicked,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                style: TextStyle(
+                                  fontSize: kTitleTextSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDarkMode ? kWhite : kBlack,
+                                ),
                               ),
-                            ),
-                            Text(
-                              time,
-                              style: TextStyle(
-                                fontSize: kNormalTextSize,
-                                color: kGrey,
+                              Text(
+                                time,
+                                style: TextStyle(
+                                  fontSize: kNormalTextSize,
+                                  color: kGrey,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -197,7 +200,7 @@ class NewsCard extends StatelessWidget {
                       style: TextStyle(
                         color: categoryColors['text'] as Color,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: kNormalTextSize,
                       ),
                     ),
                   ),
@@ -221,7 +224,7 @@ class NewsCard extends StatelessWidget {
                       heading,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: kTitleTextSize,
                         color: isDarkMode ? kWhite : kBlack,
                       ),
                     ),
@@ -241,7 +244,7 @@ class NewsCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           softWrap: true,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: kNormalTextSize,
                             color: isDarkMode ? kGrey : kGrey,
                           ),
                         ),

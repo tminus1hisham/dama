@@ -94,7 +94,7 @@ class ResourceSearchCard extends StatelessWidget {
                     title,
                     style: TextStyle(
                       color: isDarkMode ? kWhite : kBlack,
-                      fontSize: 16,
+                      fontSize: kTitleTextSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -102,7 +102,7 @@ class ResourceSearchCard extends StatelessWidget {
                   Text(
                     truncateText(description, 80),
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: kNormalTextSize,
                       color: Colors.grey,
                     ),
                   ),
@@ -111,7 +111,7 @@ class ResourceSearchCard extends StatelessWidget {
                     Text(
                       _utils.timeAgo(createdAt),
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: kSmallTextSize,
                         color: Colors.grey,
                       ),
                     ),

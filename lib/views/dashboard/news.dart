@@ -160,6 +160,7 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                   description: news.description,
                   comments: news.comments,
                   sources: news.sources,
+                  likes: news.likes,
                 ),
             transitionsBuilder: (
               context,
@@ -675,6 +676,7 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                                         description: news.description,
                                         comments: news.comments,
                                         sources: news.sources,
+                                        likes: news.likes,
                                       ),
                                   transitionsBuilder: (
                                     context,

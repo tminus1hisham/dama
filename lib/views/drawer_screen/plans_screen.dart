@@ -427,69 +427,65 @@ class _PlansScreenState extends State<PlansScreen> {
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: _getCardGradient(),
-        border: Border.all(
-          color: isCurrentPlan 
-              ? tierColors['primary']! 
-              : kGrey.withValues(alpha: 0.2),
-          width: isCurrentPlan ? 2 : 1,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: _getCardGradient(),
+          border: Border.all(
+            color: isCurrentPlan 
+                ? tierColors['primary']! 
+                : kGrey.withValues(alpha: 0.2),
+            width: isCurrentPlan ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: tierColors['primary']!.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: tierColors['primary']!.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Gradient overlay (metallic shine)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.05),
-                    Colors.transparent,
-                  ],
+        child: Stack(
+          children: [
+            // Gradient overlay (metallic shine)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.05),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Gradient top accent bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 4,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-                gradient: LinearGradient(
-                  colors: [
-                    tierColors['gradientStart']!,
-                    tierColors['primary']!,
-                    tierColors['gradientEnd']!,
-                  ],
+            // Gradient top accent bar
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 5,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      tierColors['gradientStart']!,
+                      tierColors['primary']!,
+                      tierColors['gradientEnd']!,
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
           // Main content
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.max,
@@ -940,6 +936,7 @@ class _PlansScreenState extends State<PlansScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -1298,10 +1295,14 @@ class _PlansScreenState extends State<PlansScreen> {
       // Extract just the number part (without country code)
       if (fetchedPhoneNumber!.startsWith('+254')) {
         initialPhoneNumber = fetchedPhoneNumber!.substring(4);
+        // Also set completePhoneNumber so validation passes without user edit
+        completePhoneNumber = fetchedPhoneNumber;
       } else if (fetchedPhoneNumber!.startsWith('254')) {
         initialPhoneNumber = fetchedPhoneNumber!.substring(3);
+        completePhoneNumber = '+$fetchedPhoneNumber';
       } else {
         initialPhoneNumber = fetchedPhoneNumber!;
+        completePhoneNumber = '+254$fetchedPhoneNumber';
       }
     }
     

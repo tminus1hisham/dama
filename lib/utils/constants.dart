@@ -22,10 +22,14 @@ const Color kBlack = Color(0xFF0b1120);
 // Glassmorphism border color
 const Color kGlassBorder = Color(0xFF1C3D72);
 
-const kNormalTextSize = 16.0;
+// Font sizes - standardized across app
+const kTitleTextSize = 15.0;
+const kNormalTextSize = 14.0;
+const kBadgeTextSize = 11.0;
+const kLargeHeaderSize = 16.0;
 const kMidText = 20.0;
 const kBigTextSize = 24.0;
-const kSmallTextSize = 13.0;
+const kSmallTextSize = 11.0;
 
 const kSidePadding = 15.0;
 

@@ -318,6 +318,8 @@ class _SelectedNewsScreenState extends State<SelectedNewsScreen> {
                                                   backgroundImage:
                                                       kDamaLogo,
                                                   child: null,
+                                                  borderColor: Colors.transparent,
+                                                  borderWidth: 0,
                                                 ),
                                                 SizedBox(width: 10),
                                                 Column(

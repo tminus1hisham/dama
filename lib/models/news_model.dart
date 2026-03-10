@@ -1,4 +1,5 @@
 import 'package:dama/models/blogs_model.dart' show SourceReference;
+import 'package:flutter/foundation.dart';
 
 class NewsModel {
   final String id;
@@ -182,8 +183,10 @@ class NewsModel {
 
     factory NewsModel.fromJson(Map<String, dynamic> json) {
     try {
+      debugPrint('[NewsModel.fromJson] Raw JSON keys: ${json.keys.toList()}');
+      debugPrint('[NewsModel.fromJson] Full JSON: $json');
       return NewsModel(
-        id: json['_id']?.toString() ?? '',
+        id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
         title: json['title']?.toString() ?? 'Untitled',
         author: json['author'] != null
             ? Author.fromJson(json['author'])

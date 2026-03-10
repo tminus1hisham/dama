@@ -22,6 +22,9 @@ class NotificationModel {
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    debugPrint('[NotificationModel.fromJson] Raw JSON keys: ${json.keys.toList()}');
+    debugPrint('[NotificationModel.fromJson] data field: ${json['data']}');
+    
     // Extract ID - check both '_id' (MongoDB style) and 'id'
     String extractedId = json['_id']?.toString() ?? json['id']?.toString() ?? '';
     
@@ -43,10 +46,16 @@ class NotificationModel {
           extractedRefId = dataMap['referenceId']?.toString() ?? 
                           dataMap['reference_id']?.toString() ?? 
                           dataMap['id']?.toString() ??
+                          dataMap['blogPost']?.toString() ??
                           dataMap['blogId']?.toString() ??
+                          dataMap['newsPost']?.toString() ??
                           dataMap['newsId']?.toString() ??
+                          dataMap['event_id']?.toString() ??
                           dataMap['eventId']?.toString() ??
-                          dataMap['trainingId']?.toString();
+                          dataMap['trainingId']?.toString() ??
+                          dataMap['training_id']?.toString() ??
+                          dataMap['sessionId']?.toString() ??
+                          dataMap['session_id']?.toString();
         }
       } else if (json['data'] is String) {
         // If 'data' is a string, it might be the type directly (e.g., "blog", "news")
@@ -64,7 +73,7 @@ class NotificationModel {
     debugPrint('  - ReferenceId: $extractedRefId');
     debugPrint('  - Raw data keys: ${dataMap?.keys.toList()}');
     
-    return NotificationModel(
+    final notification = NotificationModel(
       id: extractedId,
       title: json['title']?.toString() ?? '',
       read: json['read'] ?? false,
@@ -79,6 +88,12 @@ class NotificationModel {
       referenceId: extractedRefId,
       data: dataMap,
     );
+    
+    // After creating the notification, log what the getters return
+    debugPrint('  [Getters] notificationType: ${notification.notificationType}');
+    debugPrint('  [Getters] refId: ${notification.refId}');
+    
+    return notification;
   }
   
   // Helper getter to get notification category/type

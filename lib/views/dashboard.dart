@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dama/controller/auth_controller.dart';
 import 'package:dama/controller/blog_controller.dart';
 import 'package:dama/controller/events_controller.dart';
@@ -94,8 +95,18 @@ class _DashboardState extends State<Dashboard>
 
   bool _isProfileDropdownOpen = false;
   bool _hasShownOfflineNotification = false;
+  
+  // Notification polling timer
+  late Timer _notificationTimer;
+  static const Duration _notificationPollInterval = Duration(seconds: 15);
 
-  List<Widget> _screens = [];
+  List<Widget> get _screens => [
+    HomeScreen(onMenuTap: () => _toggleDrawer()),
+    Blogs(onMenuTap: () => _toggleDrawer()),
+    News(onMenuTap: () => _toggleDrawer()),
+    Resources(onMenuTap: () => _toggleDrawer()),
+    Events(onMenuTap: () => _toggleDrawer(), initialTab: widget.initialSubTab),
+  ];
 
   @override
   void initState() {
@@ -128,14 +139,6 @@ class _DashboardState extends State<Dashboard>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAuthStatus();
     });
-
-    _screens = [
-      HomeScreen(onMenuTap: () => _toggleDrawer()),
-      Blogs(onMenuTap: () => _toggleDrawer()),
-      News(onMenuTap: () => _toggleDrawer()),
-      Resources(onMenuTap: () => _toggleDrawer()),
-      Events(onMenuTap: () => _toggleDrawer(), initialTab: widget.initialSubTab),
-    ];
   }
 
   // ─── Plan helpers (mirrors React ProfileMenuSidebar logic) ────────────────
@@ -520,6 +523,9 @@ class _DashboardState extends State<Dashboard>
       _fetchAllData();
       debugPrint('📱 [Dashboard] Fetching notifications...');
       _notificationController.fetchnotifications();
+      
+      // Start polling for new notifications every 15 seconds
+      _startNotificationPolling();
       Future.delayed(Duration(milliseconds: 500), () {
         if (mounted) {
           _checkAndShowAlerts();
@@ -566,6 +572,21 @@ class _DashboardState extends State<Dashboard>
     await Future.delayed(Duration(milliseconds: 100));
   }
 
+  // Start polling for new notifications
+  void _startNotificationPolling() {
+    // Cancel existing timer if any
+    if (_notificationTimer.isActive) {
+      _notificationTimer.cancel();
+    }
+    
+    _notificationTimer = Timer.periodic(_notificationPollInterval, (_) {
+      if (mounted) {
+        _notificationController.fetchnotifications();
+      }
+    });
+    debugPrint('✅ [Dashboard] Notification polling started (every ${_notificationPollInterval.inSeconds}s)');
+  }
+
   void _toggleDrawer() {
     if (_scaffoldKey.currentState != null) {
       if (_scaffoldKey.currentState!.isDrawerOpen) {
@@ -588,6 +609,11 @@ class _DashboardState extends State<Dashboard>
     _pageController.dispose();
     _searchController.dispose();
     _pulseController.dispose();
+    // Cancel notification polling timer
+    if (_notificationTimer.isActive) {
+      _notificationTimer.cancel();
+      debugPrint('✅ [Dashboard] Notification polling stopped');
+    }
     // Don't delete PlansController here - it may be needed by incoming Dashboard
     // GetX will handle cleanup automatically when app is fully disposed
     super.dispose();
@@ -792,7 +818,7 @@ class _DashboardState extends State<Dashboard>
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: ThemeAwareLogo(height: 40, fit: BoxFit.contain),
+                      child: ThemeAwareLogo(height: 10, fit: BoxFit.contain),
                     ),
                   ),
 
@@ -1381,7 +1407,7 @@ class _DashboardState extends State<Dashboard>
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: ThemeAwareLogo(height: 40, fit: BoxFit.contain),
+                          child: ThemeAwareLogo(height: 10, fit: BoxFit.contain),
                         ),
                         if (!isCompact) SizedBox(width: 20),
                         Expanded(

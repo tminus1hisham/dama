@@ -24,31 +24,46 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
+    debugPrint('🔵 [SplashScreen] Starting app initialization...');
     await Future.delayed(Duration(milliseconds: 1500));
     
     try {
       // Check if user is already logged in
+      debugPrint('🔵 [SplashScreen] Checking for existing access token...');
       String? token = await StorageService.getData('access_token');
       
       if (token != null && token.isNotEmpty) {
+        debugPrint('✅ [SplashScreen] Access token found, navigating to home...');
         Get.offAllNamed(AppRoutes.home);
         return;
       }
+      debugPrint('🔵 [SplashScreen] No access token found');
       
       // Check for initial deep link
+      debugPrint('🔵 [SplashScreen] Checking for initial deep link...');
       final uri = await _deepLinkService.getInitialLink();
       
-      if (uri != null && _deepLinkService.isLinkedInCallback(uri)) {
-        // Handle LinkedIn deep link
-        await _linkedInController.handleDeepLink(uri);
-        return;
+      if (uri != null) {
+        debugPrint('🔵 [SplashScreen] Initial URI: $uri');
+        
+        if (_deepLinkService.isLinkedInCallback(uri)) {
+          debugPrint('✅ [SplashScreen] LinkedIn callback detected from splash screen');
+          // Handle LinkedIn deep link
+          await _linkedInController.handleDeepLink(uri);
+          return;
+        } else {
+          debugPrint('🔵 [SplashScreen] Deep link is not LinkedIn callback');
+        }
+      } else {
+        debugPrint('🔵 [SplashScreen] No initial deep link');
       }
       
       // No deep link, go to login
+      debugPrint('🔵 [SplashScreen] No LinkedIn deep link found, navigating to login...');
       Get.offAllNamed(AppRoutes.login);
       
     } catch (e) {
-      print('Error initializing app: $e');
+      debugPrint('❌ [SplashScreen] Error initializing app: $e');
       Get.offAllNamed(AppRoutes.login);
     }
   }

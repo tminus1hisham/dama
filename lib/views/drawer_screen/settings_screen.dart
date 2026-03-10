@@ -195,38 +195,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // Header with icon
                   Padding(
                     padding: const EdgeInsets.all(20),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: kBlue.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
+                        Text(
+                          'Terms and Conditions',
+                          style: TextStyle(
+                            fontSize: kBigTextSize,
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? kWhite : kBlack,
+                            letterSpacing: 0.3,
                           ),
-                          child: Icon(Icons.gavel_outlined, color: kBlue, size: 24),
                         ),
-                        const SizedBox(width: 14),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Legal',
-                              style: TextStyle(
-                                fontSize: kBigTextSize,
-                                fontWeight: FontWeight.bold,
-                                color: isDarkMode ? kWhite : kBlack,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'View our policies and terms',
-                              style: TextStyle(
-                                fontSize: kSmallTextSize,
-                                color: isDarkMode ? Color(0xFFa0a8b8) : kGrey,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'View our policies and terms',
+                          style: TextStyle(
+                            fontSize: kSmallTextSize,
+                            color: isDarkMode ? Color(0xFFa0a8b8) : kGrey,
+                          ),
                         ),
                       ],
                     ),

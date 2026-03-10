@@ -59,23 +59,21 @@ class ProfileCard extends StatelessWidget {
                 child: Center(
                   child: Stack(
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: kWhite, width: 3),
-                        ),
-                        child: ProfileAvatar(
-                          radius: 50,
-                          backgroundColor: kLightGrey,
-                          backgroundImage:
-                              imageUrl.isNotEmpty
-                                  ? NetworkImage(imageUrl)
-                                  : null,
-                          child:
-                              imageUrl.isEmpty
-                                  ? Icon(Icons.person, size: 40, color: kGrey)
-                                  : null,
-                        ),
+                      ProfileAvatar(
+                        radius: 50,
+                        backgroundColor: kLightGrey,
+                        backgroundImage:
+                            imageUrl.isNotEmpty
+                                ? NetworkImage(imageUrl)
+                                : null,
+                        borderColor: kBlue,
+                        borderWidth: 3,
+                        animateBorder: true,
+                        glowColor: kBlue,
+                        child:
+                            imageUrl.isEmpty
+                                ? Icon(Icons.person, size: 40, color: kGrey)
+                                : null,
                       ),
                     ],
                   ),

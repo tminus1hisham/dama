@@ -148,7 +148,7 @@ class NewsCard extends StatelessWidget {
                         GestureDetector(
                           onTap: isAdminOrManager ? null : onProfileClicked,
                           child: ProfileAvatar(
-                            radius: 40,
+                            radius: 25,
                             backgroundColor: kLightGrey,
                             backgroundImage: displayImage,
                             borderWidth: 0,
@@ -192,15 +192,15 @@ class NewsCard extends StatelessWidget {
                       ),
                     ),
                     padding: EdgeInsets.symmetric(
-                      horizontal: 15,
-                      vertical: 7,
+                      horizontal: 8,
+                      vertical: 4,
                     ),
                     child: Text(
                       category.isNotEmpty ? category : "News",
                       style: TextStyle(
                         color: categoryColors['text'] as Color,
                         fontWeight: FontWeight.bold,
-                        fontSize: kNormalTextSize,
+                        fontSize: 10,
                       ),
                     ),
                   ),

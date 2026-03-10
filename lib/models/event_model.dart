@@ -28,6 +28,10 @@ class EventModel {
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
+    debugPrint('[EventModel.fromJson] Raw JSON keys: ${json.keys.toList()}');
+    debugPrint('[EventModel.fromJson] _id value: ${json['_id']}');
+    debugPrint('[EventModel.fromJson] id value: ${json['id']}');
+    
     final eventCreatorData = json['event_creator'];
     final String creatorName =
         eventCreatorData != null
@@ -49,7 +53,7 @@ class EventModel {
     debugPrint('🎫 EventModel.fromJson - Title: $eventTitle, Raw Price: ${json['price']} (type: ${json['price'].runtimeType}), Parsed Price: $parsedPrice');
 
     return EventModel(
-      id: json['_id'] ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       eventCreator: creatorName,
       eventTitle: eventTitle,
       description: json['description'] ?? '',

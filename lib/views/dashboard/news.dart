@@ -25,29 +25,13 @@ class News extends StatefulWidget {
 }
 
 class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
-  final TextEditingController _categorySearchController =
-      TextEditingController();
-  bool _isSearchingCategories = false;
-
   String _formatCategoryName(String category) {
     if (category.toLowerCase() == 'all news') return 'All News';
     return category[0].toUpperCase() + category.substring(1).toLowerCase();
   }
 
-  /// Toggle category search mode
-  void _toggleCategorySearch() {
-    setState(() {
-      _isSearchingCategories = !_isSearchingCategories;
-      if (!_isSearchingCategories) {
-        _categorySearchController.clear();
-        _newsController.clearCategorySearch();
-      }
-    });
-  }
-
   @override
   void dispose() {
-    _categorySearchController.dispose();
     super.dispose();
   }
 
@@ -310,98 +294,35 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
 
             final currentSelectedCategory =
                 _newsController.selectedCategory.value;
-            final displayCategories =
-                _isSearchingCategories
-                    ? _newsController.filteredCategories
-                    : _newsController.categories;
             return Container(
               color: isDarkMode ? kBlack : kWhite,
               padding: EdgeInsets.only(top: 12, bottom: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header row with title and search toggle
+                  // Header row with title (no search)
                   Padding(
-                    padding: EdgeInsets.only(left: 16, right: 12, bottom: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Categories',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: isDarkMode ? kGrey : kGrey,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            _isSearchingCategories ? Icons.close : Icons.search,
-                            size: 20,
-                            color: isDarkMode ? kWhite : kBlack,
-                          ),
-                          onPressed: _toggleCategorySearch,
-                          padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(),
-                        ),
-                      ],
+                    padding: EdgeInsets.only(left: 16, bottom: 10),
+                    child: Text(
+                      'Categories',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: isDarkMode ? kWhite : kBlack,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
-                  // Search field (shown when searching)
-                  if (_isSearchingCategories)
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: TextField(
-                        controller: _categorySearchController,
-                        onChanged: _newsController.searchCategories,
-                        decoration: InputDecoration(
-                          hintText: 'Search categories...',
-                          prefixIcon: Icon(Icons.search, size: 20),
-                          suffixIcon:
-                              _categorySearchController.text.isNotEmpty
-                                  ? IconButton(
-                                    icon: Icon(Icons.clear, size: 18),
-                                    onPressed: () {
-                                      _categorySearchController.clear();
-                                      _newsController.clearCategorySearch();
-                                    },
-                                  )
-                                  : null,
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: isDarkMode ? kLightGrey : kLightGrey,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: kBlue, width: 1.5),
-                          ),
-                        ),
-                      ),
-                    ),
                   // Category chips with counts
                   SizedBox(
-                    height: 40,
+                    height: 36,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      padding: EdgeInsets.only(left: 12, right: 4),
-                      itemCount: displayCategories.length,
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: _newsController.categories.length,
                       itemBuilder: (context, index) {
-                        final category = displayCategories[index];
+                        final category = _newsController.categories[index];
                         final isSelected = currentSelectedCategory == category;
-                        final count = _newsController.getCategoryCount(
-                          category,
-                        );
                         return GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () {
@@ -412,8 +333,8 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                             key: ValueKey('${category}_$isSelected'),
                             margin: EdgeInsets.only(right: 8),
                             padding: EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
                               color:
@@ -449,15 +370,14 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                                 Text(
                                   _formatCategoryName(category),
                                   style: TextStyle(
-                                    color:
-                                        isSelected
-                                            ? kWhite
-                                            : (isDarkMode ? kWhite : kBlack),
+                                    color: isSelected
+                                        ? kWhite
+                                        : (isDarkMode ? kWhite : kBlack),
                                     fontWeight:
                                         isSelected
                                             ? FontWeight.w600
                                             : FontWeight.w400,
-                                    fontSize: 13,
+                                    fontSize: 11,
                                   ),
                                 ),
                               ],

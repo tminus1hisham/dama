@@ -131,15 +131,25 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   void _handleInitialDeepLink() async {
     try {
+      debugPrint('🔵 [App] Checking for initial deep link on app resume...');
       final deepLinkService = Get.find<DeepLinkService>();
       final initialUri = await deepLinkService.getInitialLink();
-      if (initialUri != null &&
-          deepLinkService.isLinkedInCallback(initialUri)) {
-        final linkedInController = Get.find<LinkedInController>();
-        await linkedInController.handleDeepLink(initialUri);
+      
+      if (initialUri != null) {
+        debugPrint('🔵 [App] Initial URI received: $initialUri');
+        
+        if (deepLinkService.isLinkedInCallback(initialUri)) {
+          debugPrint('✅ [App] LinkedIn callback detected, delegating to LinkedInController...');
+          final linkedInController = Get.find<LinkedInController>();
+          await linkedInController.handleDeepLink(initialUri);
+        } else {
+          debugPrint('🔵 [App] Deep link received but not LinkedIn: $initialUri');
+        }
+      } else {
+        debugPrint('🔵 [App] No initial deep link found');
       }
     } catch (e) {
-      print('Error handling initial deep link: $e');
+      debugPrint('❌ [App] Error handling initial deep link: $e');
     }
   }
 

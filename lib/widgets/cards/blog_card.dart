@@ -161,7 +161,7 @@ final ImageProvider displayImage = isAdminOrManager
                         GestureDetector(
                           onTap: isAdminOrManager ? null : onProfileClicked,
                           child: ProfileAvatar(
-                            radius: 40,
+                            radius: 25,
                             backgroundColor:
                                 isDarkMode ? Color(0xFF2a3040) : kLightGrey,
                             backgroundImage: displayImage,
@@ -202,13 +202,13 @@ final ImageProvider displayImage = isAdminOrManager
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: categoryColors.borderColor, width: 1.5),
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 7),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Text(
                       category.isNotEmpty ? category : "Blogs",
                       style: TextStyle(
                         color: categoryColors.textColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: kNormalTextSize,
+                        fontSize: 10,
                       ),
                     ),
                   ),

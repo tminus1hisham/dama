@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class BlogResponse {
   final bool success;
   final List<BlogPostModel> blogPosts;
@@ -172,6 +174,10 @@ class BlogPostModel {
 
   factory BlogPostModel.fromJson(Map<String, dynamic> json) {
     // Debug: Check if sources/references exists in API response
+    debugPrint('[BlogPostModel.fromJson] Raw JSON keys: ${json.keys.toList()}');
+    debugPrint('[BlogPostModel.fromJson] _id value: ${json['_id']}');
+    debugPrint('[BlogPostModel.fromJson] id value: ${json['id']}');
+    
     if (json['sources'] != null || json['references'] != null || json['source_references'] != null) {
       print('=== BLOG SOURCES DEBUG ===');
       print('sources: ${json['sources']}');
@@ -190,7 +196,7 @@ class BlogPostModel {
     }
 
     return BlogPostModel(
-      id: json['_id'] ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       title: json['title'] ?? '',
       author: json['author'] != null ? Author.fromJson(json['author']) : null,
       status: json['status'] ?? '',

@@ -914,7 +914,6 @@ class _EventsState extends State<Events>
 
   Widget _buildTabButton(String text, int index, bool isDarkMode) {
     final bool isSelected = selectedTab == index;
-    final bool isMyEvents = index == 1; // "My Events"
 
     return GestureDetector(
       onTap: () {
@@ -923,9 +922,9 @@ class _EventsState extends State<Events>
         });
       },
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isMyEvents ? 20 : 16,
-          vertical: isMyEvents ? 11 : 8,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 4,
         ),
         decoration: BoxDecoration(
           color: isSelected
@@ -936,9 +935,9 @@ class _EventsState extends State<Events>
             color: isSelected
                 ? kBlue
                 : (isDarkMode ? const Color(0xFF2a3040) : kGrey),
-            width: isMyEvents && !isSelected ? 1.8 : 1.0,
+            width: 1.0,
           ),
-          boxShadow: isSelected && isMyEvents
+          boxShadow: isSelected
               ? [
                   BoxShadow(
                     color: kBlue.withOpacity(0.35),
@@ -952,8 +951,8 @@ class _EventsState extends State<Events>
           text,
           style: TextStyle(
             color: isSelected ? kWhite : (isDarkMode ? kWhite : kGrey),
-            fontWeight: isMyEvents ? FontWeight.w700 : FontWeight.w600,
-            fontSize: isMyEvents ? 14 : 13,
+            fontWeight: FontWeight.w600,
+            fontSize: 11,
           ),
         ),
       ),

@@ -117,7 +117,7 @@ class _ResourcesState extends State<Resources>
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected ? kBlue : kWhite,
           borderRadius: BorderRadius.circular(30),
@@ -128,6 +128,7 @@ class _ResourcesState extends State<Resources>
           style: TextStyle(
             color: isSelected ? kWhite : kGrey,
             fontWeight: FontWeight.w600,
+            fontSize: 11,
           ),
         ),
       ),

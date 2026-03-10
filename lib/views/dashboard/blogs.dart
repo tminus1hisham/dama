@@ -293,8 +293,8 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                             key: ValueKey('${category}_$isSelected'),
                             margin: EdgeInsets.only(right: 8),
                             padding: EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
                               color:
@@ -330,15 +330,14 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                                 Text(
                                   _formatCategoryName(category),
                                   style: TextStyle(
-                                    color:
-                                        isSelected
-                                            ? kWhite
-                                            : (isDarkMode ? kWhite : kBlack),
+                                    color: isSelected
+                                        ? kWhite
+                                        : (isDarkMode ? kWhite : kBlack),
                                     fontWeight:
                                         isSelected
                                             ? FontWeight.w600
                                             : FontWeight.w400,
-                                    fontSize: 13,
+                                    fontSize: 11,
                                   ),
                                 ),
                               ],

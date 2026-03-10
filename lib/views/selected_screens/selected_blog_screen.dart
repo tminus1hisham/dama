@@ -363,6 +363,8 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                       backgroundImage:
                                                           kDamaLogo,
                                                       child: null,
+                                                      borderColor: Colors.transparent,
+                                                      borderWidth: 0,
                                                     ),
                                                     SizedBox(width: 10),
                                                     Column(

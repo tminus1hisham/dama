@@ -160,6 +160,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
         if (_blogController.blog.value != null) {
           final blog = _blogController.blog.value!;
+          debugPrint('  - Blog object details:');
+          debugPrint('    - id: "${blog.id}" (length: ${blog.id.length})');
+          debugPrint('    - title: "${blog.title}"');
+          debugPrint('    - author: "${blog.author?.firstName ?? ''} ${blog.author?.lastName ?? ''}"');
           debugPrint(
             '  - Navigating to SelectedBlogScreen with blog ID: ${blog.id}',
           );
@@ -199,6 +203,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
         if (_newsController.news.value != null) {
           final news = _newsController.news.value!;
+          debugPrint('  - News object details:');
+          debugPrint('    - id: "${news.id}" (length: ${news.id.length})');
+          debugPrint('    - title: "${news.title}"');
+          debugPrint('    - author: "${news.author?.firstName ?? 'Unknown'} ${news.author?.lastName ?? ''}".trim()');
           debugPrint(
             '  - Navigating to SelectedNewsScreen with news ID: ${news.id}',
           );
@@ -210,12 +218,14 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               title: news.title,
               description: news.description,
               imageUrl: news.imageUrl,
-              author: '${news.author.firstName} ${news.author.lastName}'.trim(),
-              authorID: news.author.id,
-              profileImageUrl: news.author.profilePicture,
+              author: news.author != null
+                  ? '${news.author!.firstName} ${news.author!.lastName}'.trim()
+                  : 'DAMA KENYA',
+              authorID: news.author?.id ?? '',
+              profileImageUrl: news.author?.profilePicture ?? '',
               createdAt: news.createdAt.toIso8601String(),
               comments: news.comments,
-              roles: news.author.roles,
+              roles: news.author?.roles ?? [],
             ),
           );
           debugPrint('  - Navigation complete');
@@ -237,6 +247,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
         if (_eventController.event.value != null) {
           final event = _eventController.event.value!;
+          debugPrint('  - Event object details:');
+          debugPrint('    - id: "${event.id}" (length: ${event.id.length})');
+          debugPrint('    - title: "${event.eventTitle}"');
+          debugPrint('    - creator: "${event.eventCreator}"');
           debugPrint(
             '  - Navigating to SelectedEventScreen with event ID: ${event.id}',
           );

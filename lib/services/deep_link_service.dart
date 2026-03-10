@@ -1,6 +1,7 @@
 import 'package:app_links/app_links.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 
 class DeepLinkService extends GetxService {
   final AppLinks _appLinks = AppLinks();
@@ -25,28 +26,30 @@ class DeepLinkService extends GetxService {
         uri.path.contains('linkedin') ||
         uri.queryParameters.containsKey('code') ||
         uri.path.contains('callback');
-    print(
-      'DeepLinkService: Checking if LinkedIn callback - URI: $uri, isLinkedIn: $isLinkedIn',
+    debugPrint(
+      '🔵 [DeepLink] Checking LinkedIn callback - URI: $uri, isLinkedIn: $isLinkedIn',
     );
     return isLinkedIn;
   }
 
   Future<bool> launchLinkedInAuth(String authUrl) async {
     try {
-      print('DeepLinkService: Launching LinkedIn auth URL: $authUrl');
-      return await launchUrl(
+      debugPrint('🔵 [DeepLink] Launching LinkedIn auth URL: $authUrl');
+      final result = await launchUrl(
         Uri.parse(authUrl),
         mode: LaunchMode.externalApplication,
       );
+      debugPrint('🔵 [DeepLink] Launch result: $result');
+      return result;
     } catch (e) {
-      print('DeepLinkService: Error launching LinkedIn auth: $e');
+      debugPrint('❌ [DeepLink] Error launching LinkedIn auth: $e');
       return false;
     }
   }
 
   Map<String, String> extractLinkedInParams(Uri uri) {
     final params = uri.queryParameters;
-    print('DeepLinkService: Extracted params: $params');
+    debugPrint('🔵 [DeepLink] Extracted params: ${params.keys.join(", ")}');
     return params;
   }
 }

@@ -44,6 +44,10 @@ class CustomAppbar extends StatelessWidget {
                     (imageUrl != null && imageUrl!.isNotEmpty)
                         ? NetworkImage(imageUrl!)
                         : null,
+                borderColor: kBlue,
+                borderWidth: 3,
+                animateBorder: true,
+                glowColor: kBlue,
                 child:
                     (imageUrl == null || imageUrl!.isEmpty)
                         ? Icon(Icons.person, size: 30, color: kGrey)
@@ -59,49 +63,52 @@ class CustomAppbar extends StatelessWidget {
                   color: isDarkMode ? kDarkThemeBg : kLightGrey,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        style: TextStyle(
-                          color: isDarkMode ? kWhite : kBlack,
-                        ),
-                        controller: searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Search...',
-                          hintStyle: TextStyle(
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                          ),
-                          border: InputBorder.none,
-                        ),
-                        onSubmitted: (query) {
-                          if (onSearchSubmitted != null) {
-                            onSearchSubmitted!(query);
+                child: TextField(
+                  style: TextStyle(
+                    color: isDarkMode ? kWhite : kBlack,
+                  ),
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search...',
+                    hintStyle: TextStyle(
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.only(left: 12, right: 0, top: 12, bottom: 12),
+                    suffixIconConstraints: BoxConstraints(minWidth: 40, maxHeight: 24),
+                    suffixIcon: Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        color: kGrey,
+                        iconSize: 20,
+                        padding: EdgeInsets.only(right: 8),
+                        onPressed: () {
+                          if (searchController.text.isNotEmpty &&
+                              onSearchSubmitted != null) {
+                            onSearchSubmitted!(searchController.text);
+                            searchController.clear();
                           }
-                          searchController.clear();
                         },
+                        icon: const Icon(Icons.search),
                       ),
                     ),
-                    IconButton(
-                      color: kGrey,
-                      onPressed: () {
-                        if (searchController.text.isNotEmpty &&
-                            onSearchSubmitted != null) {
-                          onSearchSubmitted!(searchController.text);
-                          searchController.clear();
-                        }
-                      },
-                      icon: const Icon(Icons.search),
-                    ),
-                  ],
+                  ),
+                  onSubmitted: (query) {
+                    if (onSearchSubmitted != null) {
+                      onSearchSubmitted!(query);
+                    }
+                    searchController.clear();
+                  },
                 ),
               ),
             ),
+            const SizedBox(width: 5),
             IconButton(
               onPressed: onChatTap,
-              icon: Icon(FontAwesomeIcons.comment),
+              icon: Icon(FontAwesomeIcons.comment, size: 18),
               color: kGrey,
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints(),
             ),
             Stack(
               children: [

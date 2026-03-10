@@ -97,17 +97,25 @@ class LinkedInController extends GetxController {
       _isProcessing.value = true;
       errorMessage.value = '';
 
+      debugPrint('🔵 [LinkedIn] === LOGIN STARTED ===');
+
       // Generate a secure state parameter
       _oauthState = _generateState();
+      debugPrint('🔵 [LinkedIn] Generated state: $_oauthState');
 
       // Get LinkedIn auth URL from backend
+      debugPrint('🔵 [LinkedIn] Calling getLinkedInAuthUrl()...');
       final response = await _apiService.getLinkedInAuthUrl(state: _oauthState);
+      debugPrint('🔵 [LinkedIn] API response: ${response.keys.join(", ")}');
 
       if (response.containsKey('authUrl')) {
         final authUrl = response['authUrl'];
+        debugPrint('🔵 [LinkedIn] Auth URL received: $authUrl');
 
         // Launch LinkedIn auth in external browser
+        debugPrint('🔵 [LinkedIn] Launching browser...');
         final launched = await _deepLinkService.launchLinkedInAuth(authUrl);
+        debugPrint('🔵 [LinkedIn] Browser launch result: $launched');
 
         if (!launched) {
           errorMessage.value = 'Could not launch LinkedIn';
@@ -117,11 +125,14 @@ class LinkedInController extends GetxController {
             isError: true,
             context: context,
           );
+          debugPrint('❌ [LinkedIn] Failed to launch browser');
         } else {
+          debugPrint('✅ [LinkedIn] Browser launched, waiting for callback...');
           // Start timeout timer for LinkedIn auth
           _timeoutTimer = Timer(const Duration(minutes: 2), () {
             if (_isProcessing.value) {
               _isProcessing.value = false;
+              debugPrint('❌ [LinkedIn] Timeout waiting for callback');
               _showSnackbar(
                 'Timeout',
                 'LinkedIn login timed out. Please try regular login.',
@@ -136,6 +147,7 @@ class LinkedInController extends GetxController {
       }
     } catch (e) {
       errorMessage.value = e.toString();
+      debugPrint('❌ [LinkedIn] Error: $e');
       String errorMsg = 'Failed to start LinkedIn login';
       if (e.toString().contains('HTML')) {
         errorMsg =
@@ -161,42 +173,37 @@ class LinkedInController extends GetxController {
       _timeoutTimer?.cancel();
       _isProcessing.value = true;
 
-      print('=== LINKEDIN DEEP LINK RECEIVED ===');
-      print('Full URI: $uri');
-      print('Scheme: ${uri.scheme}');
-      print('Host: ${uri.host}');
-      print('Path: ${uri.path}');
-      print('Query parameters: ${uri.queryParameters}');
-      print('Query string: ${uri.query}');
-      print('====================================');
+      debugPrint('🔵 [LinkedIn] === DEEP LINK RECEIVED ===');
+      debugPrint('🔵 [LinkedIn] Full URI: $uri');
+      debugPrint('🔵 [LinkedIn] Scheme: ${uri.scheme}');
+      debugPrint('🔵 [LinkedIn] Host: ${uri.host}');
+      debugPrint('🔵 [LinkedIn] Path: ${uri.path}');
+      debugPrint('🔵 [LinkedIn] Query parameters: ${uri.queryParameters}');
 
       final params = _deepLinkService.extractLinkedInParams(uri);
-
-      print('Extracted params: $params');
+      debugPrint('🔵 [LinkedIn] Extracted params keys: ${params.keys.join(", ")}');
 
       if (params.containsKey('token') && params.containsKey('user')) {
+        debugPrint('🔵 [LinkedIn] Token flow detected');
         // Direct token flow (from backend redirect)
         await _processTokenResponse(params['token']!, params['user']!);
       } else if (params.containsKey('code') && params.containsKey('state')) {
+        debugPrint('🔵 [LinkedIn] Code flow detected');
         // OAuth code flow
         await _processCodeFlow(params['code']!, params['state']!);
       } else if (params.containsKey('code') && params.containsKey('user') && !params.containsKey('state')) {
+        debugPrint('🔵 [LinkedIn] Direct token flow (code as token)');
         // Direct token flow where backend sends token as 'code' parameter
         await _processTokenResponse(params['code']!, params['user']!);
       } else {
-        throw Exception('Invalid callback parameters');
+        debugPrint('❌ [LinkedIn] Invalid callback parameters');
+        throw Exception('Invalid callback parameters: ${params.keys.join(", ")}');
       }
     } catch (e, s) {
-      print('=== LINKEDIN ERROR ===');
-      print('Error type: ${e.runtimeType}');
-      print('Error message: $e');
-      if (e is FormatException) {
-        print('FormatException details:');
-        print('  Offset: ${e.offset}');
-        print('  Source: ${e.source}');
-      }
-      print('Stack trace: ${s}');
-      print('===================');
+      debugPrint('❌ [LinkedIn] === ERROR ===');
+      debugPrint('❌ [LinkedIn] Error type: ${e.runtimeType}');
+      debugPrint('❌ [LinkedIn] Error message: $e');
+      debugPrint('❌ [LinkedIn] Stack trace: ${s.toString().split('\\n').take(5).join('\\n')}');
 
       errorMessage.value = e.toString();
       _showSnackbar(
@@ -331,33 +338,36 @@ class LinkedInController extends GetxController {
 
   Future<void> _processCodeFlow(String code, String state) async {
     try {
-      print('=== PROCESSING CODE FLOW ===');
-      print('Code: ${code.substring(0, min(20, code.length))}...');
-      print('State: $state');
-      print('Expected state: $_oauthState');
+      debugPrint('🔵 [LinkedIn] === PROCESSING CODE FLOW ===');
+      debugPrint('🔵 [LinkedIn] Code: ${code.substring(0, min(20, code.length))}...');
+      debugPrint('🔵 [LinkedIn] State received: $state');
+      debugPrint('🔵 [LinkedIn] Expected state: $_oauthState');
 
       // Verify state to prevent CSRF
       if (state != _oauthState) {
+        debugPrint('❌ [LinkedIn] State mismatch!');
         throw Exception('Invalid state parameter');
       }
 
       // Exchange code for token with backend
-      print('Calling API service exchangeLinkedInCode...');
+      debugPrint('🔵 [LinkedIn] Exchanging code with backend...');
       final response = await _apiService.exchangeLinkedInCode(
         code,
         state,
         GetPlatform.isIOS ? 'ios' : 'android',
       );
 
-      print('API response received: $response');
+      debugPrint('🔵 [LinkedIn] Exchange response received: ${response.keys.join(", ")}');
 
       if (response.containsKey('token') && response.containsKey('user')) {
+        debugPrint('✅ [LinkedIn] Token and user received, processing...');
         await _processTokenResponse(response['token'], response['user']);
       } else {
+        debugPrint('❌ [LinkedIn] Missing token or user in response');
         throw Exception('Invalid response from server: missing token or user');
       }
     } catch (e) {
-      print('Error in _processCodeFlow: $e');
+      debugPrint('❌ [LinkedIn] Code flow error: $e');
       rethrow;
     }
   }

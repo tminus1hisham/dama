@@ -2400,23 +2400,34 @@ class ApiService {
       },
     );
 
-    debugPrint('=== LINKEDIN MOBILE CALLBACK: $uri ===');
+    debugPrint('🔵 [ApiService] Exchanging LinkedIn code for tokens...');
+    debugPrint('🔵 [ApiService] Code: ${code.substring(0, code.length.clamp(0, 20))}...');
+    debugPrint('🔵 [ApiService] State: $state');
+    debugPrint('🔵 [ApiService] Endpoint: $uri');
 
     final response = await http.get(uri, headers: _headers);
 
-    debugPrint('Response status: ${response.statusCode}');
+    debugPrint('🔵 [ApiService] Response status: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final body = response.body.trim();
       if (body.startsWith('<')) {
+        debugPrint('❌ [ApiService] Server returned HTML (likely error page)');
         throw Exception('Server returned HTML instead of JSON.');
       }
-      return json.decode(body) as Map<String, dynamic>;
+      debugPrint('🔵 [ApiService] Response body preview: ${body.substring(0, body.length.clamp(0, 200))}');
+      final decoded = json.decode(body) as Map<String, dynamic>;
+      debugPrint('✅ [ApiService] LinkedIn code exchange successful');
+      debugPrint('✅ [ApiService] Response keys: ${decoded.keys.toList()}');
+      return decoded;
     } else if (response.statusCode == 401 || response.statusCode == 403) {
+      debugPrint('❌ [ApiService] Unauthorized (401/403): ${response.body}');
       HandleUnauthorizedService.showUnauthorizedDialog();
       throw Exception('Unauthorized request');
     }
 
+    debugPrint('❌ [ApiService] Code exchange failed: HTTP ${response.statusCode}');
+    debugPrint('❌ [ApiService] Response body: ${response.body}');
     throw Exception(
         'Failed to complete LinkedIn auth: ${response.statusCode} - ${response.body}');
   }

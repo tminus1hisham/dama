@@ -46,17 +46,17 @@ class _ResourcesState extends State<Resources>
   String title = '';
   String bio = '';
   String memberId = '';
-  
+
   // Payment fields
   String? completePhoneNumber;
   String? countryCode = '+254';
   String phoneNumber = '';
   String? fetchedPhoneNumber;
   String fetchedUserId = '';
-  
+
   // Sorting options
   String _sortBy = 'newest'; // newest, oldest, price_low, price_high, rating
-  
+
   // Scroll controller for pagination
   final ScrollController _allResourcesScrollController = ScrollController();
   final ScrollController _myResourcesScrollController = ScrollController();
@@ -110,6 +110,7 @@ class _ResourcesState extends State<Resources>
 
   Widget _buildPillButton(String text, int index) {
     final bool isSelected = selectedTab == index;
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDark;
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -117,9 +118,12 @@ class _ResourcesState extends State<Resources>
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? kBlue : kWhite,
+          color:
+              isSelected
+                  ? kBlue
+                  : (isDarkMode ? const Color(0xFF1a1f2e) : kWhite),
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: isSelected ? kBlue : kGrey),
         ),
@@ -127,7 +131,7 @@ class _ResourcesState extends State<Resources>
           text,
           style: TextStyle(
             color: isSelected ? kWhite : kGrey,
-            fontWeight: FontWeight.w600,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             fontSize: 11,
           ),
         ),
@@ -141,7 +145,11 @@ class _ResourcesState extends State<Resources>
     await _getUserProfileController.fetchUserProfile(fetchedUserId);
   }
 
-  void _showPhoneNumberModal(BuildContext context, dynamic resource, bool isDarkMode) {
+  void _showPhoneNumberModal(
+    BuildContext context,
+    dynamic resource,
+    bool isDarkMode,
+  ) {
     // Pre-populate phone number from storage
     String initialPhoneNumber = '';
     if (fetchedPhoneNumber != null && fetchedPhoneNumber!.isNotEmpty) {
@@ -154,16 +162,16 @@ class _ResourcesState extends State<Resources>
         initialPhoneNumber = fetchedPhoneNumber!;
       }
     }
-    
+
     // Local variable to track loading state within the modal
     bool isProcessing = false;
     final isIOS = UnifiedPaymentService.isIOS;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       isDismissible: false, // Prevent dismissing during payment
-      enableDrag: false,    // Prevent dragging away during payment
+      enableDrag: false, // Prevent dragging away during payment
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -211,7 +219,10 @@ class _ResourcesState extends State<Resources>
                       // Payment method icon - platform specific
                       if (isIOS)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black,
                             borderRadius: BorderRadius.circular(8),
@@ -239,223 +250,284 @@ class _ResourcesState extends State<Resources>
                       if (!isIOS)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 15),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Phone Number *",
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                                fontWeight: FontWeight.bold,
-                                fontSize: kNormalTextSize,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            IntlPhoneField(
-                              initialValue: initialPhoneNumber, // Autofill phone number
-                              enabled: !isProcessing, // Disable during processing
-                              decoration: InputDecoration(
-                                hintText: "7*******",
-                                hintStyle: TextStyle(
-                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                                ),
-                                counterText: '',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: BorderSide(color: Colors.grey),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: BorderSide(color: kBlue, width: 1.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Phone Number *",
+                                style: TextStyle(
+                                  color: isDarkMode ? kWhite : kBlack,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: kNormalTextSize,
                                 ),
                               ),
-                              disableLengthCheck: true,
-                              validator: (PhoneNumber? phone) {
-                                if (phone == null || phone.number.isEmpty) {
-                                  return 'Please enter a phone number';
-                                }
-                                if (phone.number.length != 9) {
-                                  return 'Phone number must be exactly 9 digits';
-                                }
-                                if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
-                                  return 'Phone number must contain only digits';
-                                }
-                                return null;
-                              },
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
+                              SizedBox(height: 8),
+                              IntlPhoneField(
+                                initialValue:
+                                    initialPhoneNumber, // Autofill phone number
+                                enabled:
+                                    !isProcessing, // Disable during processing
+                                decoration: InputDecoration(
+                                  hintText: "7*******",
+                                  hintStyle: TextStyle(
+                                    color:
+                                        isDarkMode
+                                            ? Colors.grey[400]
+                                            : Colors.grey[700],
+                                  ),
+                                  counterText: '',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: BorderSide(color: Colors.grey),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: BorderSide(
+                                      color: kBlue,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                ),
+                                disableLengthCheck: true,
+                                validator: (PhoneNumber? phone) {
+                                  if (phone == null || phone.number.isEmpty) {
+                                    return 'Please enter a phone number';
+                                  }
+                                  if (phone.number.length != 9) {
+                                    return 'Phone number must be exactly 9 digits';
+                                  }
+                                  if (!RegExp(
+                                    r'^[0-9]+$',
+                                  ).hasMatch(phone.number)) {
+                                    return 'Phone number must contain only digits';
+                                  }
+                                  return null;
+                                },
+                                style: TextStyle(
+                                  color: isDarkMode ? kWhite : kBlack,
+                                ),
+                                dropdownTextStyle: TextStyle(
+                                  color: isDarkMode ? kWhite : kBlack,
+                                ),
+                                dropdownIcon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: isDarkMode ? kWhite : kBlack,
+                                ),
+                                initialCountryCode: 'KE',
+                                onChanged: (PhoneNumber phone) {
+                                  completePhoneNumber = phone.completeNumber;
+                                },
+                                onCountryChanged: (country) {
+                                  countryCode = '+${country.dialCode}';
+                                },
                               ),
-                              dropdownTextStyle: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                              ),
-                              dropdownIcon: Icon(
-                                Icons.arrow_drop_down,
-                                color: isDarkMode ? kWhite : kBlack,
-                              ),
-                              initialCountryCode: 'KE',
-                              onChanged: (PhoneNumber phone) {
-                                completePhoneNumber = phone.completeNumber;
-                              },
-                              onCountryChanged: (country) {
-                                countryCode = '+${country.dialCode}';
-                              },
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
                       if (!isIOS) const SizedBox(height: 20),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15),
                         child: SizedBox(
                           width: double.infinity,
-                          child: isProcessing
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                decoration: BoxDecoration(
-                                  color: isIOS ? Colors.black.withValues(alpha: 0.7) : kBlue.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        color: kWhite,
-                                        strokeWidth: 2,
-                                      ),
+                          child:
+                              isProcessing
+                                  ? Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
                                     ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      isIOS ? 'Processing Apple Pay...' : 'Processing Payment...',
-                                      style: const TextStyle(
-                                        color: kWhite,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : isIOS
-                              // Apple Pay button for iOS
-                              ? GestureDetector(
-                                  onTap: () async {
-                                    setModalState(() {
-                                      isProcessing = true;
-                                    });
-                                    
-                                    final success = await _processPayment(context, resource);
-                                    
-                                    if (modalContext.mounted) {
-                                      Navigator.pop(modalContext);
-                                    }
-                                    
-                                    if (success && context.mounted) {
-                                      showSuccessBottomSheet(
-                                        context,
-                                        resource.title,
-                                        'Resource purchased',
-                                        'KES ${resource.price}',
-                                        isDarkMode,
-                                      );
-                                      Future.delayed(const Duration(seconds: 3), () {
-                                        if (context.mounted) {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => PDFViewerPage(
-                                                title: resource.title,
-                                                pdfUrl: resource.resourceLink,
-                                                onBack: () => Navigator.pop(context),
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      });
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
                                     decoration: BoxDecoration(
-                                      color: Colors.black,
+                                      color:
+                                          isIOS
+                                              ? Colors.black.withValues(
+                                                alpha: 0.7,
+                                              )
+                                              : kBlue.withValues(alpha: 0.5),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.apple, color: Colors.white, size: 24),
-                                        SizedBox(width: 8),
+                                        const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            color: kWhite,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
                                         Text(
-                                          'Pay with Apple Pay',
-                                          style: TextStyle(
-                                            color: Colors.white,
+                                          isIOS
+                                              ? 'Processing Apple Pay...'
+                                              : 'Processing Payment...',
+                                          style: const TextStyle(
+                                            color: kWhite,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                )
-                              // M-Pesa button for Android
-                              : CustomButton(
-                                callBackFunction: () async {
-                                  if (completePhoneNumber != null &&
-                                      completePhoneNumber!.length >= 10) {
-                                    phoneNumber = completePhoneNumber!;
-                                    
-                                    // Show loading state
-                                    setModalState(() {
-                                      isProcessing = true;
-                                    });
-                                    
-                                    // Process payment while modal stays open
-                                    final success = await _processPayment(context, resource);
-                                    
-                                    // Close modal after payment completes
-                                    if (modalContext.mounted) {
-                                      Navigator.pop(modalContext);
-                                    }
-                                    
-                                    // Show success UI if payment succeeded
-                                    if (success && context.mounted) {
-                                      showSuccessBottomSheet(
+                                  )
+                                  : isIOS
+                                  // Apple Pay button for iOS
+                                  ? GestureDetector(
+                                    onTap: () async {
+                                      setModalState(() {
+                                        isProcessing = true;
+                                      });
+
+                                      final success = await _processPayment(
                                         context,
-                                        resource.title,
-                                        'Resource purchased',
-                                        'KES ${resource.price}',
-                                        isDarkMode,
+                                        resource,
                                       );
-                                      // Navigate to PDF viewer after a delay
-                                      Future.delayed(const Duration(seconds: 3), () {
-                                        if (context.mounted) {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => PDFViewerPage(
-                                                title: resource.title,
-                                                pdfUrl: resource.resourceLink,
-                                                onBack: () => Navigator.pop(context),
-                                              ),
+
+                                      if (modalContext.mounted) {
+                                        Navigator.pop(modalContext);
+                                      }
+
+                                      if (success && context.mounted) {
+                                        showSuccessBottomSheet(
+                                          context,
+                                          resource.title,
+                                          'Resource purchased',
+                                          'KES ${resource.price}',
+                                          isDarkMode,
+                                        );
+                                        Future.delayed(
+                                          const Duration(seconds: 3),
+                                          () {
+                                            if (context.mounted) {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:
+                                                      (
+                                                        context,
+                                                      ) => PDFViewerPage(
+                                                        title: resource.title,
+                                                        pdfUrl:
+                                                            resource
+                                                                .resourceLink,
+                                                        onBack:
+                                                            () => Navigator.pop(
+                                                              context,
+                                                            ),
+                                                      ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        );
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.apple,
+                                            color: Colors.white,
+                                            size: 24,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Pay with Apple Pay',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
                                             ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                  // M-Pesa button for Android
+                                  : CustomButton(
+                                    callBackFunction: () async {
+                                      if (completePhoneNumber != null &&
+                                          completePhoneNumber!.length >= 10) {
+                                        phoneNumber = completePhoneNumber!;
+
+                                        // Show loading state
+                                        setModalState(() {
+                                          isProcessing = true;
+                                        });
+
+                                        // Process payment while modal stays open
+                                        final success = await _processPayment(
+                                          context,
+                                          resource,
+                                        );
+
+                                        // Close modal after payment completes
+                                        if (modalContext.mounted) {
+                                          Navigator.pop(modalContext);
+                                        }
+
+                                        // Show success UI if payment succeeded
+                                        if (success && context.mounted) {
+                                          showSuccessBottomSheet(
+                                            context,
+                                            resource.title,
+                                            'Resource purchased',
+                                            'KES ${resource.price}',
+                                            isDarkMode,
+                                          );
+                                          // Navigate to PDF viewer after a delay
+                                          Future.delayed(
+                                            const Duration(seconds: 3),
+                                            () {
+                                              if (context.mounted) {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (
+                                                          context,
+                                                        ) => PDFViewerPage(
+                                                          title: resource.title,
+                                                          pdfUrl:
+                                                              resource
+                                                                  .resourceLink,
+                                                          onBack:
+                                                              () =>
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                  ),
+                                                        ),
+                                                  ),
+                                                );
+                                              }
+                                            },
                                           );
                                         }
-                                      });
-                                    }
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Please enter a valid phone number'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                },
-                                label: "Confirm Payment",
-                                backgroundColor: kBlue,
-                              ),
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Please enter a valid phone number',
+                                            ),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    label: "Confirm Payment",
+                                    backgroundColor: kBlue,
+                                  ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -464,7 +536,7 @@ class _ResourcesState extends State<Resources>
                 ),
               ),
             );
-          }
+          },
         );
       },
     );
@@ -487,7 +559,7 @@ class _ResourcesState extends State<Resources>
     }
 
     final isIOS = UnifiedPaymentService.isIOS;
-    
+
     final result = await UnifiedPaymentService.pay(
       objectId: resource.id,
       model: 'Resource',
@@ -495,7 +567,7 @@ class _ResourcesState extends State<Resources>
       itemName: resource.title,
       phoneNumber: isIOS ? null : phoneNumber,
     );
-    
+
     final success = result.success;
 
     if (success) {
@@ -505,8 +577,6 @@ class _ResourcesState extends State<Resources>
 
     return success;
   }
-
-
 
   @override
   void dispose() {
@@ -529,18 +599,16 @@ class _ResourcesState extends State<Resources>
           SizedBox(height: 5),
           Container(
             color: isDarkMode ? kBlack : kWhite,
+            padding: EdgeInsets.only(top: 12, bottom: 12),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 15),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    _buildPillButton("All Resources", 0),
-                    const SizedBox(width: 10),
-                    _buildPillButton("My Resources", 1),
-                  ],
-                ),
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  _buildPillButton("All Resources", 0),
+                  const SizedBox(width: 10),
+                  _buildPillButton("My Resources", 1),
+                ],
               ),
             ),
           ),
@@ -609,7 +677,8 @@ class _ResourcesState extends State<Resources>
                         return ListView.builder(
                           controller: _allResourcesScrollController,
                           padding: const EdgeInsets.all(0),
-                          itemCount: _resourceController.resourceList.length +
+                          itemCount:
+                              _resourceController.resourceList.length +
                               (_resourceController.hasMore.value ? 1 : 0),
                           itemBuilder: (context, index) {
                             // Show loading indicator at the bottom
@@ -641,11 +710,12 @@ class _ResourcesState extends State<Resources>
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => PDFViewerPage(
-                                      title: resource.title,
-                                      pdfUrl: resource.resourceLink,
-                                      onBack: () => Navigator.pop(context),
-                                    ),
+                                    builder:
+                                        (context) => PDFViewerPage(
+                                          title: resource.title,
+                                          pdfUrl: resource.resourceLink,
+                                          onBack: () => Navigator.pop(context),
+                                        ),
                                   ),
                                 );
                               },
@@ -654,21 +724,24 @@ class _ResourcesState extends State<Resources>
                                 Navigator.push(
                                   context,
                                   PageRouteBuilder(
-                                    pageBuilder: (
-                                      context,
-                                      animation,
-                                      secondaryAnimation,
-                                    ) => SelectedResourceScreen(
-                                      resourceID: resource.id,
-                                      isPaid: isPurchased || resource.price == 0,
-                                      title: resource.title,
-                                      imageUrl: resource.resourceImageUrl,
-                                      description: resource.description,
-                                      price: resource.price,
-                                      viewUrl: resource.resourceLink,
-                                      date: resource.createdAt,
-                                      rating: resource.averageRating,
-                                    ),
+                                    pageBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                        ) => SelectedResourceScreen(
+                                          resourceID: resource.id,
+                                          isPaid:
+                                              isPurchased ||
+                                              resource.price == 0,
+                                          title: resource.title,
+                                          imageUrl: resource.resourceImageUrl,
+                                          description: resource.description,
+                                          price: resource.price,
+                                          viewUrl: resource.resourceLink,
+                                          date: resource.createdAt,
+                                          rating: resource.averageRating,
+                                        ),
                                     transitionsBuilder: (
                                       context,
                                       animation,
@@ -770,11 +843,12 @@ class _ResourcesState extends State<Resources>
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => PDFViewerPage(
-                                      title: resource.title,
-                                      pdfUrl: resource.resourceLink,
-                                      onBack: () => Navigator.pop(context),
-                                    ),
+                                    builder:
+                                        (context) => PDFViewerPage(
+                                          title: resource.title,
+                                          pdfUrl: resource.resourceLink,
+                                          onBack: () => Navigator.pop(context),
+                                        ),
                                   ),
                                 );
                               },

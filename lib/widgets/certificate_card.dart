@@ -33,9 +33,10 @@ class CertificateCard extends StatelessWidget {
           color: (isDarkMode ? kDarkCard : kWhite).withOpacity(0.95),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isDarkMode
-                ? Colors.grey[800]!.withOpacity(0.5)
-                : Colors.grey[200]!.withOpacity(0.8),
+            color:
+                isDarkMode
+                    ? Colors.grey[800]!.withOpacity(0.5)
+                    : Colors.grey[200]!.withOpacity(0.8),
           ),
           boxShadow: [
             BoxShadow(
@@ -216,10 +217,7 @@ class CertificateCard extends StatelessWidget {
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFF2563EB),
-                                Color(0xFF7C3AED),
-                              ],
+                              colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -230,11 +228,13 @@ class CertificateCard extends StatelessWidget {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 9),
+                              padding: const EdgeInsets.symmetric(vertical: 9),
                             ),
-                            icon: const Icon(Icons.visibility,
-                                size: 14, color: Colors.white),
+                            icon: const Icon(
+                              Icons.visibility,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                             label: const Text(
                               'View',
                               style: TextStyle(
@@ -317,9 +317,10 @@ class CertificateCard extends StatelessWidget {
         padding: const EdgeInsets.all(9),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isDarkMode
-                ? Colors.grey[700]!.withOpacity(0.5)
-                : Colors.grey[300]!.withOpacity(0.8),
+            color:
+                isDarkMode
+                    ? Colors.grey[700]!.withOpacity(0.5)
+                    : Colors.grey[300]!.withOpacity(0.8),
           ),
           borderRadius: BorderRadius.circular(8),
         ),

@@ -61,8 +61,10 @@ class _EventCardState extends State<EventCard>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _hoverAnimation =
-        Tween<double>(begin: 1.0, end: 1.05).animate(_hoverController);
+    _hoverAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(_hoverController);
   }
 
   @override
@@ -85,8 +87,7 @@ class _EventCardState extends State<EventCard>
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDark;
 
-    final localDate =
-        widget.date.isUtc ? widget.date.toLocal() : widget.date;
+    final localDate = widget.date.isUtc ? widget.date.toLocal() : widget.date;
     final now = DateTime.now();
     final isPast = localDate.isBefore(now);
 
@@ -106,16 +107,16 @@ class _EventCardState extends State<EventCard>
               color: isDarkMode ? kDarkCard : kWhite,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDarkMode
-                    ? kGlassBorder.withOpacity(0.3)
-                    : Colors.grey[200]!,
+                color:
+                    isDarkMode
+                        ? kGlassBorder.withOpacity(0.3)
+                        : Colors.grey[200]!,
               ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(_isHovered ? 0.15 : 0.08),
                   blurRadius: _isHovered ? 16 : 8,
-                  offset:
-                      _isHovered ? const Offset(0, 8) : const Offset(0, 4),
+                  offset: _isHovered ? const Offset(0, 8) : const Offset(0, 4),
                 ),
               ],
             ),
@@ -133,44 +134,48 @@ class _EventCardState extends State<EventCard>
                         child: Container(
                           height: 150,
                           color: isDarkMode ? kDarkThemeBg : Colors.grey[100],
-                          child: widget.imageUrl.isNotEmpty
-                              ? ColorFiltered(
-                                  colorFilter: isPast
-                                      ? const ColorFilter.matrix(<double>[
-                                          0.2126,
-                                          0.7152,
-                                          0.0722,
-                                          0,
-                                          0,
-                                          0.2126,
-                                          0.7152,
-                                          0.0722,
-                                          0,
-                                          0,
-                                          0.2126,
-                                          0.7152,
-                                          0.0722,
-                                          0,
-                                          0,
-                                          0,
-                                          0,
-                                          0,
-                                          1,
-                                          0,
-                                        ])
-                                      : const ColorFilter.mode(
-                                          Colors.transparent,
-                                          BlendMode.multiply,
-                                        ),
-                                  child: Image.network(
-                                    widget.imageUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            _buildImagePlaceholder(isDarkMode),
-                                  ),
-                                )
-                              : _buildImagePlaceholder(isDarkMode),
+                          child:
+                              widget.imageUrl.isNotEmpty
+                                  ? ColorFiltered(
+                                    colorFilter:
+                                        isPast
+                                            ? const ColorFilter.matrix(<double>[
+                                              0.2126,
+                                              0.7152,
+                                              0.0722,
+                                              0,
+                                              0,
+                                              0.2126,
+                                              0.7152,
+                                              0.0722,
+                                              0,
+                                              0,
+                                              0.2126,
+                                              0.7152,
+                                              0.0722,
+                                              0,
+                                              0,
+                                              0,
+                                              0,
+                                              0,
+                                              1,
+                                              0,
+                                            ])
+                                            : const ColorFilter.mode(
+                                              Colors.transparent,
+                                              BlendMode.multiply,
+                                            ),
+                                    child: Image.network(
+                                      widget.imageUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              _buildImagePlaceholder(
+                                                isDarkMode,
+                                              ),
+                                    ),
+                                  )
+                                  : _buildImagePlaceholder(isDarkMode),
                         ),
                       ),
 
@@ -186,9 +191,10 @@ class _EventCardState extends State<EventCard>
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: isPast
-                                  ? Colors.grey.withOpacity(0.8)
-                                  : kBlue.withOpacity(0.9),
+                              color:
+                                  isPast
+                                      ? Colors.grey.withOpacity(0.8)
+                                      : kBlue.withOpacity(0.9),
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
@@ -232,8 +238,7 @@ class _EventCardState extends State<EventCard>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      isPast ? Colors.grey[300] : kBlue,
+                                  color: isPast ? Colors.grey[300] : kBlue,
                                   borderRadius: const BorderRadius.only(
                                     topLeft: Radius.circular(12),
                                     topRight: Radius.circular(12),
@@ -261,9 +266,7 @@ class _EventCardState extends State<EventCard>
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                    color: isDarkMode
-                                        ? kBlack
-                                        : Colors.black87,
+                                    color: isDarkMode ? kBlack : Colors.black87,
                                   ),
                                 ),
                               ),
@@ -282,7 +285,9 @@ class _EventCardState extends State<EventCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Confirmed Tag (for My Events)
-                        if (widget.showConfirmedTag && widget.isConfirmed && !isPast)
+                        if (widget.showConfirmedTag &&
+                            widget.isConfirmed &&
+                            !isPast)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 4),
                             child: Container(
@@ -312,13 +317,14 @@ class _EventCardState extends State<EventCard>
                           style: TextStyle(
                             fontSize: kTitleTextSize,
                             fontWeight: FontWeight.bold,
-                            color: isPast
-                                ? (isDarkMode
-                                    ? Colors.white.withOpacity(0.6)
-                                    : Colors.grey[600])
-                                : (isDarkMode
-                                    ? Colors.white
-                                    : Colors.black),
+                            color:
+                                isPast
+                                    ? (isDarkMode
+                                        ? Colors.white.withOpacity(0.6)
+                                        : Colors.grey[600])
+                                    : (isDarkMode
+                                        ? Colors.white
+                                        : Colors.black),
                           ),
                         ),
 
@@ -331,8 +337,9 @@ class _EventCardState extends State<EventCard>
                           children: [
                             _buildMetadataItem(
                               icon: Icons.calendar_today_outlined,
-                              text: DateFormat('MMM dd, yyyy')
-                                  .format(localDate),
+                              text: DateFormat(
+                                'MMM dd, yyyy',
+                              ).format(localDate),
                               isDarkMode: isDarkMode,
                               isPast: isPast,
                             ),
@@ -348,7 +355,8 @@ class _EventCardState extends State<EventCard>
                             if (widget.showTicketNumber)
                               _buildMetadataItem(
                                 icon: Icons.confirmation_number_outlined,
-                                text: '${widget.ticketCount} ${widget.ticketCount == 1 ? 'ticket' : 'tickets'}',
+                                text:
+                                    '${widget.ticketCount} ${widget.ticketCount == 1 ? 'ticket' : 'tickets'}',
                                 isDarkMode: isDarkMode,
                                 isPast: isPast,
                               )
@@ -398,9 +406,8 @@ class _EventCardState extends State<EventCard>
                                 style: TextStyle(
                                   fontSize: kNormalTextSize,
                                   fontWeight: FontWeight.bold,
-                                  color: isFree
-                                      ? const Color(0xFF5CB338)
-                                      : kBlue,
+                                  color:
+                                      isFree ? const Color(0xFF5CB338) : kBlue,
                                 ),
                               )
                             else
@@ -413,7 +420,9 @@ class _EventCardState extends State<EventCard>
                                     vertical: 5,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0b65c3), // kBlue - explicit
+                                    color: const Color(
+                                      0xFF0b65c3,
+                                    ), // kBlue - explicit
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Row(
@@ -453,12 +462,19 @@ class _EventCardState extends State<EventCard>
                                         vertical: 5,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: widget.viewTicketColor ?? const Color(0xFF080D17),
+                                        color:
+                                            widget.viewTicketColor ??
+                                            const Color(0xFF080D17),
                                         borderRadius: BorderRadius.circular(8),
-                                        border: widget.viewTicketColor != null ? null : Border.all(
-                                          color: const Color(0xFF3C84F6),
-                                          width: 1,
-                                        ),
+                                        border:
+                                            widget.viewTicketColor != null
+                                                ? null
+                                                : Border.all(
+                                                  color: const Color(
+                                                    0xFF3C84F6,
+                                                  ),
+                                                  width: 1,
+                                                ),
                                       ),
                                       child: const Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -493,7 +509,9 @@ class _EventCardState extends State<EventCard>
                                         ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF0D1629),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
                                             color: const Color(0xFF3778E0),
                                             width: 1,
@@ -532,9 +550,8 @@ class _EventCardState extends State<EventCard>
                                 style: TextStyle(
                                   fontSize: kNormalTextSize,
                                   fontWeight: FontWeight.bold,
-                                  color: isFree
-                                      ? const Color(0xFF5CB338)
-                                      : kBlue,
+                                  color:
+                                      isFree ? const Color(0xFF5CB338) : kBlue,
                                 ),
                               ),
                           ],
@@ -573,11 +590,12 @@ class _EventCardState extends State<EventCard>
         Icon(
           icon,
           size: 16,
-          color: isPast
-              ? (isDarkMode
-                  ? Colors.white.withOpacity(0.4)
-                  : Colors.grey[400])
-              : (isDarkMode ? Colors.white : kBlue),
+          color:
+              isPast
+                  ? (isDarkMode
+                      ? Colors.white.withOpacity(0.4)
+                      : Colors.grey[400])
+                  : (isDarkMode ? Colors.white : kBlue),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -587,11 +605,12 @@ class _EventCardState extends State<EventCard>
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: kNormalTextSize,
-              color: isPast
-                  ? (isDarkMode
-                      ? Colors.white.withOpacity(0.6)
-                      : Colors.grey[600])
-                  : (isDarkMode ? Colors.white : Colors.black),
+              color:
+                  isPast
+                      ? (isDarkMode
+                          ? Colors.white.withOpacity(0.6)
+                          : Colors.grey[600])
+                      : (isDarkMode ? Colors.white : Colors.black),
               fontWeight: FontWeight.w500,
             ),
           ),

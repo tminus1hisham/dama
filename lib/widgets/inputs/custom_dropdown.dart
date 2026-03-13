@@ -24,47 +24,50 @@ class CustomDropdown extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDark;
 
-    final dropdownItems = items.asMap().entries.map((entry) {
-      final index = entry.key;
-      final choice = entry.value;
-      final isPlaceholder = index == 0;
+    final dropdownItems =
+        items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final choice = entry.value;
+          final isPlaceholder = index == 0;
 
-      return DropdownMenuItem<String>(
-        value: isPlaceholder ? null : choice,
-        enabled: !isPlaceholder,
-        child: Text(
-          choice,
-          style: TextStyle(
-            color: isPlaceholder
-                ? (isDarkMode ? Colors.white : kGrey)
-                : (isDarkMode ? Colors.white : Colors.black),
-          ),
-        ),
-      );
-    }).toList();
+          return DropdownMenuItem<String>(
+            value: isPlaceholder ? null : choice,
+            enabled: !isPlaceholder,
+            child: Text(
+              choice,
+              style: TextStyle(
+                color:
+                    isPlaceholder
+                        ? (isDarkMode ? Colors.white : kGrey)
+                        : (isDarkMode ? Colors.white : Colors.black),
+              ),
+            ),
+          );
+        }).toList();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: kSidePadding, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: kSidePadding,
+        vertical: 5,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(color: isDarkMode ? kWhite : kBlack),
-          ),
+          Text(label, style: TextStyle(color: isDarkMode ? kWhite : kBlack)),
           const SizedBox(height: 5),
           DropdownButtonFormField<String>(
             initialValue: value == items[0] ? null : value,
             items: dropdownItems,
             onChanged: onChanged,
-            validator: isRequired
-                ? (val) {
-              if (val == null || val.isEmpty) {
-                return 'This field is required';
-              }
-              return null;
-            }
-                : null,
+            validator:
+                isRequired
+                    ? (val) {
+                      if (val == null || val.isEmpty) {
+                        return 'This field is required';
+                      }
+                      return null;
+                    }
+                    : null,
             dropdownColor: isDarkMode ? kBlack : kWhite,
             decoration: InputDecoration(
               fillColor: isDarkMode ? kDarkThemeBg : Colors.white,
@@ -89,9 +92,10 @@ class CustomDropdown extends StatelessWidget {
               ),
             ),
             style: TextStyle(
-              color: (value == null || value == items[0])
-                  ? (isDarkMode ? Colors.grey[400] : kGrey)
-                  : (isDarkMode ? Colors.white : Colors.black),
+              color:
+                  (value == null || value == items[0])
+                      ? (isDarkMode ? Colors.grey[400] : kGrey)
+                      : (isDarkMode ? Colors.white : Colors.black),
               fontSize: kTitleTextSize,
               fontWeight: FontWeight.w400,
             ),

@@ -22,23 +22,25 @@ class UserSearchCard extends StatelessWidget {
     final String title = user['title']?.toString() ?? 'No title';
     final String profilePicture = user['profile_picture']?.toString() ?? '';
 
-    final bool hasValidProfilePicture = profilePicture.isNotEmpty &&
+    final bool hasValidProfilePicture =
+        profilePicture.isNotEmpty &&
         Uri.tryParse(profilePicture)?.hasAbsolutePath == true;
 
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
 
     return GestureDetector(
-      onTap: userId.isNotEmpty
-          ? () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OtherUserProfile(userID: userId),
-          ),
-        );
-      }
-          : null,
+      onTap:
+          userId.isNotEmpty
+              ? () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OtherUserProfile(userID: userId),
+                  ),
+                );
+              }
+              : null,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -49,19 +51,20 @@ class UserSearchCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(40),
-              child: hasValidProfilePicture
-                  ? Image.network(
-                profilePicture,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-              )
-                  : Container(
-                width: 50,
-                height: 50,
-                color: Colors.grey.shade300,
-                child: const Icon(Icons.person, color: Colors.white70),
-              ),
+              child:
+                  hasValidProfilePicture
+                      ? Image.network(
+                        profilePicture,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      )
+                      : Container(
+                        width: 50,
+                        height: 50,
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.person, color: Colors.white70),
+                      ),
             ),
             const SizedBox(width: 16),
             Expanded(

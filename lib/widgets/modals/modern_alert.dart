@@ -2,10 +2,10 @@ import 'package:dama/utils/constants.dart';
 import 'package:flutter/material.dart';
 
 enum AlertVariant {
-  success,  // Green
-  error,    // Red
-  warning,  // Orange/Yellow
-  info,     // Blue
+  success, // Green
+  error, // Red
+  warning, // Orange/Yellow
+  info, // Blue
 }
 
 class ModernAlert extends StatefulWidget {
@@ -73,9 +73,8 @@ class _ModernAlertState extends State<ModernAlert> {
     final alertColor = _getAlertColor();
     final bgColor = _getBackgroundColor();
     final textColor = widget.isDarkMode ? kWhite : kBlack;
-    final descriptionColor = widget.isDarkMode
-        ? Colors.grey[400]
-        : Colors.grey[600];
+    final descriptionColor =
+        widget.isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -83,10 +82,7 @@ class _ModernAlertState extends State<ModernAlert> {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: alertColor.withOpacity(0.3),
-            width: 1,
-          ),
+          border: Border.all(color: alertColor.withOpacity(0.3), width: 1),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -96,11 +92,7 @@ class _ModernAlertState extends State<ModernAlert> {
               // Icon (left aligned)
               Padding(
                 padding: const EdgeInsets.only(right: 16, top: 2),
-                child: Icon(
-                  _getAlertIcon(),
-                  color: alertColor,
-                  size: 20,
-                ),
+                child: Icon(_getAlertIcon(), color: alertColor, size: 20),
               ),
               // Content (title + description)
               Expanded(
@@ -218,19 +210,20 @@ class AlertStack extends StatelessWidget {
       builder: (context, child) {
         return Column(
           mainAxisSize: MainAxisSize.min,
-          children: alertProvider.alerts
-              .map(
-                (alert) => ModernAlert(
-                  title: alert.title,
-                  description: alert.description,
-                  variant: alert.variant,
-                  isDarkMode: isDarkMode,
-                  onDismiss: () {
-                    alertProvider.dismiss(alert: alert);
-                  },
-                ),
-              )
-              .toList(),
+          children:
+              alertProvider.alerts
+                  .map(
+                    (alert) => ModernAlert(
+                      title: alert.title,
+                      description: alert.description,
+                      variant: alert.variant,
+                      isDarkMode: isDarkMode,
+                      onDismiss: () {
+                        alertProvider.dismiss(alert: alert);
+                      },
+                    ),
+                  )
+                  .toList(),
         );
       },
     );

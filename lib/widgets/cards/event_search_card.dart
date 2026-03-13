@@ -26,7 +26,7 @@ class EventSearchCard extends StatelessWidget {
     final imageUrl = event?['event_image_url'];
     final createdAtString = event?['created_at'];
     final createdAt =
-    createdAtString != null ? DateTime.tryParse(createdAtString) : null;
+        createdAtString != null ? DateTime.tryParse(createdAtString) : null;
     final eventId = event?['_id'] ?? '';
     final speakers = event?['speakers'] ?? [];
     final price = event?['price'] ?? 0;
@@ -43,47 +43,46 @@ class EventSearchCard extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (context) => SelectedEventScreen(
-                eventID: eventId,
-                isPaid: false,
-                speakers: speakers,
-                description: description,
-                title: eventTitle,
-                price: price,
-                date: createdAt,
-                imageUrl: imageUrl ?? '',
-                location: location,
-                fromSearch: true,
-              ),
+                    eventID: eventId,
+                    isPaid: false,
+                    speakers: speakers,
+                    description: description,
+                    title: eventTitle,
+                    price: price,
+                    date: createdAt,
+                    imageUrl: imageUrl ?? '',
+                    location: location,
+                    fromSearch: true,
+                  ),
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Invalid blog data')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Invalid blog data')));
         }
       },
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDarkMode ? kBlack : kWhite,
-        ),
+        decoration: BoxDecoration(color: isDarkMode ? kBlack : kWhite),
         child: Row(
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: imageUrl != null && imageUrl.toString().isNotEmpty
-                  ? Image.network(
-                imageUrl,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
-              )
-                  : Container(
-                width: 70,
-                height: 70,
-                color: Colors.grey.shade300,
-                child: const Icon(Icons.image, color: Colors.white70),
-              ),
+              child:
+                  imageUrl != null && imageUrl.toString().isNotEmpty
+                      ? Image.network(
+                        imageUrl,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                      )
+                      : Container(
+                        width: 70,
+                        height: 70,
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.image, color: Colors.white70),
+                      ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -101,19 +100,13 @@ class EventSearchCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     truncateText(description, 80),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   if (createdAt != null) ...[
                     const SizedBox(height: 6),
                     Text(
                       _utils.timeAgo(createdAt),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ],

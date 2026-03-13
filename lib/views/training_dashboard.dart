@@ -86,11 +86,12 @@ class _CircularProgressPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
 
-    final bgPaint = Paint()
-      ..color = backgroundColor
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+    final bgPaint =
+        Paint()
+          ..color = backgroundColor
+          ..strokeWidth = strokeWidth
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
     canvas.drawCircle(center, radius, bgPaint);
 
     if (progress > 0) {
@@ -100,11 +101,12 @@ class _CircularProgressPainter extends CustomPainter {
         endAngle: -math.pi / 2 + 2 * math.pi * progress,
         colors: gradientColors,
       );
-      final progressPaint = Paint()
-        ..shader = gradient.createShader(rect)
-        ..strokeWidth = strokeWidth
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
+      final progressPaint =
+          Paint()
+            ..shader = gradient.createShader(rect)
+            ..strokeWidth = strokeWidth
+            ..style = PaintingStyle.stroke
+            ..strokeCap = StrokeCap.round;
       canvas.drawArc(
         rect,
         -math.pi / 2,
@@ -144,7 +146,8 @@ class _StatCard extends StatelessWidget {
         color: isDarkMode ? kDarkCard : kWhite,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!),
+          color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+        ),
       ),
       child: Row(
         children: [
@@ -254,21 +257,25 @@ class _SessionCardState extends State<_SessionCard> {
     }
     final uri = Uri.parse(resolvedUrl);
     try {
-      final launched =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched) {
         await launchUrl(uri, mode: LaunchMode.inAppWebView);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Could not open link'),
-          action: SnackBarAction(
-            label: 'Copy',
-            onPressed: () =>
-                Clipboard.setData(ClipboardData(text: resolvedUrl)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Could not open link'),
+            action: SnackBarAction(
+              label: 'Copy',
+              onPressed:
+                  () => Clipboard.setData(ClipboardData(text: resolvedUrl)),
+            ),
           ),
-        ));
+        );
       }
     }
   }
@@ -283,9 +290,10 @@ class _SessionCardState extends State<_SessionCard> {
         color: isDarkMode ? kDarkCard : kWhite,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: _isLive
-              ? Colors.green.withValues(alpha: 0.4)
-              : (isDarkMode ? Colors.grey[800]! : Colors.grey[200]!),
+          color:
+              _isLive
+                  ? Colors.green.withValues(alpha: 0.4)
+                  : (isDarkMode ? Colors.grey[800]! : Colors.grey[200]!),
           width: _isLive ? 1.5 : 1,
         ),
         boxShadow: [
@@ -300,11 +308,11 @@ class _SessionCardState extends State<_SessionCard> {
         children: [
           // ── Main row
           InkWell(
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(14)),
-            onTap: (_hasJoined || _isCompleted) && _hasDetails
-                ? () => setState(() => _isExpanded = !_isExpanded)
-                : null,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            onTap:
+                (_hasJoined || _isCompleted) && _hasDetails
+                    ? () => setState(() => _isExpanded = !_isExpanded)
+                    : null,
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Row(
@@ -315,31 +323,33 @@ class _SessionCardState extends State<_SessionCard> {
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
-                      color: _isCompleted
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : !_hasJoined
+                      color:
+                          _isCompleted
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : !_hasJoined
                               ? Colors.grey.withValues(alpha: 0.15)
                               : _isLive
-                                  ? Colors.green.withValues(alpha: 0.2)
-                                  : kBlue.withValues(alpha: 0.1),
+                              ? Colors.green.withValues(alpha: 0.2)
+                              : kBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       _isCompleted
                           ? Icons.check_circle
                           : !_hasJoined
-                              ? Icons.lock_clock
-                              : _isLive
-                                  ? Icons.videocam
-                                  : Icons.play_arrow,
+                          ? Icons.lock_clock
+                          : _isLive
+                          ? Icons.videocam
+                          : Icons.play_arrow,
                       size: 22,
-                      color: _isCompleted
-                          ? Colors.green[600]
-                          : !_hasJoined
+                      color:
+                          _isCompleted
+                              ? Colors.green[600]
+                              : !_hasJoined
                               ? Colors.grey[500]
                               : _isLive
-                                  ? Colors.green[600]
-                                  : kBlue,
+                              ? Colors.green[600]
+                              : kBlue,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -356,12 +366,15 @@ class _SessionCardState extends State<_SessionCard> {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: _statusBg,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                    color: _statusColor.withValues(alpha: 0.3)),
+                                  color: _statusColor.withValues(alpha: 0.3),
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -370,25 +383,32 @@ class _SessionCardState extends State<_SessionCard> {
                                     Container(
                                       width: 6,
                                       height: 6,
-                                      margin:
-                                          const EdgeInsets.only(right: 4),
+                                      margin: const EdgeInsets.only(right: 4),
                                       decoration: const BoxDecoration(
-                                          color: Colors.green,
-                                          shape: BoxShape.circle),
+                                        color: Colors.green,
+                                        shape: BoxShape.circle,
+                                      ),
                                     ),
                                   if (_isCompleted)
-                                    const Icon(Icons.check_circle,
-                                        size: 10, color: Colors.grey),
+                                    const Icon(
+                                      Icons.check_circle,
+                                      size: 10,
+                                      color: Colors.grey,
+                                    ),
                                   if (!_isLive && !_isCompleted)
-                                    const Icon(Icons.access_time,
-                                        size: 10, color: Colors.blue),
+                                    const Icon(
+                                      Icons.access_time,
+                                      size: 10,
+                                      color: Colors.blue,
+                                    ),
                                   const SizedBox(width: 3),
                                   Text(
                                     _statusLabel,
                                     style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: _statusColor),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: _statusColor,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -397,25 +417,33 @@ class _SessionCardState extends State<_SessionCard> {
                             if (_hasJoined)
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.green.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                      color: Colors.green
-                                          .withValues(alpha: 0.3)),
+                                    color: Colors.green.withValues(alpha: 0.3),
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: const [
-                                    Icon(Icons.check_circle,
-                                        size: 10, color: Colors.green),
+                                    Icon(
+                                      Icons.check_circle,
+                                      size: 10,
+                                      color: Colors.green,
+                                    ),
                                     SizedBox(width: 3),
-                                    Text('Joined',
-                                        style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.green)),
+                                    Text(
+                                      'Joined',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.green,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -423,14 +451,18 @@ class _SessionCardState extends State<_SessionCard> {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.timer,
-                                      size: 11, color: Colors.grey[500]),
+                                  Icon(
+                                    Icons.timer,
+                                    size: 11,
+                                    color: Colors.grey[500],
+                                  ),
                                   const SizedBox(width: 3),
                                   Text(
                                     widget.session.duration!,
                                     style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey[500]),
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -456,10 +488,12 @@ class _SessionCardState extends State<_SessionCard> {
                           Text(
                             widget.session.description!,
                             style: TextStyle(
-                                fontSize: 13,
-                                color: isDarkMode
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600]),
+                              fontSize: 13,
+                              color:
+                                  isDarkMode
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -468,27 +502,36 @@ class _SessionCardState extends State<_SessionCard> {
                           Text(
                             'Join this session to view details, meeting link, and resources',
                             style: TextStyle(
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                                color: isDarkMode
-                                    ? Colors.grey[500]
-                                    : Colors.grey[500]),
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                              color:
+                                  isDarkMode
+                                      ? Colors.grey[500]
+                                      : Colors.grey[500],
+                            ),
                           ),
                         ],
 
                         // Date/time
                         if (widget.session.startTime != null) ...[
                           const SizedBox(height: 6),
-                          Row(children: [
-                            Icon(Icons.calendar_today,
-                                size: 12, color: Colors.grey[500]),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatSessionDate(widget.session.startTime!),
-                              style: TextStyle(
-                                  fontSize: 12, color: Colors.grey[500]),
-                            ),
-                          ]),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 12,
+                                color: Colors.grey[500],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatSessionDate(widget.session.startTime!),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ],
                     ),
@@ -518,22 +561,29 @@ class _SessionCardState extends State<_SessionCard> {
           style: ElevatedButton.styleFrom(
             backgroundColor: kBlue,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8)),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
           onPressed: widget.isJoining ? null : widget.onJoin,
-          child: widget.isJoining
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
-              : const Text('Join',
-                  style: TextStyle(
+          child:
+              widget.isJoining
+                  ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                  : const Text(
+                    'Join',
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 13,
-                      fontWeight: FontWeight.w600)),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
         ),
       );
     }
@@ -541,8 +591,10 @@ class _SessionCardState extends State<_SessionCard> {
     // Completed, not joined → expand toggle
     if (!_hasJoined && _isCompleted && _hasDetails) {
       return IconButton(
-        icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more,
-            color: kGrey),
+        icon: Icon(
+          _isExpanded ? Icons.expand_less : Icons.expand_more,
+          color: kGrey,
+        ),
         onPressed: () => setState(() => _isExpanded = !_isExpanded),
       );
     }
@@ -557,8 +609,7 @@ class _SessionCardState extends State<_SessionCard> {
             tooltip: 'Enter Class',
             onPressed: () => _launchUrl(widget.session.meetingUrl!),
           ),
-        if (_isCompleted &&
-            (widget.session.recordingUrl?.isNotEmpty ?? false))
+        if (_isCompleted && (widget.session.recordingUrl?.isNotEmpty ?? false))
           IconButton(
             icon: const Icon(Icons.play_circle_outline, color: kBlue),
             tooltip: 'Replay',
@@ -573,8 +624,9 @@ class _SessionCardState extends State<_SessionCard> {
         if (_hasDetails)
           IconButton(
             icon: Icon(
-                _isExpanded ? Icons.expand_less : Icons.expand_more,
-                color: kGrey),
+              _isExpanded ? Icons.expand_less : Icons.expand_more,
+              color: kGrey,
+            ),
             onPressed: () => setState(() => _isExpanded = !_isExpanded),
           ),
       ],
@@ -585,11 +637,11 @@ class _SessionCardState extends State<_SessionCard> {
     return Container(
       decoration: BoxDecoration(
         color: isDarkMode ? Colors.grey[900] : Colors.grey[50],
-        borderRadius:
-            const BorderRadius.vertical(bottom: Radius.circular(14)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
         border: Border(
           top: BorderSide(
-              color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!),
+            color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+          ),
         ),
       ),
       padding: const EdgeInsets.all(14),
@@ -601,43 +653,57 @@ class _SessionCardState extends State<_SessionCard> {
             _sectionHeader(Icons.videocam, 'Class Details'),
             const SizedBox(height: 8),
             if (widget.session.meetingPlatform?.isNotEmpty ?? false)
-              _detailRow(Icons.place, 'Platform',
-                  widget.session.meetingPlatform!, isDarkMode),
+              _detailRow(
+                Icons.place,
+                'Platform',
+                widget.session.meetingPlatform!,
+                isDarkMode,
+              ),
             if (widget.session.meetingUrl?.isNotEmpty ?? false)
               Padding(
                 padding: const EdgeInsets.only(left: 20, top: 6),
-                child: Row(children: [
-                  const Icon(Icons.link, size: 14, color: kGrey),
-                  const SizedBox(width: 6),
-                  const Text('Link: ',
-                      style: TextStyle(fontSize: 13, color: kGrey)),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () =>
-                          _launchUrl(widget.session.meetingUrl!),
-                      child: Text(
-                        widget.session.meetingUrl!,
-                        style: const TextStyle(fontSize: 13, color: kBlue),
-                        overflow: TextOverflow.ellipsis,
+                child: Row(
+                  children: [
+                    const Icon(Icons.link, size: 14, color: kGrey),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Link: ',
+                      style: TextStyle(fontSize: 13, color: kGrey),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _launchUrl(widget.session.meetingUrl!),
+                        child: Text(
+                          widget.session.meetingUrl!,
+                          style: const TextStyle(fontSize: 13, color: kBlue),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
-                  ),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.open_in_new,
-                        size: 12, color: kBlue),
-                    label: const Text('Enter Class',
-                        style: TextStyle(fontSize: 12, color: kBlue)),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: kBlue),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                    OutlinedButton.icon(
+                      icon: const Icon(
+                        Icons.open_in_new,
+                        size: 12,
+                        color: kBlue,
+                      ),
+                      label: const Text(
+                        'Enter Class',
+                        style: TextStyle(fontSize: 12, color: kBlue),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: kBlue),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () => _launchUrl(widget.session.meetingUrl!),
                     ),
-                    onPressed: () =>
-                        _launchUrl(widget.session.meetingUrl!),
-                  ),
-                ]),
+                  ],
+                ),
               ),
             const SizedBox(height: 12),
           ],
@@ -651,28 +717,29 @@ class _SessionCardState extends State<_SessionCard> {
                 color: isDarkMode ? kDarkThemeBg : kWhite,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: isDarkMode
-                        ? Colors.grey[800]!
-                        : Colors.grey[200]!),
+                  color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+                ),
               ),
               child: Text(
                 widget.session.notes!,
                 style: TextStyle(
-                    fontSize: 13,
-                    color: isDarkMode
-                        ? Colors.grey[300]
-                        : Colors.grey[700],
-                    height: 1.5),
+                  fontSize: 13,
+                  color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                  height: 1.5,
+                ),
               ),
             ),
             const SizedBox(height: 12),
           ],
           if (widget.session.materials?.isNotEmpty ?? false) ...[
-            _sectionHeader(Icons.description,
-                'Resources (${widget.session.materials!.length})'),
+            _sectionHeader(
+              Icons.description,
+              'Resources (${widget.session.materials!.length})',
+            ),
             const SizedBox(height: 8),
-            ...widget.session.materials!
-                .map((r) => _resourceTile(r, isDarkMode)),
+            ...widget.session.materials!.map(
+              (r) => _resourceTile(r, isDarkMode),
+            ),
           ],
         ],
       ),
@@ -680,34 +747,48 @@ class _SessionCardState extends State<_SessionCard> {
   }
 
   Widget _sectionHeader(IconData icon, String title) {
-    return Row(children: [
-      Icon(icon, size: 16, color: kBlue),
-      const SizedBox(width: 6),
-      Text(title,
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: kBlue),
+        const SizedBox(width: 6),
+        Text(
+          title,
           style: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600, color: kBlue)),
-    ]);
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: kBlue,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _detailRow(
-      IconData icon, String label, String value, bool isDarkMode) {
+    IconData icon,
+    String label,
+    String value,
+    bool isDarkMode,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(left: 20, bottom: 4),
-      child: Row(children: [
-        Icon(icon, size: 14, color: kGrey),
-        const SizedBox(width: 6),
-        Text('$label: ', style: const TextStyle(fontSize: 13, color: kGrey)),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: kGrey),
+          const SizedBox(width: 6),
+          Text('$label: ', style: const TextStyle(fontSize: 13, color: kGrey)),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: widget.isDarkMode ? kWhite : kBlack),
-            overflow: TextOverflow.ellipsis,
+                color: widget.isDarkMode ? kWhite : kBlack,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -725,67 +806,74 @@ class _SessionCardState extends State<_SessionCard> {
           color: isDarkMode ? kDarkThemeBg : kWhite,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-              color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!),
+            color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+          ),
         ),
-        child: Row(children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: isLink
-                  ? Colors.green.withValues(alpha: 0.1)
-                  : isPdf
-                      ? Colors.red.withValues(alpha: 0.1)
-                      : Colors.blue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color:
+                    isLink
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : isPdf
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                isLink
+                    ? Icons.link
+                    : isPdf
+                    ? Icons.picture_as_pdf
+                    : Icons.insert_drive_file,
+                size: 18,
+                color:
+                    isLink
+                        ? Colors.green
+                        : isPdf
+                        ? Colors.red
+                        : Colors.blue,
+              ),
             ),
-            child: Icon(
-              isLink
-                  ? Icons.link
-                  : isPdf
-                      ? Icons.picture_as_pdf
-                      : Icons.insert_drive_file,
-              size: 18,
-              color: isLink
-                  ? Colors.green
-                  : isPdf
-                      ? Colors.red
-                      : Colors.blue,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(resource.title,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    resource.title,
                     style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: isDarkMode ? kWhite : kBlack),
-                    overflow: TextOverflow.ellipsis),
-                Text(
-                  isLink ? 'link' : ext.toUpperCase(),
-                  style: const TextStyle(fontSize: 11, color: kGrey),
-                ),
-              ],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: isDarkMode ? kWhite : kBlack,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    isLink ? 'link' : ext.toUpperCase(),
+                    style: const TextStyle(fontSize: 11, color: kGrey),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(
-            isLink || isPdf ? Icons.open_in_new : Icons.download,
-            size: 16,
-            color: kGrey,
-          ),
-        ]),
+            Icon(
+              isLink || isPdf ? Icons.open_in_new : Icons.download,
+              size: 16,
+              color: kGrey,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   String _formatSessionDate(DateTime date) {
     final now = DateTime.now();
-    final isToday = date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
     if (isToday) {
       return 'Today at ${DateFormat('h:mm a').format(date)}';
     }
@@ -822,8 +910,9 @@ class _DashboardSkeleton extends StatelessWidget {
                 height: 70,
                 margin: EdgeInsets.only(right: i < 2 ? 10 : 0),
                 decoration: BoxDecoration(
-                    color: isDarkMode ? kDarkCard : Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12)),
+                  color: isDarkMode ? kDarkCard : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -835,8 +924,9 @@ class _DashboardSkeleton extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 12),
             height: 80,
             decoration: BoxDecoration(
-                color: isDarkMode ? kDarkCard : Colors.grey[200],
-                borderRadius: BorderRadius.circular(12)),
+              color: isDarkMode ? kDarkCard : Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       ],
@@ -890,26 +980,31 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
     });
 
     try {
-      final sessions =
-          await _progressController.fetchTrainingSessions(widget.training.id);
+      final sessions = await _progressController.fetchTrainingSessions(
+        widget.training.id,
+      );
 
       // ✅ Merge API isJoined with our locally-tracked joined IDs
-      final mergedSessions = sessions.map((s) {
-        if (_locallyJoinedSessionIds.contains(s.id)) {
-          return s.copyWith(isJoined: true);
-        }
-        // Also seed the local set from what the API already knows
-        if (s.isJoined == true) {
-          _locallyJoinedSessionIds.add(s.id);
-        }
-        return s;
-      }).toList();
+      final mergedSessions =
+          sessions.map((s) {
+            if (_locallyJoinedSessionIds.contains(s.id)) {
+              return s.copyWith(isJoined: true);
+            }
+            // Also seed the local set from what the API already knows
+            if (s.isJoined == true) {
+              _locallyJoinedSessionIds.add(s.id);
+            }
+            return s;
+          }).toList();
 
-      final completedCount = mergedSessions
-          .where((s) =>
-              s.status == 'completed' ||
-              (s.isJoined == true && s.status == 'ongoing'))
-          .length;
+      final completedCount =
+          mergedSessions
+              .where(
+                (s) =>
+                    s.status == 'completed' ||
+                    (s.isJoined == true && s.status == 'ongoing'),
+              )
+              .length;
       final totalSessions = mergedSessions.length;
       final progressPercent =
           totalSessions > 0 ? (completedCount / totalSessions) * 100 : 0.0;
@@ -926,8 +1021,8 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
         final trainingStatus = widget.training.status?.toLowerCase() ?? '';
         _isCertificateAvailable =
             widget.training.certificate?.issued == true ||
-                trainingStatus == 'completed' ||
-                _progressPercent >= 100;
+            trainingStatus == 'completed' ||
+            _progressPercent >= 100;
         _isLoading = false;
       });
     } catch (e) {
@@ -943,25 +1038,32 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
     setState(() => _joiningSessionId = session.id);
     try {
       final result = await _progressController.joinSession(
-          widget.training.id, session.id);
+        widget.training.id,
+        session.id,
+      );
 
       // ✅ Treat both "success: true" and "Already in session" as joined
       final success = result['success'] == true;
-      final alreadyJoined =
-          (result['message'] ?? '').toString().toLowerCase().contains('already');
+      final alreadyJoined = (result['message'] ?? '')
+          .toString()
+          .toLowerCase()
+          .contains('already');
 
       if (mounted) {
-        final message = alreadyJoined
-            ? 'Already checked in to ${session.title}'
-            : success
+        final message =
+            alreadyJoined
+                ? 'Already checked in to ${session.title}'
+                : success
                 ? 'Joined ${session.title}'
                 : result['message'] ?? 'Failed to join';
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(message),
-          backgroundColor:
-              (success || alreadyJoined) ? Colors.green : Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor:
+                (success || alreadyJoined) ? Colors.green : Colors.red,
+          ),
+        );
 
         if (success || alreadyJoined) {
           // ✅ Persist joined state locally so it survives re-fetches
@@ -969,10 +1071,13 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
 
           // Optimistically update the session list
           setState(() {
-            _sessions = _sessions
-                .map((s) =>
-                    s.id == session.id ? s.copyWith(isJoined: true) : s)
-                .toList();
+            _sessions =
+                _sessions
+                    .map(
+                      (s) =>
+                          s.id == session.id ? s.copyWith(isJoined: true) : s,
+                    )
+                    .toList();
           });
 
           // Launch meeting URL if provided
@@ -992,26 +1097,35 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
     setState(() => _leavingSessionId = session.id);
     try {
       final result = await _progressController.leaveSession(
-          widget.training.id, session.id);
+        widget.training.id,
+        session.id,
+      );
       final success = result['success'] == true;
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(success
-              ? 'Left ${session.title}'
-              : result['message'] ?? 'Failed to leave'),
-          backgroundColor: success ? Colors.orange : Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'Left ${session.title}'
+                  : result['message'] ?? 'Failed to leave',
+            ),
+            backgroundColor: success ? Colors.orange : Colors.red,
+          ),
+        );
 
         if (success) {
           // ✅ Remove from local joined tracking
           _locallyJoinedSessionIds.remove(session.id);
 
           setState(() {
-            _sessions = _sessions
-                .map((s) =>
-                    s.id == session.id ? s.copyWith(isJoined: false) : s)
-                .toList();
+            _sessions =
+                _sessions
+                    .map(
+                      (s) =>
+                          s.id == session.id ? s.copyWith(isJoined: false) : s,
+                    )
+                    .toList();
           });
         }
       }
@@ -1028,10 +1142,12 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
 
       if (userId == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Please log in to view your certificate'),
-            backgroundColor: Colors.orange,
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please log in to view your certificate'),
+              backgroundColor: Colors.orange,
+            ),
+          );
         }
         return;
       }
@@ -1039,11 +1155,15 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
       // Try to get certificate number from multiple sources
       // Source 1: Training model certificate
       if (certNumber == null || certNumber.isEmpty) {
-        debugPrint('[Certificate] No certificate number in training model, trying to generate...');
+        debugPrint(
+          '[Certificate] No certificate number in training model, trying to generate...',
+        );
         try {
           final apiService = ApiService();
           final cert = await apiService.generateCertificate(
-              widget.training.id, userId);
+            widget.training.id,
+            userId,
+          );
           if (cert != null && cert.certificateNumber.isNotEmpty) {
             certNumber = cert.certificateNumber;
             debugPrint('[Certificate] Generated new certificate: $certNumber');
@@ -1055,14 +1175,19 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
 
       // Source 2: Fetch from user's certificates list
       if (certNumber == null || certNumber.isEmpty) {
-        debugPrint('[Certificate] Trying to fetch from user certificates list...');
+        debugPrint(
+          '[Certificate] Trying to fetch from user certificates list...',
+        );
         try {
           final certs = await _progressController.fetchUserCertificates(userId);
           final found = certs.firstWhereOrNull(
-              (c) => c.trainingId == widget.training.id);
+            (c) => c.trainingId == widget.training.id,
+          );
           if (found != null && found.certificateNumber.isNotEmpty) {
             certNumber = found.certificateNumber;
-            debugPrint('[Certificate] Found certificate in user list: $certNumber');
+            debugPrint(
+              '[Certificate] Found certificate in user list: $certNumber',
+            );
           }
         } catch (e) {
           debugPrint('[Certificate] Failed to fetch user certificates: $e');
@@ -1074,45 +1199,56 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
         final url = '$BASE_URL/certificates/download/$certNumber';
         debugPrint('[Certificate] Opening certificate URL: $url');
         final launched = await _launchUrl(url);
-        
+
         if (launched && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Certificate opened'),
-            backgroundColor: Colors.green,
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Certificate opened'),
+              backgroundColor: Colors.green,
+            ),
+          );
         } else if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Could not open certificate. Please try again.'),
-            backgroundColor: Colors.orange,
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open certificate. Please try again.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
         }
       } else if (mounted) {
         // Provide more specific error message based on training status
         final trainingStatus = widget.training.status?.toLowerCase() ?? '';
         final progress = _progressPercent.round();
-        
+
         String message;
         if (trainingStatus != 'completed' && progress < 100) {
-          message = 'Complete all sessions to earn your certificate. Current progress: $progress%';
+          message =
+              'Complete all sessions to earn your certificate. Current progress: $progress%';
         } else if (trainingStatus == 'completed' || progress >= 100) {
-          message = 'Your certificate is being processed. Please try again in a few minutes.';
+          message =
+              'Your certificate is being processed. Please try again in a few minutes.';
         } else {
-          message = 'Certificate not available yet. Complete all sessions to earn your certificate.';
+          message =
+              'Certificate not available yet. Complete all sessions to earn your certificate.';
         }
-        
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 4),
-        ));
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     } catch (e) {
       debugPrint('[Certificate] Error in _handleViewCertificate: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error loading certificate: $e'),
-          backgroundColor: Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading certificate: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isViewCertLoading = false);
@@ -1145,16 +1281,17 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
         children: [
           TopNavigationbar(title: widget.training.title),
           Expanded(
-            child: _isLoading
-                ? _DashboardSkeleton(isDarkMode: isDarkMode)
-                : _error != null
+            child:
+                _isLoading
+                    ? _DashboardSkeleton(isDarkMode: isDarkMode)
+                    : _error != null
                     ? _buildErrorState(isDarkMode)
                     : RefreshIndicator(
-                        color: kWhite,
-                        backgroundColor: kBlue,
-                        onRefresh: _fetchDashboardData,
-                        child: _buildContent(isDarkMode),
-                      ),
+                      color: kWhite,
+                      backgroundColor: kBlue,
+                      onRefresh: _fetchDashboardData,
+                      child: _buildContent(isDarkMode),
+                    ),
           ),
         ],
       ),
@@ -1162,8 +1299,7 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
   }
 
   Widget _buildContent(bool isDarkMode) {
-    final liveSessions =
-        _sessions.where((s) => s.status == 'ongoing').toList();
+    final liveSessions = _sessions.where((s) => s.status == 'ongoing').toList();
     final upcomingSessions =
         _sessions.where((s) => s.status == 'scheduled').toList();
     final completedSessions =
@@ -1176,22 +1312,23 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: isDarkMode
-                  ? [kDarkCard, Colors.grey[900]!]
-                  : [kWhite, Colors.blue.withValues(alpha: 0.05)],
+              colors:
+                  isDarkMode
+                      ? [kDarkCard, Colors.grey[900]!]
+                      : [kWhite, Colors.blue.withValues(alpha: 0.05)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: isDarkMode
-                    ? Colors.grey[800]!
-                    : Colors.grey[200]!),
+              color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+            ),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.07),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4)),
+                color: Colors.black.withValues(alpha: 0.07),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           padding: const EdgeInsets.all(20),
@@ -1211,25 +1348,35 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Wrap(spacing: 6, runSpacing: 4, children: [
-                          if (widget.training.category?.isNotEmpty ?? false)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: kBlue.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                    color: kBlue.withValues(alpha: 0.3)),
-                              ),
-                              child: Text(widget.training.category!,
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            if (widget.training.category?.isNotEmpty ?? false)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: kBlue.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: kBlue.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  widget.training.category!,
                                   style: const TextStyle(
-                                      fontSize: 11,
-                                      color: kBlue,
-                                      fontWeight: FontWeight.w600)),
-                            ),
-                          _enrolledBadge(isDarkMode),
-                        ]),
+                                    fontSize: 11,
+                                    color: kBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            _enrolledBadge(isDarkMode),
+                          ],
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           widget.training.title,
@@ -1243,44 +1390,50 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
                         ),
                         const SizedBox(height: 8),
                         if (widget.training.trainer != null)
-                          Row(children: [
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundColor:
-                                  kBlue.withValues(alpha: 0.15),
-                              child: Text(
-                                _initials(
-                                  widget.training.trainer!.firstName,
-                                  widget.training.trainer!.lastName,
-                                ),
-                                style: const TextStyle(
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 14,
+                                backgroundColor: kBlue.withValues(alpha: 0.15),
+                                child: Text(
+                                  _initials(
+                                    widget.training.trainer!.firstName,
+                                    widget.training.trainer!.lastName,
+                                  ),
+                                  style: const TextStyle(
                                     fontSize: 10,
                                     color: kBlue,
-                                    fontWeight: FontWeight.bold),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${widget.training.trainer!.firstName} ${widget.training.trainer!.lastName}'
-                                        .trim(),
-                                    style: TextStyle(
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${widget.training.trainer!.firstName} ${widget.training.trainer!.lastName}'
+                                          .trim(),
+                                      style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
-                                        color:
-                                            isDarkMode ? kWhite : kBlack),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const Text('Instructor',
+                                        color: isDarkMode ? kWhite : kBlack,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const Text(
+                                      'Instructor',
                                       style: TextStyle(
-                                          fontSize: 11, color: kGrey)),
-                                ],
+                                        fontSize: 11,
+                                        color: kGrey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ]),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -1289,68 +1442,85 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
 
               const SizedBox(height: 16),
 
-              LayoutBuilder(builder: (context, constraints) {
-                final isNarrow = constraints.maxWidth < 350;
-                return Row(
-                  children: [
-                    if (liveSessions.isNotEmpty)
-                      Expanded(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 8),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 350;
+                  return Row(
+                    children: [
+                      if (liveSessions.isNotEmpty)
+                        Expanded(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            icon: const Icon(Icons.videocam,
-                                color: Colors.white, size: 18),
-                            label: Text(
-                              isNarrow ? 'Join Live' : 'Join Live Session',
-                              style: const TextStyle(
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 8,
+                                ),
+                              ),
+                              icon: const Icon(
+                                Icons.videocam,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              label: Text(
+                                isNarrow ? 'Join Live' : 'Join Live Session',
+                                style: const TextStyle(
                                   color: Colors.white,
-                                  fontWeight: FontWeight.w600),
-                              overflow: TextOverflow.ellipsis,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onPressed:
+                                  () => _handleJoinSession(liveSessions.first),
                             ),
-                            onPressed: () =>
-                                _handleJoinSession(liveSessions.first),
                           ),
                         ),
-                      ),
-                    if (liveSessions.isNotEmpty) const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: Icon(Icons.menu_book,
+                      if (liveSessions.isNotEmpty) const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: Icon(
+                            Icons.menu_book,
                             size: 16,
-                            color: isDarkMode ? kWhite : kBlack),
-                        label: Text(
-                          isNarrow ? 'Details' : 'View Details',
-                          style: TextStyle(
-                              color: isDarkMode ? kWhite : kBlack),
-                          overflow: TextOverflow.ellipsis,
+                            color: isDarkMode ? kWhite : kBlack,
+                          ),
+                          label: Text(
+                            isNarrow ? 'Details' : 'View Details',
+                            style: TextStyle(
+                              color: isDarkMode ? kWhite : kBlack,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color:
+                                  isDarkMode
+                                      ? Colors.grey[600]!
+                                      : Colors.grey[300]!,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 8,
+                            ),
+                          ),
+                          onPressed: () => Get.back(),
                         ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                              color: isDarkMode
-                                  ? Colors.grey[600]!
-                                  : Colors.grey[300]!),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 8),
-                        ),
-                        onPressed: () => Get.back(),
                       ),
-                    ),
-                  ],
-                );
-              }),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -1358,27 +1528,30 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
         const SizedBox(height: 16),
 
         // ── STATS ROW  (2 cards — no overflow at any screen width)
-        Row(children: [
-          Expanded(
-            child: _StatCard(
-              icon: Icons.menu_book,
-              value: '$_completedSessions/$_totalSessions',
-              label: 'Sessions Done',
-              isDarkMode: isDarkMode,
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.menu_book,
+                value: '$_completedSessions/$_totalSessions',
+                label: 'Sessions Done',
+                isDarkMode: isDarkMode,
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _StatCard(
-              icon: Icons.emoji_events,
-              value: _progressPercent >= 100
-                  ? '🎉'
-                  : '${_progressPercent.round()}%',
-              label: _progressPercent >= 100 ? 'Completed!' : 'Progress',
-              isDarkMode: isDarkMode,
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.emoji_events,
+                value:
+                    _progressPercent >= 100
+                        ? '🎉'
+                        : '${_progressPercent.round()}%',
+                label: _progressPercent >= 100 ? 'Completed!' : 'Progress',
+                isDarkMode: isDarkMode,
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
 
         const SizedBox(height: 16),
 
@@ -1395,60 +1568,81 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
                 ],
               ),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: Colors.blue.withValues(alpha: 0.25)),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.25)),
             ),
-            child: Row(children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [
-                    Colors.blue.withValues(alpha: 0.2),
-                    Colors.purple.withValues(alpha: 0.2),
-                  ]),
-                  shape: BoxShape.circle,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.blue.withValues(alpha: 0.2),
+                        Colors.purple.withValues(alpha: 0.2),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events,
+                    size: 24,
+                    color: Colors.blue,
+                  ),
                 ),
-                child: const Icon(Icons.emoji_events,
-                    size: 24, color: Colors.blue),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('🎓 Certificate Earned!',
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '🎓 Certificate Earned!',
                         style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? kWhite : kBlack)),
-                    const Text(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? kWhite : kBlack,
+                        ),
+                      ),
+                      const Text(
                         'Congratulations on completing this training.',
-                        style: TextStyle(fontSize: 12, color: kGrey)),
-                  ],
+                        style: TextStyle(fontSize: 12, color: kGrey),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  ),
+                  icon:
+                      _isViewCertLoading
+                          ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Icon(
+                            Icons.visibility,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                  label: const Text(
+                    'View',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: _isViewCertLoading ? null : _handleViewCertificate,
                 ),
-                icon: _isViewCertLoading
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.visibility,
-                        size: 16, color: Colors.white),
-                label: const Text('View',
-                    style: TextStyle(color: Colors.white)),
-                onPressed:
-                    _isViewCertLoading ? null : _handleViewCertificate,
-              ),
-            ]),
+              ],
+            ),
           ),
 
         // ── LIVE SESSION ALERT
@@ -1459,63 +1653,73 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
             decoration: BoxDecoration(
               color: Colors.green.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: Colors.green.withValues(alpha: 0.3)),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
             ),
-            child: LayoutBuilder(builder: (context, constraints) {
-              final isNarrow = constraints.maxWidth < 350;
-              return Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 350;
+                return Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.videocam,
+                        size: 20,
+                        color: Colors.green,
+                      ),
                     ),
-                    child: const Icon(Icons.videocam,
-                        size: 20, color: Colors.green),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          isNarrow ? 'Live Now!' : 'Live Session in Progress!',
-                          style: const TextStyle(
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isNarrow
+                                ? 'Live Now!'
+                                : 'Live Session in Progress!',
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.green),
-                          overflow: TextOverflow.ellipsis,
+                              color: Colors.green,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            liveSessions.first.title,
+                            style: const TextStyle(fontSize: 13, color: kGrey),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        Text(
-                          liveSessions.first.title,
-                          style: const TextStyle(fontSize: 13, color: kGrey),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                      ],
+                      ),
+                      onPressed: () => _handleJoinSession(liveSessions.first),
+                      child: Text(
+                        isNarrow ? 'Join' : 'Join Now',
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                    ),
-                    onPressed: () => _handleJoinSession(liveSessions.first),
-                    child: Text(
-                      isNarrow ? 'Join' : 'Join Now',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              );
-            }),
+                  ],
+                );
+              },
+            ),
           ),
         ],
 
@@ -1523,20 +1727,24 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(children: [
-              const Icon(Icons.school, size: 20, color: kBlue),
-              const SizedBox(width: 8),
-              Text(
-                'Course Sessions',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isDarkMode ? kWhite : kBlack,
+            Row(
+              children: [
+                const Icon(Icons.school, size: 20, color: kBlue),
+                const SizedBox(width: 8),
+                Text(
+                  'Course Sessions',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? kWhite : kBlack,
+                  ),
                 ),
-              ),
-            ]),
-            Text('${_sessions.length} total',
-                style: const TextStyle(fontSize: 13, color: kGrey)),
+              ],
+            ),
+            Text(
+              '${_sessions.length} total',
+              style: const TextStyle(fontSize: 13, color: kGrey),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -1549,57 +1757,64 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
               color: isDarkMode ? kDarkCard : kWhite,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                  color: isDarkMode
-                      ? Colors.grey[800]!
-                      : Colors.grey[200]!),
+                color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+              ),
             ),
             child: Column(
               children: [
-                Icon(Icons.calendar_today,
-                    size: 48,
-                    color: isDarkMode
-                        ? Colors.grey[600]
-                        : Colors.grey[400]),
+                Icon(
+                  Icons.calendar_today,
+                  size: 48,
+                  color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                ),
                 const SizedBox(height: 12),
-                const Text('No sessions scheduled yet.',
-                    style: TextStyle(color: kGrey)),
+                const Text(
+                  'No sessions scheduled yet.',
+                  style: TextStyle(color: kGrey),
+                ),
               ],
             ),
           )
         else ...[
-          ...liveSessions.map((s) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _SessionCard(
-                  session: s,
-                  isDarkMode: isDarkMode,
-                  onJoin: () => _handleJoinSession(s),
-                  onLeave: () => _handleLeaveSession(s),
-                  isJoining: _joiningSessionId == s.id,
-                  isLeaving: _leavingSessionId == s.id,
-                ),
-              )),
-          ...upcomingSessions.map((s) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _SessionCard(
-                  session: s,
-                  isDarkMode: isDarkMode,
-                  onJoin: () => _handleJoinSession(s),
-                  onLeave: () => _handleLeaveSession(s),
-                  isJoining: _joiningSessionId == s.id,
-                  isLeaving: _leavingSessionId == s.id,
-                ),
-              )),
-          ...completedSessions.map((s) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _SessionCard(
-                  session: s,
-                  isDarkMode: isDarkMode,
-                  onJoin: () => _handleJoinSession(s),
-                  onLeave: () => _handleLeaveSession(s),
-                  isJoining: _joiningSessionId == s.id,
-                  isLeaving: _leavingSessionId == s.id,
-                ),
-              )),
+          ...liveSessions.map(
+            (s) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _SessionCard(
+                session: s,
+                isDarkMode: isDarkMode,
+                onJoin: () => _handleJoinSession(s),
+                onLeave: () => _handleLeaveSession(s),
+                isJoining: _joiningSessionId == s.id,
+                isLeaving: _leavingSessionId == s.id,
+              ),
+            ),
+          ),
+          ...upcomingSessions.map(
+            (s) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _SessionCard(
+                session: s,
+                isDarkMode: isDarkMode,
+                onJoin: () => _handleJoinSession(s),
+                onLeave: () => _handleLeaveSession(s),
+                isJoining: _joiningSessionId == s.id,
+                isLeaving: _leavingSessionId == s.id,
+              ),
+            ),
+          ),
+          ...completedSessions.map(
+            (s) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _SessionCard(
+                session: s,
+                isDarkMode: isDarkMode,
+                onJoin: () => _handleJoinSession(s),
+                onLeave: () => _handleLeaveSession(s),
+                isJoining: _joiningSessionId == s.id,
+                isLeaving: _leavingSessionId == s.id,
+              ),
+            ),
+          ),
         ],
       ],
     );
@@ -1633,20 +1848,27 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: borderColor)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (icon != null) ...[
-          Icon(icon, size: 11, color: textColor),
-          const SizedBox(width: 4),
-        ],
-        Text(label,
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 11, color: textColor),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
             style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: textColor)),
-      ]),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1657,8 +1879,11 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline,
-                size: 48, color: Colors.red.withValues(alpha: 0.7)),
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Colors.red.withValues(alpha: 0.7),
+            ),
             const SizedBox(height: 12),
             Text(
               _error ?? 'Training not found',
@@ -1673,14 +1898,16 @@ class _TrainingDashboardState extends State<TrainingDashboard> {
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              icon:
-                  const Icon(Icons.arrow_back, size: 16, color: Colors.white),
-              label: const Text('Back to My Trainings',
-                  style: TextStyle(color: Colors.white)),
+              icon: const Icon(Icons.arrow_back, size: 16, color: Colors.white),
+              label: const Text(
+                'Back to My Trainings',
+                style: TextStyle(color: Colors.white),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: kBlue,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onPressed: () => Get.back(),
             ),

@@ -68,7 +68,8 @@ class MpesaService {
       if (status == 'failed') {
         String errorDetail = message;
         if (transaction != null && transaction['status'] == 'Failed') {
-          errorDetail = "M-Pesa transaction failed. Possible reasons:\n"
+          errorDetail =
+              "M-Pesa transaction failed. Possible reasons:\n"
               "• Insufficient funds\n"
               "• Wrong PIN entered\n"
               "• M-Pesa service unavailable";
@@ -166,9 +167,6 @@ class MpesaResult {
   }
 
   factory MpesaResult.failure(String message) {
-    return MpesaResult._(
-      success: false,
-      errorMessage: message,
-    );
+    return MpesaResult._(success: false, errorMessage: message);
   }
 }

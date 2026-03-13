@@ -84,8 +84,18 @@ class _TrainingScreenState extends State<TrainingScreen>
   String _formatDate(DateTime? date) {
     if (date == null) return 'TBD';
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -99,11 +109,12 @@ class _TrainingScreenState extends State<TrainingScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => TrainingDetailModal(
-        training: training,
-        isDarkMode: isDarkMode,
-        onRefreshPressed: _refreshUserTrainings,
-      ),
+      builder:
+          (context) => TrainingDetailModal(
+            training: training,
+            isDarkMode: isDarkMode,
+            onRefreshPressed: _refreshUserTrainings,
+          ),
     );
   }
 
@@ -150,7 +161,8 @@ class _TrainingScreenState extends State<TrainingScreen>
           color: isDarkMode ? kDarkCard : kWhite,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!),
+            color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -163,8 +175,10 @@ class _TrainingScreenState extends State<TrainingScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: _statusBgColors[status],
                       borderRadius: BorderRadius.circular(8),
@@ -181,13 +195,16 @@ class _TrainingScreenState extends State<TrainingScreen>
                   if (training.learningTracks.isNotEmpty &&
                       training.learningTracks.first.type != 'General')
                     Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: isDarkMode
-                              ? Colors.grey[700]!
-                              : Colors.grey[300]!,
+                          color:
+                              isDarkMode
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[300]!,
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -268,9 +285,13 @@ class _TrainingScreenState extends State<TrainingScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Progress',
-                      style:
-                          const TextStyle(fontSize: kBadgeTextSize, color: kGrey)),
+                  Text(
+                    'Progress',
+                    style: const TextStyle(
+                      fontSize: kBadgeTextSize,
+                      color: kGrey,
+                    ),
+                  ),
                   Text(
                     '${progress.toStringAsFixed(0)}%',
                     style: TextStyle(
@@ -289,8 +310,7 @@ class _TrainingScreenState extends State<TrainingScreen>
                   value: progress / 100,
                   backgroundColor:
                       isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(kBlue),
+                  valueColor: const AlwaysStoppedAnimation<Color>(kBlue),
                   minHeight: 5,
                 ),
               ),
@@ -302,8 +322,8 @@ class _TrainingScreenState extends State<TrainingScreen>
                   width: double.infinity,
                   height: 40,
                   child: CustomButton(
-                    callBackFunction: () =>
-                        Get.to(() => const MyTrainingsScreen()),
+                    callBackFunction:
+                        () => Get.to(() => const MyTrainingsScreen()),
                     label: 'Go to Dashboard',
                     backgroundColor: kBlue,
                   ),
@@ -313,15 +333,16 @@ class _TrainingScreenState extends State<TrainingScreen>
                   width: double.infinity,
                   height: 40,
                   child: ElevatedButton(
-                    onPressed: () =>
-                        _showTrainingDetails(context, training, isDarkMode),
+                    onPressed:
+                        () =>
+                            _showTrainingDetails(context, training, isDarkMode),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kBlue,
                       foregroundColor: kWhite,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: Text(
                       training.learningTracks.isNotEmpty &&
@@ -339,8 +360,12 @@ class _TrainingScreenState extends State<TrainingScreen>
     );
   }
 
-  Widget _buildCompactInfoRow(IconData icon, String text, bool isDarkMode,
-      {Color? color}) {
+  Widget _buildCompactInfoRow(
+    IconData icon,
+    String text,
+    bool isDarkMode, {
+    Color? color,
+  }) {
     final c = color ?? kGrey;
     return Row(
       children: [
@@ -403,8 +428,7 @@ class _TrainingScreenState extends State<TrainingScreen>
           children: [
             // Status badge
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: _statusBgColors[status],
                 borderRadius: BorderRadius.circular(6),
@@ -436,7 +460,11 @@ class _TrainingScreenState extends State<TrainingScreen>
             // Description
             Text(
               training.description,
-              style: const TextStyle(fontSize: kNormalTextSize, color: kGrey, height: 1.3),
+              style: const TextStyle(
+                fontSize: kNormalTextSize,
+                color: kGrey,
+                height: 1.3,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -478,14 +506,17 @@ class _TrainingScreenState extends State<TrainingScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Progress',
-                    style: TextStyle(fontSize: kNormalTextSize, color: kGrey)),
+                const Text(
+                  'Progress',
+                  style: TextStyle(fontSize: kNormalTextSize, color: kGrey),
+                ),
                 Text(
                   '${progress.toInt()}%',
                   style: TextStyle(
-                      fontSize: kNormalTextSize,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? kWhite : kBlack),
+                    fontSize: kNormalTextSize,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? kWhite : kBlack,
+                  ),
                 ),
               ],
             ),
@@ -511,14 +542,16 @@ class _TrainingScreenState extends State<TrainingScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kBlue,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
                 child: const Text(
                   'Go to Dashboard',
                   style: TextStyle(
-                      color: kWhite,
-                      fontWeight: FontWeight.w600,
-                      fontSize: kNormalTextSize),
+                    color: kWhite,
+                    fontWeight: FontWeight.w600,
+                    fontSize: kNormalTextSize,
+                  ),
                 ),
               ),
             ),
@@ -535,38 +568,47 @@ class _TrainingScreenState extends State<TrainingScreen>
         color: isDarkMode ? kDarkCard : kWhite,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!),
+          color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Container(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
                   width: 80,
                   height: 20,
-                  color: isDarkMode ? Colors.grey[800] : Colors.grey[200]),
-              Container(
+                  color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                ),
+                Container(
                   width: 60,
                   height: 20,
-                  color: isDarkMode ? Colors.grey[800] : Colors.grey[200]),
-            ]),
+                  color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             Container(
-                width: 200,
-                height: 24,
-                color: isDarkMode ? Colors.grey[800] : Colors.grey[200]),
+              width: 200,
+              height: 24,
+              color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+            ),
             const SizedBox(height: 8),
             Container(
-                width: double.infinity,
-                height: 40,
-                color: isDarkMode ? Colors.grey[800] : Colors.grey[200]),
+              width: double.infinity,
+              height: 40,
+              color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+            ),
             const SizedBox(height: 16),
             Container(
-                width: double.infinity,
-                height: 48,
-                color: isDarkMode ? Colors.grey[800] : Colors.grey[200]),
+              width: double.infinity,
+              height: 48,
+              color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+            ),
           ],
         ),
       ),
@@ -622,44 +664,49 @@ class _TrainingScreenState extends State<TrainingScreen>
 
                   // Stat boxes
                   Obx(() {
-                    final userTrainings =
-                        _userTrainingController.userTrainings;
-                    final inProgress = userTrainings
-                        .where((t) =>
-                            (t.status ?? '') == 'in-progress' ||
-                            (t.status ?? '') == 'upcoming')
-                        .length;
-                    final completed = userTrainings
-                        .where((t) => (t.status ?? '') == 'completed')
-                        .length;
-                    return Row(children: [
-                      Expanded(
-                        child: _buildStatBox(
-                          'Total',
-                          _trainingController.trainings.length.toString(),
-                          Icons.menu_book,
-                          isDarkMode,
+                    final userTrainings = _userTrainingController.userTrainings;
+                    final inProgress =
+                        userTrainings
+                            .where(
+                              (t) =>
+                                  (t.status ?? '') == 'in-progress' ||
+                                  (t.status ?? '') == 'upcoming',
+                            )
+                            .length;
+                    final completed =
+                        userTrainings
+                            .where((t) => (t.status ?? '') == 'completed')
+                            .length;
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatBox(
+                            'Total',
+                            _trainingController.trainings.length.toString(),
+                            Icons.menu_book,
+                            isDarkMode,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildStatBox(
-                          'In Progress',
-                          inProgress.toString(),
-                          Icons.play_circle,
-                          isDarkMode,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _buildStatBox(
+                            'In Progress',
+                            inProgress.toString(),
+                            Icons.play_circle,
+                            isDarkMode,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildStatBox(
-                          'Completed',
-                          completed.toString(),
-                          Icons.check_circle,
-                          isDarkMode,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _buildStatBox(
+                            'Completed',
+                            completed.toString(),
+                            Icons.check_circle,
+                            isDarkMode,
+                          ),
                         ),
-                      ),
-                    ]);
+                      ],
+                    );
                   }),
                   const SizedBox(height: 16),
 
@@ -667,21 +714,23 @@ class _TrainingScreenState extends State<TrainingScreen>
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? Colors.grey[900]
-                          : Colors.grey[100],
+                      color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Row(children: [
-                      _buildTab(
+                    child: Row(
+                      children: [
+                        _buildTab(
                           index: 0,
                           label: 'Available Trainings',
-                          isDarkMode: isDarkMode),
-                      _buildTab(
+                          isDarkMode: isDarkMode,
+                        ),
+                        _buildTab(
                           index: 1,
                           label: 'My Trainings',
-                          isDarkMode: isDarkMode),
-                    ]),
+                          isDarkMode: isDarkMode,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 4),
                 ],
@@ -694,7 +743,9 @@ class _TrainingScreenState extends State<TrainingScreen>
                   return ListView(
                     padding: const EdgeInsets.all(16),
                     children: List.generate(
-                        3, (_) => _buildSkeletonCard(isDarkMode)),
+                      3,
+                      (_) => _buildSkeletonCard(isDarkMode),
+                    ),
                   );
                 }
                 return _activeTab == 0
@@ -724,29 +775,32 @@ class _TrainingScreenState extends State<TrainingScreen>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isActive
-                ? (isDarkMode ? kDarkThemeBg : kWhite)
-                : Colors.transparent,
+            color:
+                isActive
+                    ? (isDarkMode ? kDarkThemeBg : kWhite)
+                    : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
+            boxShadow:
+                isActive
+                    ? [
+                      BoxShadow(
                         color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 4,
-                        offset: const Offset(0, 1))
-                  ]
-                : [],
+                        offset: const Offset(0, 1),
+                      ),
+                    ]
+                    : [],
           ),
           child: Center(
             child: Text(
               label,
               style: TextStyle(
                 fontSize: kNormalTextSize,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.normal,
-                color: isActive
-                    ? (isDarkMode ? kWhite : kBlack)
-                    : Colors.grey[500],
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                color:
+                    isActive
+                        ? (isDarkMode ? kWhite : kBlack)
+                        : Colors.grey[500],
               ),
             ),
           ),
@@ -756,10 +810,15 @@ class _TrainingScreenState extends State<TrainingScreen>
   }
 
   Widget _buildAvailableTrainingsTab(bool isDarkMode) {
-    final availableTrainings = _trainingController.trainings
-        .where((t) => !_userTrainingController.userTrainings
-            .any((ut) => ut.id == t.id))
-        .toList();
+    final availableTrainings =
+        _trainingController.trainings
+            .where(
+              (t) =>
+                  !_userTrainingController.userTrainings.any(
+                    (ut) => ut.id == t.id,
+                  ),
+            )
+            .toList();
 
     if (availableTrainings.isEmpty) {
       return _buildEmptyAvailableTrainings(isDarkMode);
@@ -773,10 +832,11 @@ class _TrainingScreenState extends State<TrainingScreen>
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         itemCount: availableTrainings.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) => _buildTrainingCard(
-          training: availableTrainings[index],
-          isDarkMode: isDarkMode,
-        ),
+        itemBuilder:
+            (context, index) => _buildTrainingCard(
+              training: availableTrainings[index],
+              isDarkMode: isDarkMode,
+            ),
       ),
     );
   }
@@ -785,14 +845,16 @@ class _TrainingScreenState extends State<TrainingScreen>
     final userTrainings = _userTrainingController.userTrainings;
     if (userTrainings.isEmpty) return _buildEmptyMyTrainings(isDarkMode);
 
-    final inProgress = userTrainings
-        .where((t) =>
-            (t.status ?? '') == 'in-progress' ||
-            (t.status ?? '') == 'upcoming')
-        .toList();
-    final completed = userTrainings
-        .where((t) => (t.status ?? '') == 'completed')
-        .toList();
+    final inProgress =
+        userTrainings
+            .where(
+              (t) =>
+                  (t.status ?? '') == 'in-progress' ||
+                  (t.status ?? '') == 'upcoming',
+            )
+            .toList();
+    final completed =
+        userTrainings.where((t) => (t.status ?? '') == 'completed').toList();
 
     return RefreshIndicator(
       color: kWhite,
@@ -802,17 +864,21 @@ class _TrainingScreenState extends State<TrainingScreen>
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           if (inProgress.isNotEmpty) ...[
-            ...inProgress.map((t) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildMyTrainingCard(t, isDarkMode),
-                )),
+            ...inProgress.map(
+              (t) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildMyTrainingCard(t, isDarkMode),
+              ),
+            ),
             const SizedBox(height: 12),
           ],
           if (completed.isNotEmpty) ...[
-            ...completed.map((t) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildMyTrainingCard(t, isDarkMode),
-                )),
+            ...completed.map(
+              (t) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildMyTrainingCard(t, isDarkMode),
+              ),
+            ),
           ],
         ],
       ),
@@ -823,22 +889,31 @@ class _TrainingScreenState extends State<TrainingScreen>
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.school,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.school,
               size: 64,
-              color: isDarkMode ? Colors.grey[600] : Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text('No available trainings',
+              color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No available trainings',
               style: TextStyle(
-                  fontSize: kLargeHeaderSize,
-                  fontWeight: FontWeight.bold,
-                  color: isDarkMode ? kWhite : kBlack)),
-          const SizedBox(height: 8),
-          const Text(
+                fontSize: kLargeHeaderSize,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? kWhite : kBlack,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
               "You've enrolled in all available trainings! Check back soon for new opportunities.",
               style: TextStyle(fontSize: kNormalTextSize, color: kGrey),
-              textAlign: TextAlign.center),
-        ]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -847,51 +922,71 @@ class _TrainingScreenState extends State<TrainingScreen>
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.school,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.school,
               size: 64,
-              color: isDarkMode ? Colors.grey[600] : Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text('No trainings yet',
+              color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No trainings yet',
               style: TextStyle(
-                  fontSize: kLargeHeaderSize,
-                  fontWeight: FontWeight.bold,
-                  color: isDarkMode ? kWhite : kBlack)),
-          const SizedBox(height: 8),
-          const Text(
+                fontSize: kLargeHeaderSize,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? kWhite : kBlack,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
               "You haven't enrolled in any trainings yet. Browse available trainings and start your learning journey!",
               style: TextStyle(fontSize: kNormalTextSize, color: kGrey),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.school, size: 16, color: Colors.white),
-            label: const Text('Browse Trainings',
-                style: TextStyle(color: Colors.white)),
-            style: ElevatedButton.styleFrom(
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.school, size: 16, color: Colors.white),
+              label: const Text(
+                'Browse Trainings',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
                 backgroundColor: kBlue,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 12)),
-            onPressed: () {
-              _tabController.animateTo(0);
-              setState(() => _activeTab = 0);
-            },
-          ),
-        ]),
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+              onPressed: () {
+                _tabController.animateTo(0);
+                setState(() => _activeTab = 0);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildStatBox(
-      String label, String value, IconData icon, bool isDarkMode) {
+    String label,
+    String value,
+    IconData icon,
+    bool isDarkMode,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDarkMode ? kDarkCard : kWhite,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-            color: isDarkMode ? kGrey.withOpacity(0.3) : kLightGrey),
+          color: isDarkMode ? kGrey.withOpacity(0.3) : kLightGrey,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

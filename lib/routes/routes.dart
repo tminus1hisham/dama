@@ -12,9 +12,13 @@ import 'package:dama/views/drawer_screen/notifications_screen.dart';
 import 'package:dama/views/drawer_screen/plans_screen.dart';
 import 'package:dama/views/drawer_screen/settings_screen.dart';
 import 'package:dama/views/drawer_screen/profile_screen.dart';
+import 'package:dama/views/drawer_screen/support_screen.dart';
 import 'package:dama/views/drawer_screen/transactions.dart';
+import 'package:dama/views/legal/termsAndConditionScreen.dart';
+import 'package:dama/views/legal/privacyPolicyScreen.dart';
 import 'package:dama/views/my_certificates_screen.dart';
 import 'package:dama/views/my_trainings_screen.dart';
+import 'package:dama/views/my_referrals_screen.dart';
 import 'package:dama/views/personal_details.dart';
 import 'package:dama/views/professional_details.dart';
 import 'package:dama/views/splash_screen.dart';
@@ -38,13 +42,17 @@ class AppRoutes {
   static const String notifications = '/notifications';
   static const String notificationPreferences = '/notification-preferences';
   static const String aboutDama = '/aboutDama';
+  static const String support = '/support';
   static const String settingsPage = '/settings';
+  static const String privacyPolicyPage = '/privacy-policy';
+  static const String termsAndConditionPage = '/terms-and-condition';
   static const String changePassword = '/changePassword';
   static const String requestChangePassword = '/requestChangePassword';
   static const String resetPassword = '/resetPassword';
   static const String trainings = '/trainings';
   static const String todaySessions = '/today-sessions';
   static const String myTrainings = '/my-trainings';
+  static const String myReferrals = '/my-referrals';
   static const String certificates = '/my-certificates';
   // NOTE: trainingDashboard removed — always navigate using:
   // Get.to(() => TrainingDashboard(training: training))
@@ -142,6 +150,13 @@ class AppRoutes {
           duration: Duration(milliseconds: 300),
         );
 
+      case support:
+        return PageTransition(
+          child: SupportScreen(),
+          type: PageTransitionType.fade,
+          duration: Duration(milliseconds: 300),
+        );
+
       case settingsPage:
         return PageTransition(
           child: SettingsScreen(),
@@ -198,6 +213,20 @@ class AppRoutes {
           duration: Duration(milliseconds: 300),
         );
 
+      case termsAndConditionPage:
+        return PageTransition(
+          child: TermsScreen(),
+          type: PageTransitionType.fade,
+          duration: Duration(milliseconds: 300),
+        );
+
+      case privacyPolicyPage:
+        return PageTransition(
+          child: PrivacyScreen(),
+          type: PageTransitionType.fade,
+          duration: Duration(milliseconds: 300),
+        );
+
       case certificates:
         return PageTransition(
           child: MyCertificatesScreen(),
@@ -205,11 +234,18 @@ class AppRoutes {
           duration: Duration(milliseconds: 300),
         );
 
+      case myReferrals:
+        return PageTransition(
+          child: MyReferralsScreen(),
+          type: PageTransitionType.fade,
+          duration: Duration(milliseconds: 300),
+        );
+
       default:
         return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(child: Text('Page not found')),
-          ),
+          builder:
+              (_) =>
+                  const Scaffold(body: Center(child: Text('Page not found'))),
         );
     }
   }

@@ -28,20 +28,21 @@ class ResourcesCard extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(top: 8),
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDarkMode ? kBlack : kWhite,
-            border: isDarkMode 
-                ? Border.all(color: const Color(0xFF1D2839), width: 1)
-                : null,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Image
-              SizedBox(
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDarkMode ? kBlack : kWhite,
+          border:
+              isDarkMode
+                  ? Border.all(color: const Color(0xFF1D2839), width: 1)
+                  : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Image - tappable for detail screen
+            GestureDetector(
+              onTap: onPressed,
+              child: SizedBox(
                 width: double.infinity,
                 height: 200,
                 child:
@@ -66,70 +67,75 @@ class ResourcesCard extends StatelessWidget {
                           ),
                         ),
               ),
-              const SizedBox(height: 12),
-              // Title
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: kSidePadding),
-                child: Text(
-                  heading,
-                  style: TextStyle(
-                    fontSize: kTitleTextSize,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? kWhite : kBlack,
+            ),
+            const SizedBox(height: 12),
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: kSidePadding),
+              child: Text(
+                heading,
+                style: TextStyle(
+                  fontSize: kTitleTextSize,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? kWhite : kBlack,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Action button and Price row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: kSidePadding),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Action button - Read Now for purchased/free, Purchase for paid
+                  ElevatedButton.icon(
+                    onPressed:
+                        (isPurchased || price == 0)
+                            ? onReadNowPressed
+                            : onPressed,
+                    icon: Icon(
+                      (isPurchased || price == 0)
+                          ? Icons.menu_book_outlined
+                          : Icons.shopping_cart_outlined,
+                      size: 18,
+                    ),
+                    label: Text(
+                      (isPurchased || price == 0) ? 'Read Now' : 'Purchase',
+                      style: const TextStyle(
+                        color: kWhite,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kBlue,
+                      foregroundColor: kWhite,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Action button and Price row
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: kSidePadding),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-              // Action button (left) - always go to detail screen
-                    ElevatedButton.icon(
-                      onPressed: onPressed,
-                      icon: Icon(
-                        (isPurchased || price == 0) ? Icons.menu_book_outlined : Icons.shopping_cart_outlined,
-                        size: 18,
-                      ),
-                      label: Text(
-                        (isPurchased || price == 0) ? 'Read Now' : 'Purchase',
-                        style: const TextStyle(
-                          color: kWhite,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kBlue,
-                        foregroundColor: kWhite,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                      ),
+                  // Price/Free (right side)
+                  Text(
+                    price == 0 ? 'Free' : 'KES $price',
+                    style: TextStyle(
+                      color: kGreen,
+                      fontWeight: FontWeight.bold,
+                      fontSize: kNormalTextSize,
                     ),
-                    // Price/FREE (right side)
-                    Text(
-                      price == 0 ? 'FREE' : 'KES $price',
-                      style: TextStyle(
-                        color: kGreen,
-                        fontWeight: FontWeight.bold,
-                        fontSize: kNormalTextSize,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );

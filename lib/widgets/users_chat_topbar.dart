@@ -54,7 +54,10 @@ class UsersChatTopbar extends StatelessWidget {
                     GestureDetector(
                       onTap: onNewChatPressed,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF234EC6),
                           borderRadius: BorderRadius.circular(30),
@@ -66,7 +69,10 @@ class UsersChatTopbar extends StatelessWidget {
                             SizedBox(width: 4),
                             Text(
                               "New Chat",
-                              style: TextStyle(color: kWhite, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: kWhite,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
@@ -78,7 +84,12 @@ class UsersChatTopbar extends StatelessWidget {
             ),
             // Search bar
             Padding(
-              padding: const EdgeInsets.only(bottom: 10, top: 10, left: 8, right: 8),
+              padding: const EdgeInsets.only(
+                bottom: 10,
+                top: 10,
+                left: 8,
+                right: 8,
+              ),
               child: Container(
                 height: 45,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -92,16 +103,17 @@ class UsersChatTopbar extends StatelessWidget {
                     SizedBox(width: 8),
                     Expanded(
                       child: TextField(
-                        style: TextStyle(
-                          color: isDarkMode ? kWhite : kBlack,
-                        ),
+                        style: TextStyle(color: isDarkMode ? kWhite : kBlack),
                         cursorColor: isDarkMode ? kWhite : kBlue,
                         controller: searchController,
                         onChanged: onSearchChanged,
                         decoration: InputDecoration(
                           hintText: 'Search chats...',
                           hintStyle: TextStyle(
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                            color:
+                                isDarkMode
+                                    ? Colors.grey[400]
+                                    : Colors.grey[700],
                           ),
                           border: InputBorder.none,
                         ),

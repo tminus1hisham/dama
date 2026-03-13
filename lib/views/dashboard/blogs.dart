@@ -70,9 +70,10 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
               profileImageUrl: blog.author?.profilePicture ?? '',
               title: blog.title,
               imageUrl: blog.imageUrl,
-              author: blog.author != null 
-                  ? '${blog.author!.firstName} ${blog.author!.lastName}'
-                  : 'DAMA KENYA',
+              author:
+                  blog.author != null
+                      ? '${blog.author!.firstName} ${blog.author!.lastName}'
+                      : 'DAMA KENYA',
               createdAt: blog.createdAt,
               description: blog.description,
               comments: blog.comments,
@@ -330,9 +331,10 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                                 Text(
                                   _formatCategoryName(category),
                                   style: TextStyle(
-                                    color: isSelected
-                                        ? kWhite
-                                        : (isDarkMode ? kWhite : kBlack),
+                                    color:
+                                        isSelected
+                                            ? kWhite
+                                            : (isDarkMode ? kWhite : kBlack),
                                     fontWeight:
                                         isSelected
                                             ? FontWeight.w600
@@ -438,82 +440,84 @@ class _BlogsState extends State<Blogs> with AutomaticKeepAliveClientMixin {
                         return KeyedSubtree(
                           key: ValueKey('blog_$blogID'),
                           child: Obx(() {
-                          final isLiked =
-                              _likeController.likedStatus[blogID] ?? false;
-                          final likeCount =
-                              _likeController.likeCount[blogID] ??
-                              blog.likes.length;
+                            final isLiked =
+                                _likeController.likedStatus[blogID] ?? false;
+                            final likeCount =
+                                _likeController.likeCount[blogID] ??
+                                blog.likes.length;
 
-                          final commentCount =
-                              _commentController.comments[blog.id]?.length ??
-                              blog.comments.length;
+                            final commentCount =
+                                _commentController.comments[blog.id]?.length ??
+                                blog.comments.length;
 
-                          return blogCard(
-                            category: blog.category ?? '',
-                            roles: blog.author?.roles ?? [],
-                            onProfileClicked: () {
-                              if (blog.author == null) return;
-                              Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder:
-                                      (
-                                        context,
-                                        animation,
-                                        secondaryAnimation,
-                                      ) => OtherUserProfile(
-                                        userID: blog.author!.id,
-                                      ),
-                                  transitionsBuilder: (
-                                    context,
-                                    animation,
-                                    secondaryAnimation,
-                                    child,
-                                  ) {
-                                    return FadeTransition(
-                                      opacity: animation,
-                                      child: child,
-                                    );
-                                  },
-                                  transitionDuration: const Duration(
-                                    milliseconds: 200,
+                            return blogCard(
+                              category: blog.category ?? '',
+                              roles: blog.author?.roles ?? [],
+                              onProfileClicked: () {
+                                if (blog.author == null) return;
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                        ) => OtherUserProfile(
+                                          userID: blog.author!.id,
+                                        ),
+                                    transitionsBuilder: (
+                                      context,
+                                      animation,
+                                      secondaryAnimation,
+                                      child,
+                                    ) {
+                                      return FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      );
+                                    },
+                                    transitionDuration: const Duration(
+                                      milliseconds: 200,
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                            isLiked: isLiked,
-                            likes: likeCount.toString(),
-                            commentNumber: '$commentCount',
-                            onPressed: () => _navigateToBlog(blog),
-                            profileImageUrl: blog.author?.profilePicture ?? '',
-                            fullName: blog.author != null
-                                ? '${blog.author!.firstName} ${blog.author!.lastName}'
-                                : 'DAMA KENYA',
-                            blog: blog.description,
-                            heading: blog.title,
-                            imageUrl: _utils.cleanUrl(blog.imageUrl),
-                            time: _utils.timeAgo(blog.createdAt),
-                            title: blog.status,
-                            onCommentsPressed: () {
-                              _showCommentsBottomSheet(
-                                context,
-                                isDarkTheme: isDarkMode,
-                                blogID: blog.id,
-                                initialComments: blog.comments,
-                              );
-                            },
-                            onLikePressed:
-                                () => _likeController.toggleLike(blog.id),
-                            onSharePressed: () {
-                              final link =
-                                  'https://mydama.damakenya.org/blog/${blog.id}';
-                              Share.share(
-                                'Check out this blog on Dama Kenya: ${blog.title}\n$link',
-                                subject: 'Dama Kenya',
-                              );
-                            },
-                          );
-                        }),
+                                );
+                              },
+                              isLiked: isLiked,
+                              likes: likeCount.toString(),
+                              commentNumber: '$commentCount',
+                              onPressed: () => _navigateToBlog(blog),
+                              profileImageUrl:
+                                  blog.author?.profilePicture ?? '',
+                              fullName:
+                                  blog.author != null
+                                      ? '${blog.author!.firstName} ${blog.author!.lastName}'
+                                      : 'DAMA KENYA',
+                              blog: blog.description,
+                              heading: blog.title,
+                              imageUrl: _utils.cleanUrl(blog.imageUrl),
+                              time: _utils.timeAgo(blog.createdAt),
+                              title: blog.status,
+                              onCommentsPressed: () {
+                                _showCommentsBottomSheet(
+                                  context,
+                                  isDarkTheme: isDarkMode,
+                                  blogID: blog.id,
+                                  initialComments: blog.comments,
+                                );
+                              },
+                              onLikePressed:
+                                  () => _likeController.toggleLike(blog.id),
+                              onSharePressed: () {
+                                final link =
+                                    'https://mydama.damakenya.org/blog/${blog.id}';
+                                Share.share(
+                                  'Check out this blog on Dama Kenya: ${blog.title}\n$link',
+                                  subject: 'Dama Kenya',
+                                );
+                              },
+                            );
+                          }),
                         );
                       },
                     ),

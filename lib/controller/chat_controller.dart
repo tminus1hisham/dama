@@ -73,8 +73,7 @@ class ChatController extends GetxController {
           messages.add(message);
         }
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   Future<void> loadMessages() async {
@@ -145,8 +144,7 @@ class ChatController extends GetxController {
   Future<void> markAsRead(String userId) async {
     try {
       await _apiService.markMessagesAsRead(currentConversationId.value, userId);
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   @override

@@ -84,15 +84,17 @@ class AuthService {
         'articles_assigned_count': user?['articles_assigned_count'] ?? 0,
         'articles_seen_count': user?['articles_seen_count'] ?? 0,
         'membershipExp': user?['membershipExp'] ?? '',
-        'membershipId': (() {
-          final membershipIdRaw = user?['membershipId'];
-          if (membershipIdRaw is Map) {
-            return membershipIdRaw['_id'] ?? '';
-          }
-          return membershipIdRaw ?? '';
-        })(),
+        'membershipId':
+            (() {
+              final membershipIdRaw = user?['membershipId'];
+              if (membershipIdRaw is Map) {
+                return membershipIdRaw['_id'] ?? '';
+              }
+              return membershipIdRaw ?? '';
+            })(),
         'membershipCertificate': user?['membershipCertificate'] ?? '',
-        'membershipCertificateDownload': user?['membershipCertificateDownload'] ?? '',
+        'membershipCertificateDownload':
+            user?['membershipCertificateDownload'] ?? '',
         'roles_json': jsonEncode(roles),
         'authType': user?['authType'] ?? data['authType'] ?? 'email',
       });
@@ -127,9 +129,11 @@ class AuthService {
 
   Future<Map<String, dynamic>?> login(LoginModel request) async {
     try {
-      debugPrint('📱 [Login] FCM Token being sent: ${request.fcmToken.isNotEmpty ? "present (${request.fcmToken.substring(0, 20)}...)" : "EMPTY!"}');
+      debugPrint(
+        '📱 [Login] FCM Token being sent: ${request.fcmToken.isNotEmpty ? "present (${request.fcmToken.substring(0, 20)}...)" : "EMPTY!"}',
+      );
       debugPrint('📱 [Login] Calling POST /user/login');
-      
+
       final response = await http.post(
         Uri.parse('$BASE_URL/user/login'),
         headers: {'Content-Type': 'application/json'},
@@ -137,7 +141,7 @@ class AuthService {
       );
 
       debugPrint('📱 [Login] Response status: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         await AuthService.storeTokens(data);
@@ -193,7 +197,9 @@ class AuthService {
   }
 
   /// Verify OTP for registration/professional details flow
-  Future<Map<String, dynamic>?> verifyRegistrationOtp(OtpVerificationModel request) async {
+  Future<Map<String, dynamic>?> verifyRegistrationOtp(
+    OtpVerificationModel request,
+  ) async {
     final headers = <String, String>{'Content-Type': 'application/json'};
 
     debugPrint(
@@ -216,7 +222,9 @@ class AuthService {
       return data;
     } else if (response.statusCode == 404) {
       // Endpoint not found - try the login endpoint as fallback
-      debugPrint('[Registration OTP] Registration endpoint not found, trying login endpoint');
+      debugPrint(
+        '[Registration OTP] Registration endpoint not found, trying login endpoint',
+      );
       return await verifyOtp(request);
     } else {
       final errorBody = json.decode(response.body);
@@ -234,26 +242,26 @@ class AuthService {
       final userId = await StorageService.getData("userId");
       final phoneNumber = await StorageService.getData("phoneNumber");
       final email = await StorageService.getData("email");
-      
+
       print('[Initiate 2FA] Starting 2FA initiation');
       print('[Initiate 2FA] UserId: $userId');
       print('[Initiate 2FA] PhoneNumber from storage: $phoneNumber');
       print('[Initiate 2FA] Email from storage: $email');
-      print('[Initiate 2FA] AccessToken exists: ${accessToken != null && accessToken.isNotEmpty}');
-      
+      print(
+        '[Initiate 2FA] AccessToken exists: ${accessToken != null && accessToken.isNotEmpty}',
+      );
+
       if (accessToken == null || accessToken.isEmpty) {
         throw Exception('No access token available');
       }
-      
+
       if (userId == null || userId.isEmpty) {
         throw Exception('No user ID available');
       }
 
       // Build request body
-      final requestBody = {
-        'userId': userId,
-      };
-      
+      final requestBody = {'userId': userId};
+
       print('[Initiate 2FA] Request body: $requestBody');
       print('[Initiate 2FA] Calling POST $BASE_URL/user/initiate2fa');
 
@@ -277,7 +285,9 @@ class AuthService {
         print('[Initiate 2FA] Endpoint not found (404)');
         throw Exception('Endpoint not found (404)');
       } else {
-        print('[Initiate 2FA] Error response: ${response.statusCode} - ${response.body}');
+        print(
+          '[Initiate 2FA] Error response: ${response.statusCode} - ${response.body}',
+        );
         final errorBody = json.decode(response.body);
         throw Exception(
           'Failed to initiate 2FA: ${errorBody['message'] ?? 'Unknown error'}',
@@ -299,9 +309,7 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$BASE_URL/user/reset-password-otp'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(request.toJson()),
       );
 
@@ -310,9 +318,7 @@ class AuthService {
         return data;
       } else {
         final errorBody = json.decode(response.body);
-        throw Exception(
-          errorBody['message'] ?? 'OTP Verification failed',
-        );
+        throw Exception(errorBody['message'] ?? 'OTP Verification failed');
       }
     } on SocketException catch (_) {
       throw Exception('Network error, please check your internet connection.');
@@ -365,7 +371,8 @@ class AuthService {
           }
           if (errors['phone_number'] != null || errors['phone'] != null) {
             throw Exception(
-                'phone_exists: ${errors['phone_number'] ?? errors['phone']}');
+              'phone_exists: ${errors['phone_number'] ?? errors['phone']}',
+            );
           }
         }
 
@@ -389,7 +396,7 @@ class AuthService {
   Future<bool> updateUserProfile(UserProfileModel userProfileRequest) async {
     try {
       final accessToken = await StorageService.getData("access_token");
-      
+
       print('[UpdateUserProfile] Request: ${userProfileRequest.toJson()}');
 
       final response = await http.patch(
@@ -435,7 +442,8 @@ class AuthService {
     try {
       final accessToken = await StorageService.getData("access_token");
       print(
-          'Access token retrieved: ${accessToken != null ? "YES (${accessToken.length} chars)" : "NO"}');
+        'Access token retrieved: ${accessToken != null ? "YES (${accessToken.length} chars)" : "NO"}',
+      );
 
       final response = await http.post(
         Uri.parse('https://api.damakenya.org/v1/user/change/password'),
@@ -457,7 +465,8 @@ class AuthService {
         print('Password change failed - Status: ${response.statusCode}');
         print('Response body: ${response.body}');
         throw Exception(
-            'Failed to change password: ${response.statusCode} - ${response.body}');
+          'Failed to change password: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('Error in changePassword: $e');
@@ -470,7 +479,9 @@ class AuthService {
     RequestChangePasswordModel request,
   ) async {
     try {
-      print('[requestResetPassword] Request body: ${jsonEncode(request.toJson())}');
+      print(
+        '[requestResetPassword] Request body: ${jsonEncode(request.toJson())}',
+      );
 
       final response = await http.post(
         Uri.parse('$BASE_URL/user/forgot-password'),

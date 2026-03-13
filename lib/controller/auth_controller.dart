@@ -79,6 +79,7 @@ class AuthController extends GetxController {
           await updateAuthState(token: result['token'], userData: user);
           debugPrint('[Login] Updated auth state for successful login');
         }
+        // Navigate to dashboard
         Get.offAllNamed(AppRoutes.home);
       } else if (result != null && (result['requiresOtp'] ?? false)) {
         // Store token and userId for OTP verification
@@ -268,8 +269,11 @@ class AuthController extends GetxController {
     }
   }
 
-
-  Future<void> _completeLinkedInLoginFlow(String token, Map<String, dynamic> userData, {bool needsMerge = false}) async {
+  Future<void> _completeLinkedInLoginFlow(
+    String token,
+    Map<String, dynamic> userData, {
+    bool needsMerge = false,
+  }) async {
     print('Completing LinkedIn login flow...');
 
     // Use the same token storage method as regular login
@@ -283,7 +287,8 @@ class AuthController extends GetxController {
     print('API headers updated');
 
     // Fetch complete user profile from server (don't fail if this fails)
-    Map<String, dynamic> completeUserData = userData; // Default to LinkedIn data
+    Map<String, dynamic> completeUserData =
+        userData; // Default to LinkedIn data
 
     try {
       final profileData = await _apiService.fetchCurrentUserProfile();
@@ -324,7 +329,9 @@ class AuthController extends GetxController {
 
     // Show merge suggestion if needed
     if (needsMerge) {
-      await Future.delayed(const Duration(seconds: 2)); // Wait for navigation to complete
+      await Future.delayed(
+        const Duration(seconds: 2),
+      ); // Wait for navigation to complete
       Get.snackbar(
         'Account Notice',
         'You have an existing account with this email. If you see duplicate data, please contact support to merge your accounts.',
@@ -340,7 +347,7 @@ class AuthController extends GetxController {
     // Apply professional membership free for one year if user doesn't have membership
     final hasMembership = userData['hasMembership'] ?? false;
     final membershipExp = userData['membershipExp'];
-    
+
     // Check if user already has a membershipExp to avoid overwriting
     bool shouldApplyFree = !hasMembership;
     String? freeUntil;
@@ -353,8 +360,10 @@ class AuthController extends GetxController {
       freeUntil = expiryDate.toIso8601String();
       membershipStartDate = DateTime.now().toIso8601String();
       effectiveMembershipExp = freeUntil;
-      
-      debugPrint('[AuthController] Applying free professional membership for 1 year');
+
+      debugPrint(
+        '[AuthController] Applying free professional membership for 1 year',
+      );
       debugPrint('[AuthController] Free until: $freeUntil');
     }
 
@@ -367,17 +376,20 @@ class AuthController extends GetxController {
       'memberId': userData['memberId'] ?? '',
       'hasMembership': hasMembership,
       'membershipExp': effectiveMembershipExp ?? '',
-      'membershipId': (() {
-        final membershipIdRaw = userData['membershipId'];
-        if (membershipIdRaw is Map) {
-          return membershipIdRaw['_id'] ?? '';
-        }
-        return membershipIdRaw ?? '';
-      })(),
+      'membershipId':
+          (() {
+            final membershipIdRaw = userData['membershipId'];
+            if (membershipIdRaw is Map) {
+              return membershipIdRaw['_id'] ?? '';
+            }
+            return membershipIdRaw ?? '';
+          })(),
       'membershipCertificate': userData['membershipCertificate'] ?? '',
-      'membershipCertificateDownload': userData['membershipCertificateDownload'] ?? '',
+      'membershipCertificateDownload':
+          userData['membershipCertificateDownload'] ?? '',
       if (freeUntil != null) 'freeUntil': freeUntil,
-      if (membershipStartDate != null) 'membershipStartDate': membershipStartDate,
+      if (membershipStartDate != null)
+        'membershipStartDate': membershipStartDate,
     });
 
     // Store user roles if available

@@ -54,10 +54,10 @@ class _PlansScreenState extends State<PlansScreen> {
   // Get tier colors - matching React metallic tier colors
   Map<String, Color> _getTierColors(String tierName) {
     final lower = tierName.toLowerCase();
-    
+
     if (lower.contains('student')) {
       return {
-        'primary': const Color(0xFF703804),      // Bronze
+        'primary': const Color(0xFF703804), // Bronze
         'accent': const Color(0xFFFF9B17),
         'gradientStart': const Color(0xFFFFB366),
         'gradientEnd': const Color(0xFFE8C04D),
@@ -65,7 +65,7 @@ class _PlansScreenState extends State<PlansScreen> {
       };
     } else if (lower.contains('professional')) {
       return {
-        'primary': const Color(0xFF6B6E6F),      // Silver
+        'primary': const Color(0xFF6B6E6F), // Silver
         'accent': const Color(0xFF64748B),
         'gradientStart': const Color(0xFF9CA3AF),
         'gradientEnd': const Color(0xFF6B7280),
@@ -73,7 +73,7 @@ class _PlansScreenState extends State<PlansScreen> {
       };
     } else if (lower.contains('corporate')) {
       return {
-        'primary': const Color(0xFFE5B80B),      // Gold
+        'primary': const Color(0xFFE5B80B), // Gold
         'accent': const Color(0xFFCA8A04),
         'gradientStart': const Color(0xFFFCD34D),
         'gradientEnd': const Color(0xFFF59E0B),
@@ -81,14 +81,14 @@ class _PlansScreenState extends State<PlansScreen> {
       };
     } else if (lower.contains('institution')) {
       return {
-        'primary': const Color(0xFF7C3AED),      // Platinum/Violet
+        'primary': const Color(0xFF7C3AED), // Platinum/Violet
         'accent': const Color(0xA855F7),
         'gradientStart': const Color(0xFFC4B5FD),
         'gradientEnd': const Color(0xFFD8B4FE),
         'badgeBg': const Color(0xFF7C3AED),
       };
     }
-    
+
     return {
       'primary': kBlue,
       'accent': const Color(0xFF64748B),
@@ -133,11 +133,9 @@ class _PlansScreenState extends State<PlansScreen> {
             children: [
               // Header
               _buildHeader(isDarkMode),
-              
+
               // Plans List
-              Expanded(
-                child: _buildPlansList(isDarkMode),
-              ),
+              Expanded(child: _buildPlansList(isDarkMode)),
             ],
           ),
         ),
@@ -149,7 +147,10 @@ class _PlansScreenState extends State<PlansScreen> {
   Widget _buildHeader(bool isDarkMode) {
     return Container(
       color: isDarkMode ? kBlack : kWhite,
-      padding: const EdgeInsets.symmetric(horizontal: kSidePadding, vertical: 20),
+      padding: const EdgeInsets.symmetric(
+        horizontal: kSidePadding,
+        vertical: 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -162,7 +163,7 @@ class _PlansScreenState extends State<PlansScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Header Content
           Row(
             children: [
@@ -173,14 +174,10 @@ class _PlansScreenState extends State<PlansScreen> {
                   color: kBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  FontAwesomeIcons.crown,
-                  color: kBlue,
-                  size: 24,
-                ),
+                child: Icon(FontAwesomeIcons.crown, color: kBlue, size: 24),
               ),
               const SizedBox(width: 16),
-              
+
               // Title & Subtitle
               Expanded(
                 child: Column(
@@ -197,23 +194,24 @@ class _PlansScreenState extends State<PlansScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Upgrade your DAMA experience',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: kGrey,
-                      ),
+                      style: TextStyle(fontSize: 13, color: kGrey),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          
+
           // Plans count badge
-          if (!_plansController.isLoading.value && _plansController.plansList.isNotEmpty)
+          if (!_plansController.isLoading.value &&
+              _plansController.plansList.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: kBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -222,11 +220,7 @@ class _PlansScreenState extends State<PlansScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      FontAwesomeIcons.star,
-                      size: 12,
-                      color: kBlue,
-                    ),
+                    Icon(FontAwesomeIcons.star, size: 12, color: kBlue),
                     const SizedBox(width: 6),
                     Text(
                       '${_plansController.plansList.length} Active Plan${_plansController.plansList.length != 1 ? 's' : ''}',
@@ -256,10 +250,7 @@ class _PlansScreenState extends State<PlansScreen> {
             children: [
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
-              Text(
-                'Loading plans...',
-                style: TextStyle(color: kGrey),
-              ),
+              Text('Loading plans...', style: TextStyle(color: kGrey)),
             ],
           ),
         );
@@ -288,10 +279,7 @@ class _PlansScreenState extends State<PlansScreen> {
               const SizedBox(height: 8),
               Text(
                 'Membership plans will appear here',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: kGrey,
-                ),
+                style: TextStyle(fontSize: 13, color: kGrey),
               ),
             ],
           ),
@@ -342,10 +330,16 @@ class _PlansScreenState extends State<PlansScreen> {
   }
 
   // Plan Card Widget - Updated with metallic tier styling
-  Widget _buildPlanCard(BuildContext context, PlanModel plan, bool isDarkMode, [bool isMembershipExpired = false]) {
+  Widget _buildPlanCard(
+    BuildContext context,
+    PlanModel plan,
+    bool isDarkMode, [
+    bool isMembershipExpired = false,
+  ]) {
     final tierColors = _getTierColors(plan.membership);
     final tierIcon = _getTierIcon(plan.membership);
-    final isCurrentPlan = _plansController.hasActivePlan.value &&
+    final isCurrentPlan =
+        _plansController.hasActivePlan.value &&
         _plansController.currentUserPlan.value.toLowerCase() ==
             plan.membership.toLowerCase();
     final isCorporate = plan.membership.toLowerCase().contains('corporate');
@@ -358,72 +352,62 @@ class _PlansScreenState extends State<PlansScreen> {
         return LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDarkMode
-              ? [
-                  const Color(0xFF3D2414).withValues(alpha: 0.4),
-                  const Color(0xFF331D0A).withValues(alpha: 0.5),
-                ]
-              : [
-                  const Color(0xFFFFD699),
-                  const Color(0xFFFFB366),
-                ],
+          colors:
+              isDarkMode
+                  ? [
+                    const Color(0xFF3D2414).withValues(alpha: 0.4),
+                    const Color(0xFF331D0A).withValues(alpha: 0.5),
+                  ]
+                  : [const Color(0xFFFFD699), const Color(0xFFFFB366)],
         );
       } else if (lower.contains('professional')) {
         return LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDarkMode
-              ? [
-                  const Color(0xFF3A4047).withValues(alpha: 0.4),
-                  const Color(0xFF262B32).withValues(alpha: 0.5),
-                ]
-              : [
-                  const Color(0xFFCDD5E0),
-                  const Color(0xFFB8C1D0),
-                ],
+          colors:
+              isDarkMode
+                  ? [
+                    const Color(0xFF3A4047).withValues(alpha: 0.4),
+                    const Color(0xFF262B32).withValues(alpha: 0.5),
+                  ]
+                  : [const Color(0xFFCDD5E0), const Color(0xFFB8C1D0)],
         );
       } else if (lower.contains('corporate')) {
         return LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDarkMode
-              ? [
-                  const Color(0xFF665533).withValues(alpha: 0.5),
-                  const Color(0xFF4D3D26).withValues(alpha: 0.6),
-                ]
-              : [
-                  const Color(0xFFFEE2A0),
-                  const Color(0xFFFFD580),
-                ],
+          colors:
+              isDarkMode
+                  ? [
+                    const Color(0xFF665533).withValues(alpha: 0.5),
+                    const Color(0xFF4D3D26).withValues(alpha: 0.6),
+                  ]
+                  : [const Color(0xFFFEE2A0), const Color(0xFFFFD580)],
         );
       } else if (lower.contains('institution')) {
         return LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDarkMode
-              ? [
-                  const Color(0xFF4C2672).withValues(alpha: 0.4),
-                  const Color(0xFF2D1652).withValues(alpha: 0.5),
-                ]
-              : [
-                  const Color(0xFFE5D4FF),
-                  const Color(0xFFD9B8FF),
-                ],
+          colors:
+              isDarkMode
+                  ? [
+                    const Color(0xFF4C2672).withValues(alpha: 0.4),
+                    const Color(0xFF2D1652).withValues(alpha: 0.5),
+                  ]
+                  : [const Color(0xFFE5D4FF), const Color(0xFFD9B8FF)],
         );
       }
       // Default
       return LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: isDarkMode
-            ? [
-                const Color(0xFF1E2A3A).withValues(alpha: 0.5),
-                const Color(0xFF0F1A2A).withValues(alpha: 0.6),
-              ]
-            : [
-                const Color(0xFFC7D9F7),
-                const Color(0xFFA8C8F7),
-              ],
+        colors:
+            isDarkMode
+                ? [
+                  const Color(0xFF1E2A3A).withValues(alpha: 0.5),
+                  const Color(0xFF0F1A2A).withValues(alpha: 0.6),
+                ]
+                : [const Color(0xFFC7D9F7), const Color(0xFFA8C8F7)],
       );
     }
 
@@ -433,9 +417,10 @@ class _PlansScreenState extends State<PlansScreen> {
         decoration: BoxDecoration(
           gradient: _getCardGradient(),
           border: Border.all(
-            color: isCurrentPlan 
-                ? tierColors['primary']! 
-                : kGrey.withValues(alpha: 0.2),
+            color:
+                isCurrentPlan
+                    ? tierColors['primary']!
+                    : kGrey.withValues(alpha: 0.2),
             width: isCurrentPlan ? 2 : 1,
           ),
           boxShadow: [
@@ -483,473 +468,564 @@ class _PlansScreenState extends State<PlansScreen> {
               ),
             ),
 
-          // Main content
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                // Category Badge & Popular Badge
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tierColors['primary']!.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: tierColors['primary']!.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            tierIcon,
-                            size: 12,
-                            color: tierColors['primary'],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            plan.membership.toLowerCase(),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: tierColors['primary'],
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (isCorporate && !isCurrentPlan)
+            // Main content
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  // Category Badge & Popular Badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
-                          vertical: 4,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.amber.withValues(alpha: 0.3),
-                              Colors.orange.withValues(alpha: 0.3),
-                            ],
-                          ),
+                          color: tierColors['primary']!.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: Colors.orange.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: Row(
-                          children: const [
-                            Icon(
-                              Icons.star_rounded,
-                              size: 12,
-                              color: Colors.orange,
+                            color: tierColors['primary']!.withValues(
+                              alpha: 0.3,
                             ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Popular',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (isCurrentPlan)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tierColors['primary']!.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: tierColors['primary']!.withValues(alpha: 0.5),
                           ),
                         ),
                         child: Row(
                           children: [
                             Icon(
-                              Icons.check_circle_rounded,
+                              tierIcon,
                               size: 12,
                               color: tierColors['primary'],
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Your Plan',
+                              plan.membership.toLowerCase(),
                               style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
                                 color: tierColors['primary'],
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ],
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Plan Name
-                Text(
-                  plan.membership,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? kWhite : kBlack,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Price - always show actual price
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      'Ksh ${_formatPrice(_getCorrectPrice(plan))}',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: isCorporate ? kWhite : tierColors['primary'],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '/year',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isCorporate ? kWhite.withValues(alpha: 0.7) : kGrey,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Divider
-                Divider(
-                  color: kGrey.withValues(alpha: 0.2),
-                  height: 1,
-                ),
-                const SizedBox(height: 10),
-
-                // Features List
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // All features shown
-                        ...plan.included.map((feature) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.check_circle_rounded,
-                                  size: 16,
-                                  color: kGreen,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    feature,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isDarkMode ? kWhite : kBlack,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ),
+                      if (isCorporate && !isCurrentPlan)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.amber.withValues(alpha: 0.3),
+                                Colors.orange.withValues(alpha: 0.3),
                               ],
                             ),
-                          );
-                        }).toList(),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Divider
-                Divider(
-                  color: kGrey.withValues(alpha: 0.2),
-                  height: 1,
-                ),
-                const SizedBox(height: 8),
-
-                // Action Buttons
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (isCurrentPlan)
-                      // Current Plan State or Expired Membership
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isCurrentPlanExpired
-                                  ? tierColors['primary']
-                                  : tierColors['primary']!.withValues(alpha: 0.2),
-                              foregroundColor: isCurrentPlanExpired ? Colors.black : tierColors['primary'],
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(
-                                  color: isCurrentPlanExpired
-                                      ? tierColors['primary']!
-                                      : tierColors['primary']!.withValues(alpha: 0.5),
-                                ),
-                              ),
-                              elevation: isCurrentPlanExpired ? 2 : 0,
-                            ),
-                            onPressed: isCurrentPlanExpired ? () {
-                              debugPrint('Membership expired - showing payment modal for: ${plan.membership}');
-                              Navigator.pop(context);
-                              _showPaymentModal(context, plan, isDarkMode);
-                            } : null,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isCurrentPlanExpired ? Icons.refresh_rounded : Icons.check_circle_rounded,
-                                  size: 16,
-                                  color: isCurrentPlanExpired ? Colors.black : tierColors['primary'],
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isCurrentPlanExpired ? 'Activate' : 'Active',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                    color: isCurrentPlanExpired ? Colors.black : tierColors['primary'],
-                                  ),
-                                ),
-                              ],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Colors.orange.withValues(alpha: 0.5),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          // View Certificate button for Professional plan
-                          if (plan.membership.toLowerCase().contains('professional'))
-                            Padding(
+                          child: Row(
+                            children: const [
+                              Icon(
+                                Icons.star_rounded,
+                                size: 12,
+                                color: Colors.orange,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Popular',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (isCurrentPlan)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tierColors['primary']!.withValues(
+                              alpha: 0.2,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: tierColors['primary']!.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 12,
+                                color: tierColors['primary'],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Your Plan',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: tierColors['primary'],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Plan Name
+                  Text(
+                    plan.membership,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? kWhite : kBlack,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Price - always show actual price
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        'Ksh ${_formatPrice(_getCorrectPrice(plan))}',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: isCorporate ? kWhite : tierColors['primary'],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '/year',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              isCorporate
+                                  ? kWhite.withValues(alpha: 0.7)
+                                  : kGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Divider
+                  Divider(color: kGrey.withValues(alpha: 0.2), height: 1),
+                  const SizedBox(height: 10),
+
+                  // Features List
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // All features shown
+                          ...plan.included.map((feature) {
+                            return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: tierColors['primary'],
-                                  side: BorderSide(
-                                    color: tierColors['primary']!
-                                        .withValues(alpha: 0.5),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    size: 16,
+                                    color: kGreen,
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      feature,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: isDarkMode ? kWhite : kBlack,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Divider
+                  Divider(color: kGrey.withValues(alpha: 0.2), height: 1),
+                  const SizedBox(height: 8),
+
+                  // Action Buttons
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (isCurrentPlan)
+                        // Current Plan State or Expired Membership
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    isCurrentPlanExpired
+                                        ? tierColors['primary']
+                                        : tierColors['primary']!.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                foregroundColor:
+                                    isCurrentPlanExpired
+                                        ? Colors.black
+                                        : tierColors['primary'],
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color:
+                                        isCurrentPlanExpired
+                                            ? tierColors['primary']!
+                                            : tierColors['primary']!.withValues(
+                                              alpha: 0.5,
+                                            ),
                                   ),
                                 ),
-                                onPressed: () async {
-                                  debugPrint('Opening membership certificate');
-                                  final certUrl = await StorageService.getData('membershipCertificateDownload');
-                                  final url = certUrl?.toString().trim() ?? '';
-                                  if (url.isNotEmpty) {
-                                    Get.to(() => PDFViewerPage(
-                                      pdfUrl: url,
-                                      title: 'Membership Certificate',
-                                    ));
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Certificate not available yet'),
-                                        backgroundColor: Colors.orange,
+                                elevation: isCurrentPlanExpired ? 2 : 0,
+                              ),
+                              onPressed:
+                                  isCurrentPlanExpired
+                                      ? () {
+                                        debugPrint(
+                                          'Membership expired - showing payment modal for: ${plan.membership}',
+                                        );
+                                        Navigator.pop(context);
+                                        _showPaymentModal(
+                                          context,
+                                          plan,
+                                          isDarkMode,
+                                        );
+                                      }
+                                      : null,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    isCurrentPlanExpired
+                                        ? Icons.refresh_rounded
+                                        : Icons.check_circle_rounded,
+                                    size: 16,
+                                    color:
+                                        isCurrentPlanExpired
+                                            ? Colors.black
+                                            : tierColors['primary'],
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    isCurrentPlanExpired
+                                        ? 'Activate'
+                                        : 'Active',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color:
+                                          isCurrentPlanExpired
+                                              ? Colors.black
+                                              : tierColors['primary'],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            // View Certificate button for Professional plan
+                            if (plan.membership.toLowerCase().contains(
+                              'professional',
+                            ))
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: tierColors['primary'],
+                                    side: BorderSide(
+                                      color: tierColors['primary']!.withValues(
+                                        alpha: 0.5,
                                       ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: () async {
+                                    debugPrint(
+                                      'Opening membership certificate',
                                     );
-                                  }
-                                },
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.card_membership_rounded,
+                                    final certUrl =
+                                        await StorageService.getData(
+                                          'membershipCertificateDownload',
+                                        );
+                                    final url =
+                                        certUrl?.toString().trim() ?? '';
+                                    if (url.isNotEmpty) {
+                                      Get.to(
+                                        () => PDFViewerPage(
+                                          pdfUrl: url,
+                                          title: 'Membership Certificate',
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Certificate not available yet',
+                                          ),
+                                          backgroundColor: Colors.orange,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.card_membership_rounded,
                                         size: 14,
-                                        color: tierColors['primary']),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'View Certificate',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
                                         color: tierColors['primary'],
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: kBlue,
-                              side: const BorderSide(color: kBlue),
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: () =>
-                                _showPlanDetailsModal(context, plan, isDarkMode, isMembershipExpired),
-                            child: const Text(
-                              'View Details',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    else if (isCorporate)
-                      // Corporate/Upgrade Plan
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: tierColors['primary'],
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: () {
-                              debugPrint('Card Upgrade tapped for: ${plan.membership}');
-                              _showPaymentModal(context, plan, isDarkMode);
-                            },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(Icons.trending_up_rounded, size: 16),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Upgrade',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'View Certificate',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          color: tierColors['primary'],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: kGrey,
-                              side: BorderSide(
-                                color: kGrey.withValues(alpha: 0.3),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: kBlue,
+                                side: const BorderSide(color: kBlue),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed:
+                                  () => _showPlanDetailsModal(
+                                    context,
+                                    plan,
+                                    isDarkMode,
+                                    isMembershipExpired,
+                                  ),
+                              child: const Text(
+                                'View Details',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
-                            onPressed: () =>
-                                _showPlanDetailsModal(context, plan, isDarkMode, isMembershipExpired),
-                            child: const Text(
-                              'View Details',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
+                          ],
+                        )
+                      else if (isCorporate)
+                        // Corporate/Upgrade Plan
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: tierColors['primary'],
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () {
+                                debugPrint(
+                                  'Card Upgrade tapped for: ${plan.membership}',
+                                );
+                                _showPaymentModal(context, plan, isDarkMode);
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.trending_up_rounded, size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Upgrade',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        ],
-                      )
-                    else
-                      // Student/Other Plans - Not Available
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF204987),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: kGrey,
+                                side: BorderSide(
+                                  color: kGrey.withValues(alpha: 0.3),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                              elevation: 0,
-                              disabledBackgroundColor: const Color(0xFF204987),
-                              disabledForegroundColor: Colors.white,
+                              onPressed:
+                                  () => _showPlanDetailsModal(
+                                    context,
+                                    plan,
+                                    isDarkMode,
+                                    isMembershipExpired,
+                                  ),
+                              child: const Text(
+                                'View Details',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
                             ),
-                            onPressed: null,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(Icons.lock_rounded, size: 16, color: Colors.white),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Not Available',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
+                          ],
+                        )
+                      else
+                        // Student/Other Plans - Not Available
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF204987),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                                disabledBackgroundColor: const Color(
+                                  0xFF204987,
+                                ),
+                                disabledForegroundColor: Colors.white,
+                              ),
+                              onPressed: null,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(
+                                    Icons.lock_rounded,
+                                    size: 16,
                                     color: Colors.white,
                                   ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Not Available',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: kGrey,
+                                side: BorderSide(
+                                  color: kGrey.withValues(alpha: 0.3),
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: kGrey,
-                              side: BorderSide(
-                                color: kGrey.withValues(alpha: 0.3),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: () =>
-                                _showPlanDetailsModal(context, plan, isDarkMode, isMembershipExpired),
-                            child: const Text(
-                              'View Details',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
+                              onPressed:
+                                  () => _showPlanDetailsModal(
+                                    context,
+                                    plan,
+                                    isDarkMode,
+                                    isMembershipExpired,
+                                  ),
+                              child: const Text(
+                                'View Details',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ],
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
   }
 
   // Plan Details Modal - Enhanced with full features and styling matching React
-  void _showPlanDetailsModal(BuildContext context, PlanModel plan, bool isDarkMode, [bool isMembershipExpired = false]) {
+  void _showPlanDetailsModal(
+    BuildContext context,
+    PlanModel plan,
+    bool isDarkMode, [
+    bool isMembershipExpired = false,
+  ]) {
     final tierColors = _getTierColors(plan.membership);
     final tierIcon = _getTierIcon(plan.membership);
-    final isCurrentPlan = _plansController.hasActivePlan.value &&
+    final isCurrentPlan =
+        _plansController.hasActivePlan.value &&
         _plansController.currentUserPlan.value.toLowerCase() ==
             plan.membership.toLowerCase();
     final isCurrentPlanExpired = isCurrentPlan && isMembershipExpired;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -977,7 +1053,7 @@ class _PlansScreenState extends State<PlansScreen> {
                   ),
                 ),
               ),
-              
+
               // Content - Flexible allows shrinking if content is small
               Flexible(
                 child: SingleChildScrollView(
@@ -991,11 +1067,14 @@ class _PlansScreenState extends State<PlansScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: tierColors['primary']!.withValues(alpha: 0.15),
+                              color: tierColors['primary']!.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: tierColors['primary']!
-                                    .withValues(alpha: 0.3),
+                                color: tierColors['primary']!.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                             child: Icon(
@@ -1039,7 +1118,9 @@ class _PlansScreenState extends State<PlansScreen> {
                           color: tierColors['primary']!.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: tierColors['primary']!.withValues(alpha: 0.2),
+                            color: tierColors['primary']!.withValues(
+                              alpha: 0.2,
+                            ),
                           ),
                         ),
                         child: Column(
@@ -1068,10 +1149,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                 ),
                                 Text(
                                   '/year',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: kGrey,
-                                  ),
+                                  style: TextStyle(fontSize: 13, color: kGrey),
                                 ),
                               ],
                             ),
@@ -1092,32 +1170,33 @@ class _PlansScreenState extends State<PlansScreen> {
                       const SizedBox(height: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: plan.included.map((feature) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.check_circle_rounded,
-                                  size: 18,
-                                  color: kGreen,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    feature,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isDarkMode ? kWhite : kBlack,
-                                      height: 1.4,
+                        children:
+                            plan.included.map((feature) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 18,
+                                      color: kGreen,
                                     ),
-                                  ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        feature,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: isDarkMode ? kWhite : kBlack,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
+                              );
+                            }).toList(),
                       ),
                       const SizedBox(height: 24),
 
@@ -1137,32 +1216,39 @@ class _PlansScreenState extends State<PlansScreen> {
                             const SizedBox(height: 12),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: plan.benefits.map((benefit) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(
-                                        Icons.star_rounded,
-                                        size: 18,
-                                        color: tierColors['primary'],
+                              children:
+                                  plan.benefits.map((benefit) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
                                       ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          benefit,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: isDarkMode ? kWhite : kBlack,
-                                            height: 1.4,
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(
+                                            Icons.star_rounded,
+                                            size: 18,
+                                            color: tierColors['primary'],
                                           ),
-                                        ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              benefit,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color:
+                                                    isDarkMode
+                                                        ? kWhite
+                                                        : kBlack,
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
+                                    );
+                                  }).toList(),
                             ),
                           ],
                         ),
@@ -1175,18 +1261,28 @@ class _PlansScreenState extends State<PlansScreen> {
               SafeArea(
                 top: false,
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 20),
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 12,
+                    bottom: 20,
+                  ),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _isButtonDisabled(plan.membership)
-                            ? const Color(0xFF204987)
-                            : plan.membership.toLowerCase().contains('professional')
+                        backgroundColor:
+                            _isButtonDisabled(plan.membership)
+                                ? const Color(0xFF204987)
+                                : plan.membership.toLowerCase().contains(
+                                  'professional',
+                                )
                                 ? const Color(0xFF0A161A)
-                                : plan.membership.toLowerCase().contains('corporate')
-                                    ? const Color(0xFF377DF4)
-                                    : tierColors['primary'],
+                                : plan.membership.toLowerCase().contains(
+                                  'corporate',
+                                )
+                                ? const Color(0xFF377DF4)
+                                : tierColors['primary'],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -1196,43 +1292,64 @@ class _PlansScreenState extends State<PlansScreen> {
                         disabledBackgroundColor: const Color(0xFF204987),
                         disabledForegroundColor: Colors.white,
                       ),
-                      onPressed: _isButtonDisabled(plan.membership)
-                          ? null
-                          : () {
-                              final isCorporate = plan.membership.toLowerCase().contains('corporate');
-                              final isProfessional = plan.membership.toLowerCase().contains('professional');
-                              
-                              if (isCorporate) {
-                                // Show payment modal for Corporate plan
-                                Navigator.pop(context);
-                                debugPrint('Showing payment modal for: ${plan.membership}');
-                                _showPaymentModal(context, plan, isDarkMode);
-                              } else if (isProfessional && isCurrentPlanExpired) {
-                                // Professional plan that expired - show payment modal
-                                Navigator.pop(context);
-                                debugPrint('Professional membership expired - showing payment modal');
-                                _showPaymentModal(context, plan, isDarkMode);
-                              } else if (isProfessional) {
-                                // Current plan - just close modal
-                                Navigator.pop(context);
-                                debugPrint('Current plan: ${plan.membership}');
-                              } else {
-                                // Other plans - just close modal
-                                Navigator.pop(context);
-                                debugPrint('Joining plan: ${plan.membership}');
-                              }
-                            },
+                      onPressed:
+                          _isButtonDisabled(plan.membership)
+                              ? null
+                              : () {
+                                final isCorporate = plan.membership
+                                    .toLowerCase()
+                                    .contains('corporate');
+                                final isProfessional = plan.membership
+                                    .toLowerCase()
+                                    .contains('professional');
+
+                                if (isCorporate) {
+                                  // Show payment modal for Corporate plan
+                                  Navigator.pop(context);
+                                  debugPrint(
+                                    'Showing payment modal for: ${plan.membership}',
+                                  );
+                                  _showPaymentModal(context, plan, isDarkMode);
+                                } else if (isProfessional &&
+                                    isCurrentPlanExpired) {
+                                  // Professional plan that expired - show payment modal
+                                  Navigator.pop(context);
+                                  debugPrint(
+                                    'Professional membership expired - showing payment modal',
+                                  );
+                                  _showPaymentModal(context, plan, isDarkMode);
+                                } else if (isProfessional) {
+                                  // Current plan - just close modal
+                                  Navigator.pop(context);
+                                  debugPrint(
+                                    'Current plan: ${plan.membership}',
+                                  );
+                                } else {
+                                  // Other plans - just close modal
+                                  Navigator.pop(context);
+                                  debugPrint(
+                                    'Joining plan: ${plan.membership}',
+                                  );
+                                }
+                              },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           if (_isButtonDisabled(plan.membership))
-                            const Icon(Icons.lock_rounded, size: 18, color: Colors.white),
+                            const Icon(
+                              Icons.lock_rounded,
+                              size: 18,
+                              color: Colors.white,
+                            ),
                           if (_isButtonDisabled(plan.membership))
                             const SizedBox(width: 6),
                           if (!_isButtonDisabled(plan.membership))
                             Icon(
-                              isCurrentPlanExpired ? Icons.refresh_rounded
-                                  : plan.membership.toLowerCase().contains('professional')
+                              isCurrentPlanExpired
+                                  ? Icons.refresh_rounded
+                                  : plan.membership.toLowerCase().contains(
+                                    'professional',
+                                  )
                                   ? Icons.check_circle_rounded
                                   : FontAwesomeIcons.crown,
                               size: 18,
@@ -1241,7 +1358,8 @@ class _PlansScreenState extends State<PlansScreen> {
                           if (!_isButtonDisabled(plan.membership))
                             const SizedBox(width: 6),
                           Text(
-                            isCurrentPlanExpired ? 'Activate'
+                            isCurrentPlanExpired
+                                ? 'Activate'
                                 : _getButtonText(plan.membership),
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
@@ -1285,13 +1403,15 @@ class _PlansScreenState extends State<PlansScreen> {
     debugPrint('_showPaymentModal called for: ${plan.membership}');
     final correctPrice = _getCorrectPrice(plan);
     final isIOS = UnifiedPaymentService.isIOS;
-    
+
     // Use the State's context instead of passed context
     final ctx = this.context;
-    
+
     // Pre-populate phone number from storage (Android only)
     String initialPhoneNumber = '';
-    if (!isIOS && fetchedPhoneNumber != null && fetchedPhoneNumber!.isNotEmpty) {
+    if (!isIOS &&
+        fetchedPhoneNumber != null &&
+        fetchedPhoneNumber!.isNotEmpty) {
       // Extract just the number part (without country code)
       if (fetchedPhoneNumber!.startsWith('+254')) {
         initialPhoneNumber = fetchedPhoneNumber!.substring(4);
@@ -1305,11 +1425,11 @@ class _PlansScreenState extends State<PlansScreen> {
         completePhoneNumber = '+254$fetchedPhoneNumber';
       }
     }
-    
+
     bool isProcessing = false;
-    
+
     debugPrint('About to show modal, context mounted: ${ctx.mounted}');
-    
+
     try {
       showModalBottomSheet(
         context: ctx,
@@ -1321,301 +1441,350 @@ class _PlansScreenState extends State<PlansScreen> {
         ),
         backgroundColor: isDarkMode ? kDarkThemeBg : kWhite,
         builder: (modalContext) {
-        debugPrint('Modal builder called');
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            debugPrint('StatefulBuilder called');
-            return SafeArea(
-              bottom: true,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 20),
-                      Text(
-                        'Upgrade to ${plan.membership}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? kWhite : kBlack,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Amount: KES ${_formatPrice(correctPrice)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: kBlue,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Payment method icon - platform specific
-                      if (isIOS)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(8),
+          debugPrint('Modal builder called');
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              debugPrint('StatefulBuilder called');
+              return SafeArea(
+                bottom: true,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 20),
+                        Text(
+                          'Upgrade to ${plan.membership}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? kWhite : kBlack,
                           ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.apple, color: Colors.white, size: 28),
-                              SizedBox(width: 8),
-                              Text(
-                                'Pay',
-                                style: TextStyle(
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Amount: KES ${_formatPrice(correctPrice)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: kBlue,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Payment method icon - platform specific
+                        if (isIOS)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.apple,
                                   color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
+                                  size: 28,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 8),
+                                Text(
+                                  'Pay',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Image.asset("images/mpesa.png", height: 50),
+                        const SizedBox(height: 20),
+                        // Phone number field - Android only (M-Pesa)
+                        if (!isIOS)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Phone Number *",
+                                  style: TextStyle(
+                                    color: isDarkMode ? kWhite : kBlack,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: kNormalTextSize,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                IntlPhoneField(
+                                  initialValue: initialPhoneNumber,
+                                  enabled: !isProcessing,
+                                  decoration: InputDecoration(
+                                    hintText: "7*******",
+                                    hintStyle: TextStyle(
+                                      color:
+                                          isDarkMode
+                                              ? Colors.grey[400]
+                                              : Colors.grey[700],
+                                    ),
+                                    counterText: '',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      borderSide: const BorderSide(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      borderSide: const BorderSide(
+                                        color: kBlue,
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                  ),
+                                  disableLengthCheck: true,
+                                  validator: (PhoneNumber? phone) {
+                                    if (phone == null || phone.number.isEmpty) {
+                                      return 'Please enter a phone number';
+                                    }
+                                    if (phone.number.length != 9) {
+                                      return 'Phone number must be exactly 9 digits';
+                                    }
+                                    if (!RegExp(
+                                      r'^[0-9]+$',
+                                    ).hasMatch(phone.number)) {
+                                      return 'Phone number must contain only digits';
+                                    }
+                                    return null;
+                                  },
+                                  style: TextStyle(
+                                    color: isDarkMode ? kWhite : kBlack,
+                                  ),
+                                  dropdownTextStyle: TextStyle(
+                                    color: isDarkMode ? kWhite : kBlack,
+                                  ),
+                                  dropdownIcon: Icon(
+                                    Icons.arrow_drop_down,
+                                    color: isDarkMode ? kWhite : kBlack,
+                                  ),
+                                  initialCountryCode: 'KE',
+                                  onChanged: (PhoneNumber phone) {
+                                    completePhoneNumber = phone.completeNumber;
+                                  },
+                                  onCountryChanged: (country) {
+                                    countryCode = '+${country.dialCode}';
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        )
-                      else
-                        Image.asset("images/mpesa.png", height: 50),
-                      const SizedBox(height: 20),
-                      // Phone number field - Android only (M-Pesa)
-                      if (!isIOS)
+                        if (!isIOS) const SizedBox(height: 20),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 15),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Phone Number *",
-                                style: TextStyle(
-                                  color: isDarkMode ? kWhite : kBlack,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: kNormalTextSize,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              IntlPhoneField(
-                                initialValue: initialPhoneNumber,
-                                enabled: !isProcessing,
-                                decoration: InputDecoration(
-                                  hintText: "7*******",
-                                  hintStyle: TextStyle(
-                                    color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                                  ),
-                                  counterText: '',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                    borderSide: const BorderSide(color: Colors.grey),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                    borderSide: const BorderSide(color: kBlue, width: 1.0),
-                                  ),
-                                ),
-                                disableLengthCheck: true,
-                                validator: (PhoneNumber? phone) {
-                                  if (phone == null || phone.number.isEmpty) {
-                                    return 'Please enter a phone number';
-                                  }
-                                  if (phone.number.length != 9) {
-                                    return 'Phone number must be exactly 9 digits';
-                                  }
-                                  if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
-                                    return 'Phone number must contain only digits';
-                                  }
-                                  return null;
-                                },
-                                style: TextStyle(
-                                  color: isDarkMode ? kWhite : kBlack,
-                                ),
-                                dropdownTextStyle: TextStyle(
-                                  color: isDarkMode ? kWhite : kBlack,
-                                ),
-                                dropdownIcon: Icon(
-                                  Icons.arrow_drop_down,
-                                  color: isDarkMode ? kWhite : kBlack,
-                                ),
-                                initialCountryCode: 'KE',
-                                onChanged: (PhoneNumber phone) {
-                                  completePhoneNumber = phone.completeNumber;
-                                },
-                                onCountryChanged: (country) {
-                                  countryCode = '+${country.dialCode}';
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (!isIOS) const SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: isProcessing
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                decoration: BoxDecoration(
-                                  color: isIOS ? Colors.black.withValues(alpha: 0.7) : kBlue.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        color: kWhite,
-                                        strokeWidth: 2,
+                          child: SizedBox(
+                            width: double.infinity,
+                            child:
+                                isProcessing
+                                    ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
                                       ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      isIOS ? 'Processing Apple Pay...' : 'Processing Payment...',
-                                      style: const TextStyle(
-                                        color: kWhite,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isIOS
+                                                ? Colors.black.withValues(
+                                                  alpha: 0.7,
+                                                )
+                                                : kBlue.withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : isIOS
-                              // Apple Pay button for iOS
-                              ? GestureDetector(
-                                  onTap: () async {
-                                    setModalState(() {
-                                      isProcessing = true;
-                                    });
-                                    
-                                    final result = await _processPayment(plan);
-                                    
-                                    setModalState(() {
-                                      isProcessing = false;
-                                    });
-                                    
-                                    if (result['success'] == true) {
-                                      if (modalContext.mounted) {
-                                        Navigator.pop(modalContext);
-                                      }
-                                      if (context.mounted) {
-                                        showSuccessBottomSheet(
-                                          context,
-                                          plan.membership,
-                                          'Payment completed',
-                                          'KES ${_formatPrice(correctPrice)}',
-                                          isDarkMode,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: kWhite,
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            isIOS
+                                                ? 'Processing Apple Pay...'
+                                                : 'Processing Payment...',
+                                            style: const TextStyle(
+                                              color: kWhite,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                    : isIOS
+                                    // Apple Pay button for iOS
+                                    ? GestureDetector(
+                                      onTap: () async {
+                                        setModalState(() {
+                                          isProcessing = true;
+                                        });
+
+                                        final result = await _processPayment(
+                                          plan,
                                         );
-                                      }
-                                    } else {
-                                      Get.snackbar(
-                                        'Payment Error',
-                                        result['error'] ?? 'Payment failed. Please try again.',
-                                        snackPosition: SnackPosition.TOP,
-                                        backgroundColor: Colors.red,
-                                        colorText: Colors.white,
-                                        duration: const Duration(seconds: 4),
-                                        margin: const EdgeInsets.all(10),
-                                      );
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.apple, color: Colors.white, size: 24),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Pay with Apple Pay',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+
+                                        setModalState(() {
+                                          isProcessing = false;
+                                        });
+
+                                        if (result['success'] == true) {
+                                          if (modalContext.mounted) {
+                                            Navigator.pop(modalContext);
+                                          }
+                                          if (context.mounted) {
+                                            showSuccessBottomSheet(
+                                              context,
+                                              plan.membership,
+                                              'Payment completed',
+                                              'KES ${_formatPrice(correctPrice)}',
+                                              isDarkMode,
+                                            );
+                                          }
+                                        } else {
+                                          Get.snackbar(
+                                            'Payment Error',
+                                            result['error'] ??
+                                                'Payment failed. Please try again.',
+                                            snackPosition: SnackPosition.TOP,
+                                            backgroundColor: Colors.red,
+                                            colorText: Colors.white,
+                                            duration: const Duration(
+                                              seconds: 4,
+                                            ),
+                                            margin: const EdgeInsets.all(10),
+                                          );
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
                                         ),
-                                      ],
+                                        child: const Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.apple,
+                                              color: Colors.white,
+                                              size: 24,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Pay with Apple Pay',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                    // M-Pesa button for Android
+                                    : CustomButton(
+                                      callBackFunction: () async {
+                                        if (completePhoneNumber != null &&
+                                            completePhoneNumber!.length >= 10) {
+                                          phoneNumber = completePhoneNumber!;
+
+                                          setModalState(() {
+                                            isProcessing = true;
+                                          });
+
+                                          final result = await _processPayment(
+                                            plan,
+                                          );
+
+                                          setModalState(() {
+                                            isProcessing = false;
+                                          });
+
+                                          if (result['success'] == true) {
+                                            if (modalContext.mounted) {
+                                              Navigator.pop(modalContext);
+                                            }
+                                            if (context.mounted) {
+                                              showSuccessBottomSheet(
+                                                context,
+                                                plan.membership,
+                                                'Payment initiated',
+                                                'KES ${_formatPrice(correctPrice)}',
+                                                isDarkMode,
+                                              );
+                                            }
+                                          } else {
+                                            // Show error above the modal using GetX
+                                            Get.snackbar(
+                                              'Payment Error',
+                                              result['error'] ??
+                                                  'Payment failed. Please try again.',
+                                              snackPosition: SnackPosition.TOP,
+                                              backgroundColor: Colors.red,
+                                              colorText: Colors.white,
+                                              duration: const Duration(
+                                                seconds: 4,
+                                              ),
+                                              margin: const EdgeInsets.all(10),
+                                            );
+                                          }
+                                        } else {
+                                          Get.snackbar(
+                                            'Invalid Phone',
+                                            'Please enter a valid phone number',
+                                            snackPosition: SnackPosition.TOP,
+                                            backgroundColor: Colors.red,
+                                            colorText: Colors.white,
+                                            duration: const Duration(
+                                              seconds: 3,
+                                            ),
+                                            margin: const EdgeInsets.all(10),
+                                          );
+                                        }
+                                      },
+                                      label: "Confirm Payment",
+                                      backgroundColor: kBlue,
                                     ),
-                                  ),
-                                )
-                              // M-Pesa button for Android
-                              : CustomButton(
-                                callBackFunction: () async {
-                                  if (completePhoneNumber != null &&
-                                      completePhoneNumber!.length >= 10) {
-                                    phoneNumber = completePhoneNumber!;
-                                    
-                                    setModalState(() {
-                                      isProcessing = true;
-                                    });
-                                    
-                                    final result = await _processPayment(plan);
-                                    
-                                    setModalState(() {
-                                      isProcessing = false;
-                                    });
-                                    
-                                    if (result['success'] == true) {
-                                      if (modalContext.mounted) {
-                                        Navigator.pop(modalContext);
-                                      }
-                                      if (context.mounted) {
-                                        showSuccessBottomSheet(
-                                          context,
-                                          plan.membership,
-                                          'Payment initiated',
-                                          'KES ${_formatPrice(correctPrice)}',
-                                          isDarkMode,
-                                        );
-                                      }
-                                    } else {
-                                      // Show error above the modal using GetX
-                                      Get.snackbar(
-                                        'Payment Error',
-                                        result['error'] ?? 'Payment failed. Please try again.',
-                                        snackPosition: SnackPosition.TOP,
-                                        backgroundColor: Colors.red,
-                                        colorText: Colors.white,
-                                        duration: const Duration(seconds: 4),
-                                        margin: const EdgeInsets.all(10),
-                                      );
-                                    }
-                                  } else {
-                                    Get.snackbar(
-                                      'Invalid Phone',
-                                      'Please enter a valid phone number',
-                                      snackPosition: SnackPosition.TOP,
-                                      backgroundColor: Colors.red,
-                                      colorText: Colors.white,
-                                      duration: const Duration(seconds: 3),
-                                      margin: const EdgeInsets.all(10),
-                                    );
-                                  }
-                                },
-                                label: "Confirm Payment",
-                                backgroundColor: kBlue,
-                              ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          }
-        );
-      },
-    );
-    debugPrint('Modal shown successfully');
+              );
+            },
+          );
+        },
+      );
+      debugPrint('Modal shown successfully');
     } catch (e, stackTrace) {
       debugPrint('Error showing payment modal: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -1627,17 +1796,19 @@ class _PlansScreenState extends State<PlansScreen> {
     try {
       final correctPrice = _getCorrectPrice(plan);
       final isIOS = UnifiedPaymentService.isIOS;
-      
+
       // Validate phone number for Android (M-Pesa)
       if (!isIOS && phoneNumber.isEmpty) {
         return {'success': false, 'error': 'Please enter a phone number'};
       }
-      
-      debugPrint('[PlansScreen] Processing ${UnifiedPaymentService.paymentMethodName} payment for ${plan.membership} - KES $correctPrice');
+
+      debugPrint(
+        '[PlansScreen] Processing ${UnifiedPaymentService.paymentMethodName} payment for ${plan.membership} - KES $correctPrice',
+      );
       if (!isIOS) {
         debugPrint('[PlansScreen] Phone: $phoneNumber');
       }
-      
+
       // Use UnifiedPaymentService for platform-specific payment
       final result = await UnifiedPaymentService.pay(
         objectId: plan.id,
@@ -1646,20 +1817,20 @@ class _PlansScreenState extends State<PlansScreen> {
         itemName: plan.membership,
         phoneNumber: isIOS ? null : phoneNumber,
       );
-      
+
       if (result.success) {
         return {'success': true};
       } else {
         return {
           'success': false,
-          'error': result.errorMessage ?? 'Payment failed. Please try again.'
+          'error': result.errorMessage ?? 'Payment failed. Please try again.',
         };
       }
     } catch (e) {
       debugPrint('Error processing payment: $e');
       return {
         'success': false,
-        'error': 'An unexpected error occurred: ${e.toString()}'
+        'error': 'An unexpected error occurred: ${e.toString()}',
       };
     }
   }

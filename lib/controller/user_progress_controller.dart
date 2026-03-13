@@ -27,7 +27,12 @@ class UserProgressController extends GetxController {
       errorMessage.value = '';
 
       final result = await _apiService.getUserTodaySessions();
-      todaySessions.assignAll((result['sessions'] as List?)?.map((e) => TrainingSession.fromJson(e as Map<String, dynamic>)) ?? []);
+      todaySessions.assignAll(
+        (result['sessions'] as List?)?.map(
+              (e) => TrainingSession.fromJson(e as Map<String, dynamic>),
+            ) ??
+            [],
+      );
     } catch (e) {
       errorMessage.value = e.toString();
     } finally {
@@ -41,7 +46,12 @@ class UserProgressController extends GetxController {
       errorMessage.value = '';
 
       final result = await _apiService.getUserUpcomingSessions();
-      upcomingSessions.assignAll((result['sessions'] as List?)?.map((e) => TrainingSession.fromJson(e as Map<String, dynamic>)) ?? []);
+      upcomingSessions.assignAll(
+        (result['sessions'] as List?)?.map(
+              (e) => TrainingSession.fromJson(e as Map<String, dynamic>),
+            ) ??
+            [],
+      );
     } catch (e) {
       errorMessage.value = e.toString();
     } finally {
@@ -71,7 +81,10 @@ class UserProgressController extends GetxController {
 
       // Get user's trainings with detailed session information
       final userTrainingsResult = await _apiService.getUserTrainings();
-      final trainingsData = userTrainingsResult is List ? userTrainingsResult : userTrainingsResult['trainings'] ?? [];
+      final trainingsData =
+          userTrainingsResult is List
+              ? userTrainingsResult
+              : userTrainingsResult['trainings'] ?? [];
 
       List<UserTrainingProgress> progressList = [];
 
@@ -79,8 +92,13 @@ class UserProgressController extends GetxController {
         final training = TrainingModel.fromJson(trainingData);
 
         // Get detailed training data with sessions
-        final detailedResult = await _apiService.getUserTrainingDetails(training.id);
-        final detailedData = detailedResult['training'] ?? detailedResult['data'] ?? detailedResult;
+        final detailedResult = await _apiService.getUserTrainingDetails(
+          training.id,
+        );
+        final detailedData =
+            detailedResult['training'] ??
+            detailedResult['data'] ??
+            detailedResult;
         final fullTraining = TrainingModel.fromJson(detailedData);
 
         // Calculate progress based on session statuses
@@ -88,14 +106,16 @@ class UserProgressController extends GetxController {
         final totalSessions = sessions.length;
 
         if (totalSessions == 0) {
-          progressList.add(UserTrainingProgress(
-            trainingId: training.id,
-            title: training.title,
-            completedSessions: 0,
-            totalSessions: 0,
-            progressPercentage: 0.0,
-            lastAccessed: null,
-          ));
+          progressList.add(
+            UserTrainingProgress(
+              trainingId: training.id,
+              title: training.title,
+              completedSessions: 0,
+              totalSessions: 0,
+              progressPercentage: 0.0,
+              lastAccessed: null,
+            ),
+          );
           continue;
         }
 
@@ -106,12 +126,18 @@ class UserProgressController extends GetxController {
           bool isCompleted = false;
 
           // Check training status first
-          if (fullTraining.status == 'completed' || fullTraining.status == 'cancelled') {
+          if (fullTraining.status == 'completed' ||
+              fullTraining.status == 'cancelled') {
             isCompleted = true;
           } else {
             // Check session status and attendance
-            final hasUserAttended = currentUserId != null && session.attendance.any((a) => a.userId == currentUserId);
-            isCompleted = hasUserAttended || session.status == 'completed' || session.status == 'cancelled';
+            final hasUserAttended =
+                currentUserId != null &&
+                session.attendance.any((a) => a.userId == currentUserId);
+            isCompleted =
+                hasUserAttended ||
+                session.status == 'completed' ||
+                session.status == 'cancelled';
           }
 
           if (isCompleted) {
@@ -120,16 +146,21 @@ class UserProgressController extends GetxController {
         }
 
         // Calculate progress percentage
-        final progressPercentage = totalSessions > 0 ? (completedSessions / totalSessions) * 100.0 : 0.0;
+        final progressPercentage =
+            totalSessions > 0
+                ? (completedSessions / totalSessions) * 100.0
+                : 0.0;
 
-        progressList.add(UserTrainingProgress(
-          trainingId: training.id,
-          title: training.title,
-          completedSessions: completedSessions,
-          totalSessions: totalSessions,
-          progressPercentage: progressPercentage,
-          lastAccessed: DateTime.now(), // TODO: Track actual last access time
-        ));
+        progressList.add(
+          UserTrainingProgress(
+            trainingId: training.id,
+            title: training.title,
+            completedSessions: completedSessions,
+            totalSessions: totalSessions,
+            progressPercentage: progressPercentage,
+            lastAccessed: DateTime.now(), // TODO: Track actual last access time
+          ),
+        );
       }
 
       return progressList;
@@ -151,7 +182,10 @@ class UserProgressController extends GetxController {
     await fetchTrainingProgress();
   }
 
-  Future<Map<String, dynamic>> joinSession(String trainingId, String sessionId) async {
+  Future<Map<String, dynamic>> joinSession(
+    String trainingId,
+    String sessionId,
+  ) async {
     try {
       final result = await _apiService.joinSession(trainingId, sessionId);
       if (result['success'] == true) {
@@ -166,7 +200,10 @@ class UserProgressController extends GetxController {
     }
   }
 
-  Future<Map<String, dynamic>> leaveSession(String trainingId, String sessionId) async {
+  Future<Map<String, dynamic>> leaveSession(
+    String trainingId,
+    String sessionId,
+  ) async {
     try {
       final result = await _apiService.leaveSession(trainingId, sessionId);
       if (result['success'] == true) {
@@ -185,7 +222,7 @@ class UserProgressController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       final result = await _apiService.getTrainingSessions(trainingId);
       final sessionsData = result['sessions'] as List? ?? [];
       return sessionsData
@@ -204,7 +241,7 @@ class UserProgressController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       final progressList = await _calculateStatusBasedProgress();
       return progressList.firstWhereOrNull((p) => p.trainingId == trainingId);
     } catch (e) {
@@ -220,7 +257,7 @@ class UserProgressController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       return await _apiService.getUserCertificates(userId);
     } catch (e) {
       errorMessage.value = e.toString();

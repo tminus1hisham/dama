@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 
 class NewsCard extends StatelessWidget {
   const NewsCard({
-    super.key, 
+    super.key,
     required this.profileImageUrl,
     required this.fullName,
     required this.heading,
@@ -95,19 +95,25 @@ class NewsCard extends StatelessWidget {
 
     // Check if author has admin or manager role - only these show as "DAMA KENYA"
     // All other roles (blogger, news_editor, etc.) show their actual name and profile picture
-    bool isAdminOrManager = roles.isNotEmpty && roles.any(
-      (role) {
-        final roleStr = role.toString().toLowerCase();
-        return roleStr == 'admin' || roleStr == 'manager';
-      },
-    );
-    
+    bool isAdminOrManager =
+        roles.isNotEmpty &&
+        roles.any((role) {
+          final roleStr = role.toString().toLowerCase();
+          return roleStr == 'admin' || roleStr == 'manager';
+        });
+
     // Determine display name and image
-    final String displayName = isAdminOrManager ? 'DAMA KENYA' : (fullName.isNotEmpty ? fullName : 'DAMA KENYA');
-    final ImageProvider displayImage = isAdminOrManager 
-        ? kDamaLogo 
-        : (profileImageUrl?.isNotEmpty == true ? NetworkImage(profileImageUrl!) : kDamaLogo);
-    
+    final String displayName =
+        isAdminOrManager
+            ? 'DAMA KENYA'
+            : (fullName.isNotEmpty ? fullName : 'DAMA KENYA');
+    final ImageProvider displayImage =
+        isAdminOrManager
+            ? kDamaLogo
+            : (profileImageUrl?.isNotEmpty == true
+                ? NetworkImage(profileImageUrl!)
+                : kDamaLogo);
+
     final categoryColors = _getCategoryColors(category);
 
     return Container(
@@ -116,9 +122,10 @@ class NewsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDarkMode ? kBlack : kWhite,
         borderRadius: BorderRadius.circular(16),
-        border: isDarkMode 
-            ? Border.all(color: const Color(0xFF1D2839), width: 1)
-            : null,
+        border:
+            isDarkMode
+                ? Border.all(color: const Color(0xFF1D2839), width: 1)
+                : null,
         boxShadow: [
           BoxShadow(
             color:
@@ -187,14 +194,11 @@ class NewsCard extends StatelessWidget {
                       color: categoryColors['bg'],
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: categoryColors['border'] as Color, 
+                        color: categoryColors['border'] as Color,
                         width: 1.5,
                       ),
                     ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Text(
                       category.isNotEmpty ? category : "News",
                       style: TextStyle(
@@ -351,13 +355,16 @@ class NewsCard extends StatelessWidget {
       final text = document.body?.text ?? '';
       if (text.isNotEmpty) {
         // It was HTML, use the parsed text
-        final result = text.length <= maxLength ? text : '${text.substring(0, maxLength)}...';
+        final result =
+            text.length <= maxLength
+                ? text
+                : '${text.substring(0, maxLength)}...';
         return result;
       }
     } catch (e) {
       // Not valid HTML, treat as plain text
     }
-    
+
     // Treat as plain text
     if (input.length <= maxLength) return input;
     return '${input.substring(0, maxLength)}...';

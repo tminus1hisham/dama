@@ -15,8 +15,12 @@ class Conversation {
     return Conversation(
       id: json['_id'] ?? '',
       participants: List<String>.from(json['participants'] ?? []),
-      lastMessage: json['lastMessage'] != null ? Message.fromJson(json['lastMessage']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      lastMessage:
+          json['lastMessage'] != null
+              ? Message.fromJson(json['lastMessage'])
+              : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 }
@@ -39,7 +43,9 @@ class Message {
       id: json['_id'] ?? '',
       senderId: json['senderId'] ?? '',
       content: json['content'] ?? '',
-      timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
+      timestamp: DateTime.parse(
+        json['timestamp'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 }
@@ -49,11 +55,7 @@ class User {
   final String fullName;
   final String? profilePicture;
 
-  User({
-    required this.id,
-    required this.fullName,
-    this.profilePicture,
-  });
+  User({required this.id, required this.fullName, this.profilePicture});
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(

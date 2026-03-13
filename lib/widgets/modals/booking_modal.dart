@@ -123,12 +123,12 @@ class _BookingModalState extends State<BookingModal>
 
     try {
       if (isFree) {
-        final response =
-            await _apiService.registerForEvent(widget.event!.id);
+        final response = await _apiService.registerForEvent(widget.event!.id);
         debugPrint('registerForEvent response: $response');
         if (response != null) {
           setState(() {
-            _ticketNumber = response['ticketNumber'] ??
+            _ticketNumber =
+                response['ticketNumber'] ??
                 response['ticket']?['number'] ??
                 response['reference'] ??
                 response['reference_number'] ??
@@ -148,7 +148,8 @@ class _BookingModalState extends State<BookingModal>
         debugPrint('initiatePayment response: $response');
         if (response != null) {
           setState(() {
-            _ticketNumber = response['ticketNumber'] ??
+            _ticketNumber =
+                response['ticketNumber'] ??
                 response['ticket']?['number'] ??
                 response['reference'] ??
                 response['reference_number'] ??
@@ -162,12 +163,12 @@ class _BookingModalState extends State<BookingModal>
     } catch (err) {
       debugPrint('Booking failed: $err');
       String errorMsg = err.toString();
-      
+
       // Extract clean error message from Exception
       if (errorMsg.contains('Exception: ')) {
         errorMsg = errorMsg.replaceFirst('Exception: ', '');
       }
-      
+
       // Try to extract JSON message from error response
       if (errorMsg.contains('"message":"')) {
         try {
@@ -180,20 +181,21 @@ class _BookingModalState extends State<BookingModal>
           debugPrint('Error parsing message: $e');
         }
       }
-      
+
       // Remove HTTP status codes
       errorMsg = errorMsg.replaceAll(RegExp(r' \d{3} -'), '');
       errorMsg = errorMsg.replaceAll(RegExp(r'\d{3}'), '');
-      
+
       // Handle specific error cases
       if (errorMsg.contains('already registered')) {
         errorMsg = 'You are already registered for this event.';
       } else if (errorMsg.contains('Payment required')) {
-        errorMsg = 'This is a paid event. Please provide a phone number to proceed with payment.';
+        errorMsg =
+            'This is a paid event. Please provide a phone number to proceed with payment.';
       } else if (errorMsg.contains('no response')) {
         errorMsg = 'Server error. Please try again later.';
       }
-      
+
       setState(() {
         _bookingState = BookingState.failed;
         _errorMessage = errorMsg.trim();
@@ -259,7 +261,10 @@ class _BookingModalState extends State<BookingModal>
               children: [
                 // Reserved Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: kGreen.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
@@ -314,7 +319,9 @@ class _BookingModalState extends State<BookingModal>
                     const SizedBox(width: 40),
                     Expanded(
                       child: Text(
-                        isFree ? 'Your RSVP is Confirmed!' : 'Booking Confirmed!',
+                        isFree
+                            ? 'Your RSVP is Confirmed!'
+                            : 'Booking Confirmed!',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -359,9 +366,10 @@ class _BookingModalState extends State<BookingModal>
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? Colors.black.withValues(alpha: 0.3)
-                        : Colors.grey.shade50,
+                    color:
+                        isDarkMode
+                            ? Colors.black.withValues(alpha: 0.3)
+                            : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: kGreen.withValues(alpha: 0.2),
@@ -396,9 +404,10 @@ class _BookingModalState extends State<BookingModal>
                               _formatEventDate(widget.event!.eventDate),
                               style: TextStyle(
                                 fontSize: 13,
-                                color: isDarkMode
-                                    ? Colors.grey[300]
-                                    : Colors.grey[700],
+                                color:
+                                    isDarkMode
+                                        ? Colors.grey[300]
+                                        : Colors.grey[700],
                               ),
                             ),
                           ),
@@ -420,9 +429,10 @@ class _BookingModalState extends State<BookingModal>
                               widget.event?.location ?? 'TBA',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: isDarkMode
-                                    ? Colors.grey[300]
-                                    : Colors.grey[700],
+                                color:
+                                    isDarkMode
+                                        ? Colors.grey[300]
+                                        : Colors.grey[700],
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -491,7 +501,11 @@ class _BookingModalState extends State<BookingModal>
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.calendar_today, size: 18, color: Colors.white),
+                            Icon(
+                              Icons.calendar_today,
+                              size: 18,
+                              color: Colors.white,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Add to Calendar',
@@ -560,11 +574,7 @@ class _BookingModalState extends State<BookingModal>
                   color: kBlue.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.smartphone,
-                  color: kBlue,
-                  size: 40,
-                ),
+                child: const Icon(Icons.smartphone, color: kBlue, size: 40),
               ),
               const SizedBox(height: 24),
 
@@ -605,10 +615,7 @@ class _BookingModalState extends State<BookingModal>
               if (isFree)
                 Text(
                   'Please wait while we confirm your reservation...',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   textAlign: TextAlign.center,
                 )
               else
@@ -622,7 +629,9 @@ class _BookingModalState extends State<BookingModal>
                           color: Colors.grey.shade600,
                         ),
                         children: [
-                          const TextSpan(text: 'An M-PESA prompt has been sent to '),
+                          const TextSpan(
+                            text: 'An M-PESA prompt has been sent to ',
+                          ),
                           TextSpan(
                             text: _phoneNumber,
                             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -646,10 +655,7 @@ class _BookingModalState extends State<BookingModal>
               // Warning
               Text(
                 'Please do not close this window',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -658,10 +664,7 @@ class _BookingModalState extends State<BookingModal>
               const SizedBox(
                 width: 50,
                 height: 50,
-                child: CircularProgressIndicator(
-                  color: kBlue,
-                  strokeWidth: 4,
-                ),
+                child: CircularProgressIndicator(color: kBlue, strokeWidth: 4),
               ),
             ],
           ),
@@ -691,11 +694,7 @@ class _BookingModalState extends State<BookingModal>
                   color: kRed.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.error_outline,
-                  color: kRed,
-                  size: 40,
-                ),
+                child: const Icon(Icons.error_outline, color: kRed, size: 40),
               ),
               const SizedBox(height: 16),
 
@@ -789,10 +788,7 @@ class _BookingModalState extends State<BookingModal>
                   ),
                   child: const Text(
                     'Close',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                 ),
               ),
@@ -811,7 +807,9 @@ class _BookingModalState extends State<BookingModal>
     final price = event.price;
     final totalPrice = price * _quantity;
 
-    debugPrint('🎫 BookingModal - Event: ${event.eventTitle}, Price: $price, IsFree: $isFree');
+    debugPrint(
+      '🎫 BookingModal - Event: ${event.eventTitle}, Price: $price, IsFree: $isFree',
+    );
 
     return Dialog(
       child: Container(
@@ -868,9 +866,10 @@ class _BookingModalState extends State<BookingModal>
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDarkMode
-                            ? Colors.black.withValues(alpha: 0.2)
-                            : Colors.grey.shade100,
+                        color:
+                            isDarkMode
+                                ? Colors.black.withValues(alpha: 0.2)
+                                : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -937,14 +936,16 @@ class _BookingModalState extends State<BookingModal>
                       decoration: BoxDecoration(
                         border: Border(
                           top: BorderSide(
-                            color: isDarkMode
-                                ? Colors.grey.shade700
-                                : Colors.grey.shade300,
+                            color:
+                                isDarkMode
+                                    ? Colors.grey.shade700
+                                    : Colors.grey.shade300,
                           ),
                           bottom: BorderSide(
-                            color: isDarkMode
-                                ? Colors.grey.shade700
-                                : Colors.grey.shade300,
+                            color:
+                                isDarkMode
+                                    ? Colors.grey.shade700
+                                    : Colors.grey.shade300,
                           ),
                         ),
                       ),
@@ -954,7 +955,10 @@ class _BookingModalState extends State<BookingModal>
                             'Ticket Price',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
+                              color:
+                                  isDarkMode
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade700,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -997,49 +1001,61 @@ class _BookingModalState extends State<BookingModal>
                         decoration: InputDecoration(
                           hintText: '0712345678',
                           hintStyle: TextStyle(
-                            color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                            color:
+                                isDarkMode
+                                    ? Colors.grey.shade500
+                                    : Colors.grey.shade400,
                           ),
-                          prefixIcon: Icon(Icons.phone, size: 18, color: isDarkMode ? Colors.white70 : Colors.grey.shade600),
-                          suffixIcon: _phoneNumber.isNotEmpty
-                              ? Icon(
-                                  _isPhoneValid()
-                                      ? Icons.check_circle
-                                      : Icons.cancel,
-                                  color: _isPhoneValid() ? kGreen : kRed,
-                                  size: 20,
-                                )
-                              : null,
+                          prefixIcon: Icon(
+                            Icons.phone,
+                            size: 18,
+                            color:
+                                isDarkMode
+                                    ? Colors.white70
+                                    : Colors.grey.shade600,
+                          ),
+                          suffixIcon:
+                              _phoneNumber.isNotEmpty
+                                  ? Icon(
+                                    _isPhoneValid()
+                                        ? Icons.check_circle
+                                        : Icons.cancel,
+                                    color: _isPhoneValid() ? kGreen : kRed,
+                                    size: 20,
+                                  )
+                                  : null,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: Colors.grey.shade300,
-                            ),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: _phoneNumber.isNotEmpty
-                                  ? (_isPhoneValid()
-                                      ? kGreen.withValues(alpha: 0.5)
-                                      : kRed.withValues(alpha: 0.3))
-                                  : (isDarkMode
-                                      ? Colors.grey.shade700
-                                      : Colors.grey.shade300),
+                              color:
+                                  _phoneNumber.isNotEmpty
+                                      ? (_isPhoneValid()
+                                          ? kGreen.withValues(alpha: 0.5)
+                                          : kRed.withValues(alpha: 0.3))
+                                      : (isDarkMode
+                                          ? Colors.grey.shade700
+                                          : Colors.grey.shade300),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
-                              color: _phoneNumber.isNotEmpty
-                                  ? (_isPhoneValid() ? kGreen : kRed)
-                                  : kBlue,
+                              color:
+                                  _phoneNumber.isNotEmpty
+                                      ? (_isPhoneValid() ? kGreen : kRed)
+                                      : kBlue,
                               width: 2,
                             ),
                           ),
                           filled: true,
-                          fillColor: isDarkMode
-                              ? Colors.transparent
-                              : Colors.grey.shade50,
+                          fillColor:
+                              isDarkMode
+                                  ? Colors.transparent
+                                  : Colors.grey.shade50,
                         ),
                         keyboardType: TextInputType.phone,
                       ),
@@ -1169,7 +1185,14 @@ class _BookingModalState extends State<BookingModal>
                     width: double.infinity,
                     height: 44,
                     child: ElevatedButton(
-                      onPressed: _isLoading || (widget.event != null && (widget.event!.price != null && widget.event!.price != 0) && !_isPhoneValid()) ? null : _handleBookNow,
+                      onPressed:
+                          _isLoading ||
+                                  (widget.event != null &&
+                                      (widget.event!.price != null &&
+                                          widget.event!.price != 0) &&
+                                      !_isPhoneValid())
+                              ? null
+                              : _handleBookNow,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kBlue,
                         disabledBackgroundColor: Colors.grey.shade300,
@@ -1177,35 +1200,39 @@ class _BookingModalState extends State<BookingModal>
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.local_offer,
-                                    color: Colors.white, size: 18),
-                                const SizedBox(width: 8),
-                                Text(
-                                  isFree
-                                      ? 'Confirm RSVP'
-                                      : 'Pay KES ${totalPrice.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15,
+                      child:
+                          _isLoading
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
                                   ),
                                 ),
-                              ],
-                            ),
+                              )
+                              : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.local_offer,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    isFree
+                                        ? 'Confirm RSVP'
+                                        : 'Pay KES ${totalPrice.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
                     ),
                   ),
                   if (!isFree) ...[

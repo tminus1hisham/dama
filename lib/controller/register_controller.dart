@@ -16,7 +16,7 @@ class RegisterController extends GetxController {
   var fcmToken = ''.obs;
 
   var isLoading = false.obs;
-  
+
   // Field-specific error messages
   var emailError = ''.obs;
   var phoneError = ''.obs;
@@ -33,10 +33,10 @@ class RegisterController extends GetxController {
   void register(BuildContext context) async {
     print("Register controller called");
     print("FCM Token in controller: ${fcmToken.value}");
-    
+
     // Clear previous errors
     clearErrors();
-    
+
     isLoading.value = true;
 
     try {
@@ -63,7 +63,7 @@ class RegisterController extends GetxController {
           lastName.value = user['lastName'] ?? '';
           phone.value = user['phone_number'] ?? '';
         }
-        
+
         // Navigate to Personal Details to complete profile setup
         Get.snackbar(
           margin: EdgeInsets.only(top: 15, left: 15, right: 15),
@@ -76,17 +76,19 @@ class RegisterController extends GetxController {
       }
     } catch (e) {
       print("Registration error: $e");
-      
+
       // Parse field-specific errors
       final errorString = e.toString();
-      
+
       if (errorString.contains('email_exists')) {
-        emailError.value = errorString.replaceAll('Exception: email_exists: ', '').trim();
+        emailError.value =
+            errorString.replaceAll('Exception: email_exists: ', '').trim();
         if (emailError.value.isEmpty) {
           emailError.value = 'This email is already registered';
         }
       } else if (errorString.contains('phone_exists')) {
-        phoneError.value = errorString.replaceAll('Exception: phone_exists: ', '').trim();
+        phoneError.value =
+            errorString.replaceAll('Exception: phone_exists: ', '').trim();
         if (phoneError.value.isEmpty) {
           phoneError.value = 'This phone number is already registered';
         }

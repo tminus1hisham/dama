@@ -463,11 +463,11 @@ class NewsController extends GetxController {
     try {
       debugPrint('Fetching popular news...');
       final category =
-          selectedCategory.value == 'All News'
-              ? null
-              : selectedCategory.value;
-      final popular =
-          await _apiService.getPopularNews(limit: 10, category: category);
+          selectedCategory.value == 'All News' ? null : selectedCategory.value;
+      final popular = await _apiService.getPopularNews(
+        limit: 10,
+        category: category,
+      );
       debugPrint('Popular news fetched: ${popular.length} items');
 
       if (popular.isEmpty && category != null) {
@@ -624,9 +624,9 @@ class NewsController extends GetxController {
         selected == 'ALL NEWS'
             ? _allNews
             : _allNews.where((news) {
-                final newsCat = _getCategoryForNews(news);
-                return newsCat == selected;
-              }).toList();
+              final newsCat = _getCategoryForNews(news);
+              return newsCat == selected;
+            }).toList();
 
     final sortedByDate = List<NewsModel>.from(filtered);
     sortedByDate.sort((a, b) => b.createdAt.compareTo(a.createdAt));

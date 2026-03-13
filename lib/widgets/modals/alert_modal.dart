@@ -25,9 +25,7 @@ class AlertDialogWidget extends StatelessWidget {
         vertical: 40,
       ),
       child: Container(
-        constraints: BoxConstraints(
-          maxWidth: isWeb ? 500 : double.infinity,
-        ),
+        constraints: BoxConstraints(maxWidth: isWeb ? 500 : double.infinity),
         decoration: BoxDecoration(
           // Dark blue gradient background
           gradient: const LinearGradient(
@@ -100,10 +98,7 @@ class AlertDialogWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFFE53935).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFFE53935),
-                  width: 1.5,
-                ),
+                border: Border.all(color: const Color(0xFFE53935), width: 1.5),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

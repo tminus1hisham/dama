@@ -104,11 +104,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                   Expanded(
                     child: Row(
                       children: [
-                        Icon(
-                          FontAwesomeIcons.comments,
-                          size: 20,
-                          color: kBlue,
-                        ),
+                        Icon(FontAwesomeIcons.comments, size: 20, color: kBlue),
                         const SizedBox(width: 10),
                         Text(
                           'Comments',
@@ -146,7 +142,10 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                     icon: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: isDarkMode ? kGrey.withOpacity(0.3) : Colors.grey.shade100,
+                        color:
+                            isDarkMode
+                                ? kGrey.withOpacity(0.3)
+                                : Colors.grey.shade100,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -162,9 +161,10 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
 
             // Comments list
             Flexible(
-              child: widget.comments.isEmpty
-                  ? _buildEmptyState(isDarkMode)
-                  : _buildCommentsList(isDarkMode),
+              child:
+                  widget.comments.isEmpty
+                      ? _buildEmptyState(isDarkMode)
+                      : _buildCommentsList(isDarkMode),
             ),
 
             // Input field
@@ -206,10 +206,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
             const SizedBox(height: 8),
             Text(
               "Be the first to share your thoughts!",
-              style: TextStyle(
-                fontSize: 14,
-                color: kGrey,
-              ),
+              style: TextStyle(fontSize: 14, color: kGrey),
             ),
           ],
         ),
@@ -238,19 +235,23 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
         ProfileAvatar(
           radius: 20,
           backgroundColor: kBlue.withOpacity(0.2),
-          backgroundImage: comment.profileImageUrl.isNotEmpty 
-              ? NetworkImage(comment.profileImageUrl) 
-              : null,
-          child: comment.profileImageUrl.isEmpty
-              ? Text(
-                  comment.name.isNotEmpty ? comment.name[0].toUpperCase() : '?',
-                  style: const TextStyle(
-                    color: kBlue,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                )
-              : null,
+          backgroundImage:
+              comment.profileImageUrl.isNotEmpty
+                  ? NetworkImage(comment.profileImageUrl)
+                  : null,
+          child:
+              comment.profileImageUrl.isEmpty
+                  ? Text(
+                    comment.name.isNotEmpty
+                        ? comment.name[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      color: kBlue,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  )
+                  : null,
         ),
         const SizedBox(width: 12),
         // Comment bubble
@@ -273,17 +274,17 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                   ),
                   Text(
                     _utils.timeAgo(comment.createdAt),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: kGrey,
-                    ),
+                    style: TextStyle(fontSize: 11, color: kGrey),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               // Comment text in bubble
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: isDarkMode ? kDarkThemeBg : Colors.grey.shade100,
                   borderRadius: const BorderRadius.only(
@@ -296,7 +297,10 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                   comment.comment,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDarkMode ? kWhite.withOpacity(0.9) : kBlack.withOpacity(0.85),
+                    color:
+                        isDarkMode
+                            ? kWhite.withOpacity(0.9)
+                            : kBlack.withOpacity(0.85),
                     height: 1.4,
                   ),
                 ),
@@ -349,10 +353,7 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                 controller: _controller,
                 decoration: InputDecoration(
                   hintText: 'Write a comment...',
-                  hintStyle: TextStyle(
-                    color: kGrey,
-                    fontSize: 15,
-                  ),
+                  hintStyle: TextStyle(color: kGrey, fontSize: 15),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 18,
@@ -369,30 +370,27 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
           const SizedBox(width: 10),
           widget.isLoading
               ? Container(
+                width: 44,
+                height: 44,
+                padding: const EdgeInsets.all(10),
+                child: CircularProgressIndicator(strokeWidth: 2, color: kBlue),
+              )
+              : GestureDetector(
+                onTap: _handleSend,
+                child: Container(
                   width: 44,
                   height: 44,
-                  padding: const EdgeInsets.all(10),
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
+                  decoration: BoxDecoration(
                     color: kBlue,
+                    shape: BoxShape.circle,
                   ),
-                )
-              : GestureDetector(
-                  onTap: _handleSend,
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: kBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.send_rounded,
-                      color: kWhite,
-                      size: 20,
-                    ),
+                  child: const Icon(
+                    Icons.send_rounded,
+                    color: kWhite,
+                    size: 20,
                   ),
                 ),
+              ),
         ],
       ),
     );

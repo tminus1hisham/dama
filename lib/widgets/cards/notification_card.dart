@@ -5,8 +5,9 @@ import 'package:provider/provider.dart';
 
 import '../../utils/theme_provider.dart';
 
-class NotoficationCard extends StatelessWidget {
-  NotoficationCard({super.key, 
+class NotificationCard extends StatelessWidget {
+  NotificationCard({
+    super.key,
     required this.title,
     required this.body,
     required this.date,
@@ -164,7 +165,8 @@ enum NotificationPriority { low, normal, medium, high }
 
 // Alternative compact version for dense layouts
 class CompactNotificationCard extends StatelessWidget {
-  CompactNotificationCard({super.key, 
+  CompactNotificationCard({
+    super.key,
     required this.title,
     required this.body,
     required this.date,
@@ -274,7 +276,8 @@ class NotificationDetailModal extends StatelessWidget {
   final String date;
   final Utils _utils = Utils();
 
-  NotificationDetailModal({super.key, 
+  NotificationDetailModal({
+    super.key,
     required this.title,
     required this.body,
     required this.date,

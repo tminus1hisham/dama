@@ -25,22 +25,23 @@ class UserTrainingController extends GetxController {
   Future<void> _loadEnrolledTrainingIds() async {
     final prefs = await SharedPreferences.getInstance();
     final ids = prefs.getStringList('enrolled_training_ids') ?? [];
-    final cachedTrainings = ids
-        .map(
-          (id) => TrainingModel(
-            id: id,
-            title: 'Enrolled Training',
-            description: '',
-            learningTracks: [],
-            targetAudience: [],
-            learningOutcomes: [],
-            courseOutline: [],
-            sessions: [],
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ),
-        )
-        .toList();
+    final cachedTrainings =
+        ids
+            .map(
+              (id) => TrainingModel(
+                id: id,
+                title: 'Enrolled Training',
+                description: '',
+                learningTracks: [],
+                targetAudience: [],
+                learningOutcomes: [],
+                courseOutline: [],
+                sessions: [],
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+              ),
+            )
+            .toList();
     userTrainings.assignAll(cachedTrainings);
   }
 
@@ -74,28 +75,32 @@ class UserTrainingController extends GetxController {
       for (var training in basicTrainings) {
         try {
           print('Fetching details for training: ${training.id}');
-          final detailedResult =
-              await _apiService.getUserTrainingDetails(training.id);
+          final detailedResult = await _apiService.getUserTrainingDetails(
+            training.id,
+          );
 
-          final detailedData = detailedResult['training'] ??
+          final detailedData =
+              detailedResult['training'] ??
               detailedResult['data'] ??
               detailedResult;
 
           // ✅ Extract userData — contains the user's real enrollment status & progress
-          final userData = detailedResult['userData'] ??
-              detailedResult['user_data'];
+          final userData =
+              detailedResult['userData'] ?? detailedResult['user_data'];
 
           final detailedModel = TrainingModel.fromJson(detailedData);
 
           // ✅ Read user's enrollment status from userData.enrollment.status
-          final enrollment = userData != null
-              ? userData['enrollment'] as Map<String, dynamic>?
-              : null;
+          final enrollment =
+              userData != null
+                  ? userData['enrollment'] as Map<String, dynamic>?
+                  : null;
 
           // ✅ Read user's progress from userData.progress.attendanceRate
-          final userProgressData = userData != null
-              ? userData['progress'] as Map<String, dynamic>?
-              : null;
+          final userProgressData =
+              userData != null
+                  ? userData['progress'] as Map<String, dynamic>?
+                  : null;
 
           final userStatus = enrollment?['status'] as String?;
 
@@ -104,12 +109,14 @@ class UserTrainingController extends GetxController {
               (userProgressData?['attendanceRate'] as num?)?.toInt();
 
           // ✅ Certificate info from userData.certificate
-          final certData = userData != null
-              ? userData['certificate'] as Map<String, dynamic>?
-              : null;
+          final certData =
+              userData != null
+                  ? userData['certificate'] as Map<String, dynamic>?
+                  : null;
 
           print(
-              'Training ${training.id} → userStatus: $userStatus, userProgress: $userProgressValue');
+            'Training ${training.id} → userStatus: $userStatus, userProgress: $userProgressValue',
+          );
 
           final mergedModel = TrainingModel(
             id: training.id.isNotEmpty ? training.id : detailedModel.id,
@@ -134,20 +141,27 @@ class UserTrainingController extends GetxController {
             userData: userData is Map<String, dynamic> ? userData : null,
             category: detailedModel.category,
             // ✅ Build Certificate from userData.certificate if available
-            certificate: certData != null
-                ? Certificate(
-                    issued: certData['issued'] == true,
-                    certificateNumber:
-                        detailedModel.certificate?.certificateNumber ??
-                            certData['certificateNumber'] as String?,
-                    issuedAt: certData['issuedAt'] != null
-                        ? DateTime.tryParse(certData['issuedAt'].toString())
-                        : null,
-                    expiresAt: certData['expiresAt'] != null
-                        ? DateTime.tryParse(certData['expiresAt'].toString())
-                        : null,
-                  )
-                : detailedModel.certificate,
+            certificate:
+                certData != null
+                    ? Certificate(
+                      issued: certData['issued'] == true,
+                      certificateNumber:
+                          detailedModel.certificate?.certificateNumber ??
+                          certData['certificateNumber'] as String?,
+                      issuedAt:
+                          certData['issuedAt'] != null
+                              ? DateTime.tryParse(
+                                certData['issuedAt'].toString(),
+                              )
+                              : null,
+                      expiresAt:
+                          certData['expiresAt'] != null
+                              ? DateTime.tryParse(
+                                certData['expiresAt'].toString(),
+                              )
+                              : null,
+                    )
+                    : detailedModel.certificate,
             certificateConfig: detailedModel.certificateConfig,
           );
 
@@ -177,8 +191,7 @@ class UserTrainingController extends GetxController {
 
   Future<bool> cancelTrainingRegistration(String trainingId) async {
     try {
-      final success =
-          await _apiService.cancelTrainingRegistration(trainingId);
+      final success = await _apiService.cancelTrainingRegistration(trainingId);
       if (success) {
         await fetchUserTrainings();
       }

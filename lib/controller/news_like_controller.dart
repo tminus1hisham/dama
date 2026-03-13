@@ -23,28 +23,26 @@ class NewsLikeController extends GetxController {
     // 2. List of objects: [{"userId": "..."}, {"user_Id": {"_id": "..."}}]
     final isLiked = likes.any((like) {
       if (like == null) return false;
-      
+
       // Format 1: String user ID
       if (like is String) {
         return like == userId;
       }
-      
+
       // Format 2: Object with userId
       if (like is Map<String, dynamic>) {
         // Check various possible formats
-        final likeUserId = like['userId'] ?? 
-                          like['user_id'] ?? 
-                          like['userId'] ??
-                          like['_id'];
+        final likeUserId =
+            like['userId'] ?? like['user_id'] ?? like['userId'] ?? like['_id'];
         if (likeUserId == userId) return true;
-        
+
         // Check nested user_Id._id format
         final nestedUser = like['user_Id'];
         if (nestedUser is Map<String, dynamic>) {
           return nestedUser['_id'] == userId;
         }
       }
-      
+
       return false;
     });
 

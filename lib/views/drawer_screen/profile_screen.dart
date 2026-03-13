@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:dama/controller/referral_controller.dart';
 import 'package:dama/controller/request_delete_account.dart';
 import 'package:dama/controller/role_request_controller.dart';
 import 'package:dama/controller/update_user_profile_controller.dart';
 import 'package:dama/routes/routes.dart';
+import 'package:dama/services/api_service.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
@@ -65,6 +67,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     RoleRequestController(),
   );
 
+  final ReferralController _referralController = Get.put(ReferralController());
+
   final Map<String, String> roleOptions = {
     "Please select": "",
     "News Editor": "news_editor",
@@ -80,6 +84,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _referralEmailController =
+      TextEditingController();
 
   final Utils utils = Utils();
 
@@ -134,7 +140,9 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _fetchData() async {
     try {
-      String? fetchedProfilePicture = await StorageService.getData('profile_picture');
+      String? fetchedProfilePicture = await StorageService.getData(
+        'profile_picture',
+      );
       String? fetchedLastName = await StorageService.getData('lastName');
       String? fetchedFirstName = await StorageService.getData('firstName');
       String? fetchedTitle = await StorageService.getData('title');
@@ -143,9 +151,15 @@ class _ProfileScreenState extends State<ProfileScreen>
       String? fetchedEmail = await StorageService.getData('email');
       String? fetchedPhoneNumber = await StorageService.getData('phoneNumber');
       String? fetchedMemberId = await StorageService.getData('memberId');
-      dynamic fetchedHasMembership = await StorageService.getData('hasMembership');
-      String? fetchedMembershipExp = await StorageService.getData('membershipExp');
-      String? fetchedMembershipId = await StorageService.getData('membershipId');
+      dynamic fetchedHasMembership = await StorageService.getData(
+        'hasMembership',
+      );
+      String? fetchedMembershipExp = await StorageService.getData(
+        'membershipExp',
+      );
+      String? fetchedMembershipId = await StorageService.getData(
+        'membershipId',
+      );
 
       bool parsedHasMembership = false;
       if (fetchedHasMembership is bool) {
@@ -180,12 +194,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
 
       if (fetchedProfilePicture != null) {
-        updateUserProfileController.profilePicture.value = fetchedProfilePicture;
+        updateUserProfileController.profilePicture.value =
+            fetchedProfilePicture;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading profile data')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading profile data')));
     }
   }
 
@@ -214,26 +229,28 @@ class _ProfileScreenState extends State<ProfileScreen>
             _isUploading = false;
           });
 
-          updateUserProfileController.firstName.value = _firstNameController.text;
+          updateUserProfileController.firstName.value =
+              _firstNameController.text;
           updateUserProfileController.lastName.value = _lastNameController.text;
           updateUserProfileController.title.value = _titleController.text;
 
           if (bio != null) updateUserProfileController.brief.value = bio!;
-          if (phoneNumber != null) updateUserProfileController.phoneNumber.value = phoneNumber!;
+          if (phoneNumber != null)
+            updateUserProfileController.phoneNumber.value = phoneNumber!;
 
           updateUserProfileController.updateUser();
         } else {
           setState(() => _isUploading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to upload image')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to upload image')));
         }
       }
     } catch (e) {
       setState(() => _isUploading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
   }
 
@@ -246,8 +263,10 @@ class _ProfileScreenState extends State<ProfileScreen>
     updateUserProfileController.company.value = _companyController.text;
 
     if (bio != null) updateUserProfileController.brief.value = bio!;
-    if (profilePicture != null) updateUserProfileController.profilePicture.value = profilePicture!;
-    if (phoneNumber != null) updateUserProfileController.phoneNumber.value = phoneNumber!;
+    if (profilePicture != null)
+      updateUserProfileController.profilePicture.value = profilePicture!;
+    if (phoneNumber != null)
+      updateUserProfileController.phoneNumber.value = phoneNumber!;
 
     updateUserProfileController.updateUser();
 
@@ -277,8 +296,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       updateUserProfileController.lastName.value = lastName!;
     }
     if (title != null) updateUserProfileController.title.value = title!;
-    if (profilePicture != null) updateUserProfileController.profilePicture.value = profilePicture!;
-    if (phoneNumber != null) updateUserProfileController.phoneNumber.value = phoneNumber!;
+    if (profilePicture != null)
+      updateUserProfileController.profilePicture.value = profilePicture!;
+    if (phoneNumber != null)
+      updateUserProfileController.phoneNumber.value = phoneNumber!;
 
     updateUserProfileController.updateUser();
 
@@ -287,6 +308,125 @@ class _ProfileScreenState extends State<ProfileScreen>
       bio = _bioController.text;
       _isUpdating = false;
     });
+  }
+
+  Future<void> _submitEmailUpdate() async {
+    final String newEmail = _emailController.text.trim();
+    if (newEmail.isEmpty) return;
+
+    try {
+      // Update local state
+      setState(() => email = newEmail);
+      await StorageService.storeData({'email': newEmail});
+
+      Get.snackbar(
+        'Success',
+        'Email updated successfully',
+        backgroundColor: kGreen,
+        colorText: kWhite,
+      );
+    } catch (e) {
+      debugPrint('Error updating email: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to update email',
+        backgroundColor: kRed,
+        colorText: kWhite,
+      );
+    }
+  }
+
+  Future<void> _submitPhoneUpdateWithOTP() async {
+    final String newPhone = _phoneController.text.trim();
+    if (newPhone.isEmpty) return;
+
+    try {
+      Get.dialog(
+        Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(kBlue),
+          ),
+        ),
+        barrierDismissible: false,
+      );
+
+      final apiService = Get.find<ApiService>();
+      await apiService.initiatePhoneUpdate(newPhone);
+
+      Get.back(); // Close loading dialog
+
+      // Navigate to OTP verification screen with phone number
+      final result = await Get.toNamed(
+        AppRoutes.otp,
+        arguments: {'phone': newPhone, 'isPhoneUpdate': true},
+      );
+
+      if (result != null) {
+        // Refresh profile after OTP verification
+        setState(() {
+          phoneNumber = newPhone;
+        });
+      }
+
+      Get.snackbar(
+        'Success',
+        'Verification code sent to $newPhone',
+        backgroundColor: kGreen,
+        colorText: kWhite,
+      );
+    } catch (e) {
+      Get.back(); // Close loading dialog
+      debugPrint('Error initiating phone update: $e');
+      Get.snackbar(
+        'Error',
+        e.toString().replaceFirst('Exception: ', ''),
+        backgroundColor: kRed,
+        colorText: kWhite,
+      );
+    }
+  }
+
+  Future<void> _verifyPhoneUpdateOTP(String otp) async {
+    final String newPhone = _phoneController.text.trim();
+    if (newPhone.isEmpty || otp.isEmpty) return;
+
+    try {
+      Get.dialog(
+        Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(kBlue),
+          ),
+        ),
+        barrierDismissible: false,
+      );
+
+      final apiService = Get.find<ApiService>();
+      await apiService.verifyPhoneUpdate(newPhone, otp);
+
+      Get.back(); // Close loading dialog
+      Get.back(); // Close OTP screen
+
+      // Update local state
+      setState(() {
+        phoneNumber = newPhone;
+      });
+
+      Get.snackbar(
+        'Success',
+        'Phone number updated successfully',
+        backgroundColor: kGreen,
+        colorText: kWhite,
+      );
+    } catch (e) {
+      Get.back(); // Close loading dialog
+      debugPrint('Error verifying phone update: $e');
+      Get.snackbar(
+        'Error',
+        e.toString().replaceFirst('Exception: ', ''),
+        backgroundColor: kRed,
+        colorText: kWhite,
+      );
+    }
   }
 
   Future<void> _submitContactDetails() async {
@@ -300,7 +440,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       updateUserProfileController.lastName.value = lastName!;
     }
     if (title != null) updateUserProfileController.title.value = title!;
-    if (profilePicture != null) updateUserProfileController.profilePicture.value = profilePicture!;
+    if (profilePicture != null)
+      updateUserProfileController.profilePicture.value = profilePicture!;
     if (bio != null) updateUserProfileController.brief.value = bio!;
 
     updateUserProfileController.updateUser();
@@ -316,79 +457,88 @@ class _ProfileScreenState extends State<ProfileScreen>
     });
   }
 
- void _showEditNameAndTitleDialog() {
-  final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-  bool isDarkMode = themeProvider.isDark;
+  void _showEditNameAndTitleDialog() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    bool isDarkMode = themeProvider.isDark;
 
-  showDialog(
-    context: context,
-    builder: (context) => Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: AlertDialog(
-          backgroundColor: isDarkMode ? kBlack : kWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: kBlue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+    showDialog(
+      context: context,
+      builder:
+          (context) => Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: AlertDialog(
+                backgroundColor: isDarkMode ? kBlack : kWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(
-                  Icons.person_rounded,
-                  color: kBlue,
-                  size: 24,
+                title: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: kBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.person_rounded,
+                        color: kBlue,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        color: isDarkMode ? kWhite : kBlack,
+                        fontSize: kLargeHeaderSize,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Edit Profile',
-                style: TextStyle(
-                  color: isDarkMode ? kWhite : kBlack,
-                  fontSize: kLargeHeaderSize,
-                  fontWeight: FontWeight.w600,
+                content: SingleChildScrollView(
+                  child: SizedBox(
+                    width: double.maxFinite,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTextField(
+                          _firstNameController,
+                          'First Name',
+                          isDarkMode,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          _lastNameController,
+                          'Last Name',
+                          isDarkMode,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          _titleController,
+                          'Professional Title',
+                          isDarkMode,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          _companyController,
+                          'Company / Organization',
+                          isDarkMode,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: SizedBox(
-              width: double.maxFinite,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildTextField(
-                      _firstNameController, 'First Name', isDarkMode),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                      _lastNameController, 'Last Name', isDarkMode),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                      _titleController, 'Professional Title', isDarkMode),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                      _companyController,
-                      'Company / Organization',
-                      isDarkMode),
+                actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                actions: [
+                  _buildDialogActions(context, isDarkMode, _updateNameAndTitle),
                 ],
               ),
             ),
           ),
-          actionsPadding:
-              const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          actions: [
-            _buildDialogActions(
-                context, isDarkMode, _updateNameAndTitle),
-          ],
-        ),
-      ),
-    ),
-  );
-}
+    );
+  }
 
   void _showDeleteAccountConfirmation(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -397,92 +547,109 @@ class _ProfileScreenState extends State<ProfileScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 800),
-          child: AlertDialog(
-            backgroundColor: isDarkMode ? kBlack : kWhite,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: kRed.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+      builder:
+          (context) => Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 800),
+              child: AlertDialog(
+                backgroundColor: isDarkMode ? kBlack : kWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: kRed.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.warning_rounded, color: kRed, size: 24),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Delete Account',
+                      style: TextStyle(
+                        color: isDarkMode ? kWhite : kBlack,
+                        fontSize: kLargeHeaderSize,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                content: Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Are you sure you want to request account deletion? This action cannot be undone and all your data will be permanently removed.',
+                    style: TextStyle(
+                      color:
+                          isDarkMode
+                              ? kWhite.withOpacity(0.8)
+                              : kBlack.withOpacity(0.7),
+                      fontSize: kLargeHeaderSize,
+                      height: 1.4,
+                    ),
                   ),
-                  child: Icon(Icons.warning_rounded, color: kRed, size: 24),
                 ),
-                SizedBox(width: 12),
-                Text(
-                  'Delete Account',
-                  style: TextStyle(
-                    color: isDarkMode ? kWhite : kBlack,
-                    fontSize: kLargeHeaderSize,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            content: Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text(
-                'Are you sure you want to request account deletion? This action cannot be undone and all your data will be permanently removed.',
-                style: TextStyle(
-                  color: isDarkMode ? kWhite.withOpacity(0.8) : kBlack.withOpacity(0.7),
-                  fontSize: kLargeHeaderSize,
-                  height: 1.4,
-                ),
-              ),
-            ),
-            actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
-            actions: [
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: isDarkMode ? kWhite : kBlack,
-                            fontWeight: FontWeight.w500,
+                actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+                actions: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color:
+                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: isDarkMode ? kWhite : kBlack,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          requestDeleteAccountController.requestDeleteAccount(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kRed,
-                          foregroundColor: kWhite,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          elevation: 0,
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              requestDeleteAccountController
+                                  .requestDeleteAccount(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kRed,
+                              foregroundColor: kWhite,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              'Delete Account',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
                         ),
-                        child: Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w600)),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -492,207 +659,366 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     showDialog(
       context: context,
-      builder: (context) => Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 800),
-          child: AlertDialog(
-            backgroundColor: isDarkMode ? kBlack : kWhite,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: kBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.edit_rounded, color: kBlue, size: 24),
+      builder:
+          (context) => Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 800),
+              child: AlertDialog(
+                backgroundColor: isDarkMode ? kBlack : kWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                SizedBox(width: 12),
-                Text(
-                  'Edit Bio',
-                  style: TextStyle(
-                    color: isDarkMode ? kWhite : kBlack,
-                    fontSize: kLargeHeaderSize,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(height: 8),
-                  TextField(
-                    controller: _bioController,
-                    maxLines: 5,
-                    maxLength: 500,
-                    style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: 16),
-                    decoration: InputDecoration(
-                      labelText: "Tell us about yourself",
-                      labelStyle: TextStyle(color: isDarkMode ? kWhite : kGrey),
-                      hintText: "Share your professional background, interests, or goals...",
-                      hintStyle: TextStyle(
-                        color: isDarkMode ? kWhite.withOpacity(0.5) : kGrey.withOpacity(0.7),
+                title: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: kBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: kBlue, width: 2),
-                      ),
-                      filled: true,
-                      fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
-                      contentPadding: EdgeInsets.all(16),
+                      child: Icon(Icons.edit_rounded, color: kBlue, size: 24),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
-            actions: [_buildDialogActions(context, isDarkMode, _submitBioDetails)],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showEditContactDialog() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    bool isDarkMode = themeProvider.isDark;
-    final GlobalKey<FormState> _contactFormKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      builder: (context) => Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 800,
-            maxHeight: MediaQuery.of(context).size.height * 0.9,
-          ),
-          child: AlertDialog(
-            backgroundColor: isDarkMode ? kBlack : kWhite,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: kBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.contact_phone_rounded, color: kBlue, size: 24),
-                ),
-                SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    'Edit Contact Information',
-                    style: TextStyle(
-                      color: isDarkMode ? kWhite : kBlack,
-                      fontSize: kLargeHeaderSize,
-                      fontWeight: FontWeight.w600,
+                    SizedBox(width: 12),
+                    Text(
+                      'Edit Bio',
+                      style: TextStyle(
+                        color: isDarkMode ? kWhite : kBlack,
+                        fontSize: kLargeHeaderSize,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Form(
-                key: _contactFormKey,
-                child: SizedBox(
+                content: SizedBox(
                   width: double.maxFinite,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(height: 8),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: kLargeHeaderSize),
-                        decoration: _inputDecoration('Email Address', isDarkMode),
-                      ),
-                      SizedBox(height: 16),
-                      TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: kLargeHeaderSize),
-                        decoration: _inputDecoration('Phone Number', isDarkMode,
-                            hint: 'Enter your phone number (9 digits)'),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return "Phone number is required";
-                          }
-                          final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
-                          if (digitsOnly.length != 9) return "Phone number must be exactly 9 digits";
-                          if (!RegExp(r'^[0-9]+$').hasMatch(digitsOnly)) {
-                            return "Phone number must contain only digits";
-                          }
-                          return null;
-                        },
+                      TextField(
+                        controller: _bioController,
+                        maxLines: 5,
+                        maxLength: 500,
+                        style: TextStyle(
+                          color: isDarkMode ? kWhite : kBlack,
+                          fontSize: 16,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: "Tell us about yourself",
+                          labelStyle: TextStyle(
+                            color: isDarkMode ? kWhite : kGrey,
+                          ),
+                          hintText:
+                              "Share your professional background, interests, or goals...",
+                          hintStyle: TextStyle(
+                            color:
+                                isDarkMode
+                                    ? kWhite.withOpacity(0.5)
+                                    : kGrey.withOpacity(0.7),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color:
+                                  isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color:
+                                  isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: kBlue, width: 2),
+                          ),
+                          filled: true,
+                          fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
+                          contentPadding: EdgeInsets.all(16),
+                        ),
                       ),
                     ],
                   ),
                 ),
+                actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+                actions: [
+                  _buildDialogActions(context, isDarkMode, _submitBioDetails),
+                ],
               ),
             ),
-            actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
-            actions: [
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: isDarkMode ? kWhite : kBlack,
-                            fontWeight: FontWeight.w500,
+          ),
+    );
+  }
+
+  void _showEditEmailDialog() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    bool isDarkMode = themeProvider.isDark;
+    final TextEditingController _tempEmailController = TextEditingController(
+      text: email ?? '',
+    );
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 400,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: AlertDialog(
+                backgroundColor: isDarkMode ? kBlack : kWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: Text(
+                  'Edit Email',
+                  style: TextStyle(
+                    color: isDarkMode ? kWhite : kBlack,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  child: TextField(
+                    controller: _tempEmailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: TextStyle(color: isDarkMode ? kWhite : kBlack),
+                    decoration: InputDecoration(
+                      hintText: 'Enter new email address',
+                      hintStyle: TextStyle(
+                        color: isDarkMode ? kGrey : Colors.grey[400],
+                      ),
+                      filled: true,
+                      fillColor: isDarkMode ? kDarkThemeBg : kLightGrey,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+                actions: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color:
+                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: isDarkMode ? kWhite : kBlack,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (_contactFormKey.currentState!.validate()) {
-                            _submitContactDetails();
-                            Navigator.pop(context);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kBlue,
-                          foregroundColor: kWhite,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          elevation: 0,
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (_tempEmailController.text.trim().isNotEmpty) {
+                                _emailController.text =
+                                    _tempEmailController.text.trim();
+                                _submitEmailUpdate();
+                                Navigator.pop(context);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kBlue,
+                              foregroundColor: kWhite,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              'Save',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
                         ),
-                        child: Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+    );
+  }
+
+  void _showUpdatePhoneDialog() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    bool isDarkMode = themeProvider.isDark;
+    final TextEditingController _tempPhoneController = TextEditingController(
+      text: phoneNumber ?? '',
+    );
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 400,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: AlertDialog(
+                backgroundColor: isDarkMode ? kBlack : kWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: Text(
+                  'Update Phone Number',
+                  style: TextStyle(
+                    color: isDarkMode ? kWhite : kBlack,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Enter your new phone number to receive a verification code.',
+                          style: TextStyle(
+                            color: isDarkMode ? kGrey : Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Phone Number',
+                          style: TextStyle(
+                            color: isDarkMode ? kWhite : kBlack,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        TextField(
+                          controller: _tempPhoneController,
+                          keyboardType: TextInputType.phone,
+                          style: TextStyle(color: isDarkMode ? kWhite : kBlack),
+                          decoration: InputDecoration(
+                            hintText: 'Enter phone number',
+                            hintStyle: TextStyle(
+                              color: isDarkMode ? kGrey : Colors.grey[400],
+                            ),
+                            filled: true,
+                            fillColor: isDarkMode ? kDarkThemeBg : kLightGrey,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          "Please include country code without '+', e.g., 254 for Kenya.",
+                          style: TextStyle(
+                            color: isDarkMode ? kGrey : Colors.grey[500],
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actionsPadding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+                actions: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color:
+                                    isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: isDarkMode ? kWhite : kBlack,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (_tempPhoneController.text.trim().isNotEmpty) {
+                                _phoneController.text =
+                                    _tempPhoneController.text.trim();
+                                _submitPhoneUpdateWithOTP();
+                                Navigator.pop(context);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kBlue,
+                              foregroundColor: kWhite,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              'Send OTP',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
     );
   }
 
@@ -710,7 +1036,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  InputDecoration _inputDecoration(String label, bool isDarkMode, {String? hint}) {
+  InputDecoration _inputDecoration(
+    String label,
+    bool isDarkMode, {
+    String? hint,
+  }) {
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: isDarkMode ? kWhite : kGrey),
@@ -721,7 +1051,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
+        borderSide: BorderSide(
+          color: isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -746,12 +1078,19 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: OutlinedButton(
               onPressed: () => Navigator.pop(context),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: isDarkMode ? kGrey : kGrey.withOpacity(0.5)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                side: BorderSide(
+                  color: isDarkMode ? kGrey : kGrey.withOpacity(0.5),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: Text(
                 'Cancel',
-                style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: isDarkMode ? kWhite : kBlack,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -768,10 +1107,15 @@ class _ProfileScreenState extends State<ProfileScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: kBlue,
                 foregroundColor: kWhite,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 elevation: 0,
               ),
-              child: Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(
+                'Save Changes',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ),
@@ -787,6 +1131,40 @@ class _ProfileScreenState extends State<ProfileScreen>
     await roleRequestController.requestRole(selectedRole!);
   }
 
+  void _sendReferralInvite() async {
+    final emailOrPhone = _referralEmailController.text.trim();
+
+    if (emailOrPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter an email or phone number')),
+      );
+      return;
+    }
+
+    final success = await _referralController.sendInvite(emailOrPhone);
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invitation sent successfully!'),
+            backgroundColor: kGreen,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        _referralEmailController.clear();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to send invitation. Please try again.'),
+            backgroundColor: kRed,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _pulseController.dispose();
@@ -796,6 +1174,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     _bioController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _referralEmailController.dispose();
     _companyController.dispose();
     super.dispose();
   }
@@ -863,14 +1242,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                                               ),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: const Color(0xFF3B82F6)
-                                                      .withOpacity(_pulseAnim.value * 0.55),
+                                                  color: const Color(
+                                                    0xFF3B82F6,
+                                                  ).withOpacity(
+                                                    _pulseAnim.value * 0.55,
+                                                  ),
                                                   blurRadius: 18,
                                                   spreadRadius: 3,
                                                 ),
                                                 BoxShadow(
-                                                  color: const Color(0xFF6366F1)
-                                                      .withOpacity(_pulseAnim.value * 0.3),
+                                                  color: const Color(
+                                                    0xFF6366F1,
+                                                  ).withOpacity(
+                                                    _pulseAnim.value * 0.3,
+                                                  ),
                                                   blurRadius: 30,
                                                   spreadRadius: 5,
                                                 ),
@@ -882,22 +1267,28 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         },
                                         child: CircleAvatar(
                                           radius: 42,
-                                          backgroundColor: isDarkMode
-                                              ? const Color(0xFF1E1E1E)
-                                              : const Color(0xFFEEF2FF),
-                                          backgroundImage: profilePicture != null
-                                              ? NetworkImage(profilePicture!)
-                                              : null,
-                                          child: profilePicture == null
-                                              ? Text(
-                                                  _initials,
-                                                  style: const TextStyle(
-                                                    color: Color(0xFF6366F1),
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 24,
-                                                  ),
-                                                )
-                                              : null,
+                                          backgroundColor:
+                                              isDarkMode
+                                                  ? const Color(0xFF1E1E1E)
+                                                  : const Color(0xFFEEF2FF),
+                                          backgroundImage:
+                                              profilePicture != null
+                                                  ? NetworkImage(
+                                                    profilePicture!,
+                                                  )
+                                                  : null,
+                                          child:
+                                              profilePicture == null
+                                                  ? Text(
+                                                    _initials,
+                                                    style: const TextStyle(
+                                                      color: Color(0xFF6366F1),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 24,
+                                                    ),
+                                                  )
+                                                  : null,
                                         ),
                                       ),
                                     ),
@@ -953,9 +1344,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 8,
+                                  ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         'Edit Profile Details',
@@ -965,25 +1360,26 @@ class _ProfileScreenState extends State<ProfileScreen>
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                     InkWell(
-  onTap: _showEditNameAndTitleDialog,
-  child: CircleAvatar(
-    radius: 15,
-    backgroundColor: kGrey,
-    child: Icon(
-      FontAwesomeIcons.pen,
-      size: 15,
-      color: kWhite,
-    ),
-  ),
-),
+                                      InkWell(
+                                        onTap: _showEditNameAndTitleDialog,
+                                        child: CircleAvatar(
+                                          radius: 15,
+                                          backgroundColor: kGrey,
+                                          child: Icon(
+                                            FontAwesomeIcons.pen,
+                                            size: 15,
+                                            color: kWhite,
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
                                 Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 20),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         "${firstName ?? ''} ${lastName ?? ''}",
@@ -995,11 +1391,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       ),
                                       Text(
                                         title ?? '',
-                                        style: TextStyle(color: isDarkMode ? kWhite : kBlack),
+                                        style: TextStyle(
+                                          color: isDarkMode ? kWhite : kBlack,
+                                        ),
                                       ),
                                       Text(
                                         company ?? '',
-                                        style: TextStyle(color: isDarkMode ? kWhite : kGrey),
+                                        style: TextStyle(
+                                          color: isDarkMode ? kWhite : kGrey,
+                                        ),
                                       ),
                                       SizedBox(height: 10),
                                     ],
@@ -1015,12 +1415,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 20,
+                              ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
                                       children: [
                                         Text(
                                           'My Bio',
@@ -1033,7 +1437,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         SizedBox(height: 10),
                                         Text(
                                           bio ?? '',
-                                          style: TextStyle(color: isDarkMode ? kWhite : kBlack),
+                                          style: TextStyle(
+                                            color: isDarkMode ? kWhite : kBlack,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -1043,7 +1449,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     child: CircleAvatar(
                                       radius: 15,
                                       backgroundColor: kGrey,
-                                      child: Icon(FontAwesomeIcons.pen, size: 15, color: kWhite),
+                                      child: Icon(
+                                        FontAwesomeIcons.pen,
+                                        size: 15,
+                                        color: kWhite,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1053,41 +1463,137 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                           SizedBox(height: 10),
 
-                          // Contact & Location
+                          // Email
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 20,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
+                                  Text(
+                                    'Email Address',
+                                    style: TextStyle(
+                                      fontSize: kNormalTextSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDarkMode ? kWhite : kBlack,
+                                    ),
+                                  ),
+                                  SizedBox(height: 12),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        'Contact & Location',
-                                        style: TextStyle(
-                                          fontSize: kNormalTextSize,
-                                          fontWeight: FontWeight.bold,
-                                          color: isDarkMode ? kWhite : kBlack,
+                                      Expanded(
+                                        child: Text(
+                                          email ?? 'Not set',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color:
+                                                isDarkMode
+                                                    ? kGrey
+                                                    : Colors.grey[600],
+                                          ),
                                         ),
                                       ),
-                                      InkWell(
-                                        onTap: _showEditContactDialog,
-                                        child: CircleAvatar(
-                                          radius: 15,
-                                          backgroundColor: kGrey,
-                                          child: Icon(FontAwesomeIcons.pen, size: 15, color: kWhite),
+                                      SizedBox(width: 12),
+                                      SizedBox(
+                                        height: 36,
+                                        child: ElevatedButton(
+                                          onPressed: _showEditEmailDialog,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: kBlue,
+                                            foregroundColor: kWhite,
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            elevation: 0,
+                                          ),
+                                          child: Text(
+                                            'Save',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 15),
-                                  _contactRow('Email', email ?? 'Not set', isDarkMode),
-                                  SizedBox(height: 15),
-                                  Divider(color: kGrey.withOpacity(0.2), height: 1),
-                                  SizedBox(height: 15),
-                                  _contactRow('Phone', phoneNumber ?? 'Not set', isDarkMode),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: 8),
+
+                          // Phone Number
+                          Container(
+                            color: isDarkMode ? kBlack : kWhite,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 20,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    'Phone Number',
+                                    style: TextStyle(
+                                      fontSize: kNormalTextSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDarkMode ? kWhite : kBlack,
+                                    ),
+                                  ),
+                                  SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          phoneNumber ?? 'Not set',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color:
+                                                isDarkMode
+                                                    ? kGrey
+                                                    : Colors.grey[600],
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      SizedBox(
+                                        height: 36,
+                                        child: ElevatedButton(
+                                          onPressed: _showUpdatePhoneDialog,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: kBlue,
+                                            foregroundColor: kWhite,
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            elevation: 0,
+                                          ),
+                                          child: Text(
+                                            'Update',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -1099,33 +1605,45 @@ class _ProfileScreenState extends State<ProfileScreen>
                           Container(
                             color: isDarkMode ? kBlack : kWhite,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 20,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Change Password',
                                             style: TextStyle(
-                                              color: isDarkMode ? kWhite : kBlack,
+                                              color:
+                                                  isDarkMode ? kWhite : kBlack,
                                               fontSize: kNormalTextSize,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                           Text(
                                             "Change your password",
-                                            style: TextStyle(color: isDarkMode ? kWhite : kGrey),
+                                            style: TextStyle(
+                                              color:
+                                                  isDarkMode ? kWhite : kGrey,
+                                            ),
                                           ),
                                         ],
                                       ),
                                       IconButton(
                                         onPressed: () {
-                                          Navigator.pushNamed(context, AppRoutes.changePassword);
+                                          Navigator.pushNamed(
+                                            context,
+                                            AppRoutes.changePassword,
+                                          );
                                         },
                                         icon: Icon(
                                           Icons.arrow_forward_ios,
@@ -1149,22 +1667,29 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   color: isDarkMode ? kBlack : kWhite,
                                   child: Obx(() {
                                     if (roleRequestController.isLoading.value) {
-                                      return Center(child: CircularProgressIndicator());
+                                      return Center(
+                                        child: CircularProgressIndicator(),
+                                      );
                                     }
                                     return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
                                       children: [
                                         DictDropdown(
                                           label: "Request For role",
                                           value: selectedRole,
                                           items: roleOptions,
                                           isRequired: true,
-                                          onChanged: (value) =>
-                                              setState(() => selectedRole = value),
+                                          onChanged:
+                                              (value) => setState(
+                                                () => selectedRole = value,
+                                              ),
                                         ),
                                         SizedBox(height: 10),
                                         Padding(
-                                          padding: EdgeInsets.symmetric(horizontal: 15.0),
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 15.0,
+                                          ),
                                           child: CustomButton(
                                             callBackFunction: _requestRole,
                                             label: 'Request',
@@ -1175,6 +1700,221 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       ],
                                     );
                                   }),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(height: 30),
+
+                          // Refer a Friend Section
+                          Container(
+                            color: kWhite,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Container(
+                                  color: isDarkMode ? kBlack : kWhite,
+                                  child: Padding(
+                                    padding: EdgeInsets.all(kSidePadding),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Header with icon
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: kBlue.withOpacity(0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                Icons.person_add,
+                                                color: kBlue,
+                                                size: 20,
+                                              ),
+                                            ),
+                                            SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Refer a Friend',
+                                                    style: TextStyle(
+                                                      color:
+                                                          isDarkMode
+                                                              ? kWhite
+                                                              : kBlack,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  Text(
+                                                    'Invite your friends or colleagues to join DAMA Kenya. Stand a chance to receive a free membership or free training!',
+                                                    style: TextStyle(
+                                                      color:
+                                                          isDarkMode
+                                                              ? kGrey
+                                                              : Colors
+                                                                  .grey[600],
+                                                      fontSize: 13,
+                                                      height: 1.4,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 20),
+
+                                        // View Referrals Button
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: OutlinedButton(
+                                            onPressed:
+                                                () => Get.toNamed(
+                                                  AppRoutes.myReferrals,
+                                                ),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: kBlue,
+                                              side: BorderSide(
+                                                color: kBlue,
+                                                width: 1.5,
+                                              ),
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 12,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            child: FittedBox(
+                                              child: Text(
+                                                'View Referrals',
+                                                style: TextStyle(
+                                                  color: kBlue,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(height: 16),
+
+                                        // Email input
+                                        TextField(
+                                          controller: _referralEmailController,
+                                          decoration: InputDecoration(
+                                            hintText:
+                                                'Email address or phone number',
+                                            hintStyle: TextStyle(
+                                              color:
+                                                  isDarkMode
+                                                      ? Colors.grey[600]
+                                                      : Colors.grey[400],
+                                              fontSize: 14,
+                                            ),
+                                            filled: true,
+                                            fillColor:
+                                                isDarkMode
+                                                    ? kDarkThemeBg
+                                                    : kLightGrey,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 14,
+                                                ),
+                                          ),
+                                          style: TextStyle(
+                                            color: isDarkMode ? kWhite : kBlack,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        SizedBox(height: 12),
+
+                                        // Send Invite button
+                                        Obx(
+                                          () => SizedBox(
+                                            width: double.infinity,
+                                            child: ElevatedButton(
+                                              onPressed:
+                                                  _referralController
+                                                          .isSendingInvite
+                                                          .value
+                                                      ? null
+                                                      : _sendReferralInvite,
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: kBlue,
+                                                disabledBackgroundColor: kBlue
+                                                    .withOpacity(0.5),
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: 12,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child:
+                                                  _referralController
+                                                          .isSendingInvite
+                                                          .value
+                                                      ? SizedBox(
+                                                        height: 20,
+                                                        width: 20,
+                                                        child: CircularProgressIndicator(
+                                                          valueColor:
+                                                              AlwaysStoppedAnimation<
+                                                                Color
+                                                              >(kWhite),
+                                                          strokeWidth: 2,
+                                                        ),
+                                                      )
+                                                      : Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Text(
+                                                            'Send Invite',
+                                                            style: TextStyle(
+                                                              color: kWhite,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              fontSize: 14,
+                                                            ),
+                                                          ),
+                                                          SizedBox(width: 8),
+                                                          Icon(
+                                                            Icons.send,
+                                                            color: kWhite,
+                                                            size: 16,
+                                                          ),
+                                                        ],
+                                                      ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(height: 30),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -1199,10 +1939,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   ),
                                   SizedBox(height: 10),
                                   GestureDetector(
-                                    onTap: () => _showDeleteAccountConfirmation(context),
+                                    onTap:
+                                        () => _showDeleteAccountConfirmation(
+                                          context,
+                                        ),
                                     child: Text(
                                       'Delete Account',
-                                      style: TextStyle(color: kRed, fontSize: 18),
+                                      style: TextStyle(
+                                        color: kRed,
+                                        fontSize: 18,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1235,7 +1981,10 @@ class _ProfileScreenState extends State<ProfileScreen>
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(color: kGrey, fontSize: kSmallTextSize)),
+            Text(
+              label,
+              style: TextStyle(color: kGrey, fontSize: kSmallTextSize),
+            ),
             SizedBox(height: 5),
             Text(
               value,

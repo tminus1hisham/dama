@@ -70,7 +70,13 @@ class UnifiedPaymentService {
     bool showSnackbar = true,
   }) async {
     debugPrint('=== UNIFIED PAYMENT ===');
-    debugPrint('Platform: ${isIOS ? 'iOS' : isAndroid ? 'Android' : 'Other'}');
+    debugPrint(
+      'Platform: ${isIOS
+          ? 'iOS'
+          : isAndroid
+          ? 'Android'
+          : 'Other'}',
+    );
     debugPrint('Method: $paymentMethodName');
 
     if (isIOS) {
@@ -142,11 +148,7 @@ class UnifiedPaymentService {
 }
 
 /// Payment method types
-enum PaymentMethod {
-  mpesa,
-  applePay,
-  unsupported,
-}
+enum PaymentMethod { mpesa, applePay, unsupported }
 
 /// Extension for PaymentMethod display
 extension PaymentMethodX on PaymentMethod {

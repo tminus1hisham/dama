@@ -42,7 +42,6 @@ class _PersonalDetailsState extends State<PersonalDetails> {
   bool _isLinkedInUser = false;
   String? _authType;
 
-
   final RegisterController _registerController = Get.find<RegisterController>();
 
   @override
@@ -97,7 +96,7 @@ class _PersonalDetailsState extends State<PersonalDetails> {
     if (_registerController.lastName.value.isNotEmpty) {
       _lastNameController.text = _registerController.lastName.value;
     }
-    
+
     // For LinkedIn users, load data from storage
     if (_isLinkedInUser) {
       await _loadLinkedInData();
@@ -109,9 +108,11 @@ class _PersonalDetailsState extends State<PersonalDetails> {
     final storedFirstName = await StorageService.getData('firstName');
     final storedLastName = await StorageService.getData('lastName');
     final storedMiddleName = await StorageService.getData('middleName');
-    final storedProfilePicture = await StorageService.getData('profile_picture');
+    final storedProfilePicture = await StorageService.getData(
+      'profile_picture',
+    );
     final storedPhoneNumber = await StorageService.getData('phone_number');
-    
+
     setState(() {
       if (storedFirstName != null && storedFirstName.isNotEmpty) {
         _firstNameController.text = storedFirstName;
@@ -142,8 +143,10 @@ class _PersonalDetailsState extends State<PersonalDetails> {
 
     // Build phone number with country code if provided
     String? fullPhoneNumber;
-    if (_phoneNumberController.text.isNotEmpty && selectedPhoneCountry != null) {
-      fullPhoneNumber = '+${selectedPhoneCountry!.phoneCode}${_phoneNumberController.text}';
+    if (_phoneNumberController.text.isNotEmpty &&
+        selectedPhoneCountry != null) {
+      fullPhoneNumber =
+          '+${selectedPhoneCountry!.phoneCode}${_phoneNumberController.text}';
     }
     print('Phone Number: $fullPhoneNumber');
 
@@ -160,22 +163,24 @@ class _PersonalDetailsState extends State<PersonalDetails> {
       'middleName': _middleNameController.text,
       'lastName': _lastNameController.text,
       'selectedCountry': selectedCountry?.name,
-      'selectedNationality': selectedCountry?.name,  // Also save as nationality for compatibility
+      'selectedNationality':
+          selectedCountry?.name, // Also save as nationality for compatibility
       'phoneNumber': fullPhoneNumber,
       if (_passwordController.text.isNotEmpty)
         'password': _passwordController.text,
-      if (_isLinkedInUser && email != null)
-        'email': email,
+      if (_isLinkedInUser && email != null) 'email': email,
     };
 
     print('Data to save: $dataToSave');
 
     await StorageService.storeData(dataToSave);
-    
+
     // Verify data was stored
-    final verifyNationality = await StorageService.getData('selectedNationality');
+    final verifyNationality = await StorageService.getData(
+      'selectedNationality',
+    );
     print('[Verify] selectedNationality from storage: $verifyNationality');
-    
+
     print('Personal Details saved successfully');
     print('=====================================');
 
@@ -235,7 +240,10 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                     ),
                     child: Text(
                       'Step 1 of 3',
-                      style: TextStyle(color: isDarkMode ? kWhite : kBlue, fontSize: kNormalTextSize),
+                      style: TextStyle(
+                        color: isDarkMode ? kWhite : kBlue,
+                        fontSize: kNormalTextSize,
+                      ),
                     ),
                   ),
                   Padding(
@@ -253,7 +261,10 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                     padding: EdgeInsets.only(left: 15),
                     child: Text(
                       'We need your personal infomation to setup your profile.',
-                      style: TextStyle(fontSize: kNormalTextSize, color: isDarkMode ? kWhite : kBlack),
+                      style: TextStyle(
+                        fontSize: kNormalTextSize,
+                        color: isDarkMode ? kWhite : kBlack,
+                      ),
                     ),
                   ),
                   Padding(
@@ -404,9 +415,7 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                 showSearch: true,
                 countryListTheme: CountryListThemeData(
                   backgroundColor: isDarkMode ? kDarkCard : kWhite,
-                  textStyle: TextStyle(
-                    color: isDarkMode ? kWhite : kBlack,
-                  ),
+                  textStyle: TextStyle(color: isDarkMode ? kWhite : kBlack),
                   searchTextStyle: TextStyle(
                     color: isDarkMode ? kWhite : kBlack,
                   ),
@@ -415,14 +424,23 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                     hintStyle: TextStyle(
                       color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                     ),
-                    prefixIcon: Icon(Icons.search, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+                      borderSide: BorderSide(
+                        color:
+                            isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+                      borderSide: BorderSide(
+                        color:
+                            isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -461,9 +479,12 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                     child: Text(
                       selectedCountry?.name ?? "Select a country",
                       style: TextStyle(
-                        color: selectedCountry != null
-                            ? (isDarkMode ? kWhite : kBlack)
-                            : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                        color:
+                            selectedCountry != null
+                                ? (isDarkMode ? kWhite : kBlack)
+                                : (isDarkMode
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600]),
                         fontSize: kNormalTextSize,
                       ),
                     ),
@@ -481,7 +502,10 @@ class _PersonalDetailsState extends State<PersonalDetails> {
     );
   }
 
-  Widget _buildPhoneNumberWithCountryCode(BuildContext context, bool isDarkMode) {
+  Widget _buildPhoneNumberWithCountryCode(
+    BuildContext context,
+    bool isDarkMode,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: kSidePadding, vertical: 8),
       child: Column(
@@ -507,25 +531,38 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                     showSearch: true,
                     countryListTheme: CountryListThemeData(
                       backgroundColor: isDarkMode ? kDarkCard : kWhite,
-                      textStyle: TextStyle(
-                        color: isDarkMode ? kWhite : kBlack,
-                      ),
+                      textStyle: TextStyle(color: isDarkMode ? kWhite : kBlack),
                       searchTextStyle: TextStyle(
                         color: isDarkMode ? kWhite : kBlack,
                       ),
                       inputDecoration: InputDecoration(
                         hintText: 'Search country',
                         hintStyle: TextStyle(
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          color:
+                              isDarkMode ? Colors.grey[400] : Colors.grey[600],
                         ),
-                        prefixIcon: Icon(Icons.search, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color:
+                              isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+                          borderSide: BorderSide(
+                            color:
+                                isDarkMode
+                                    ? Colors.grey[700]!
+                                    : Colors.grey[300]!,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+                          borderSide: BorderSide(
+                            color:
+                                isDarkMode
+                                    ? Colors.grey[700]!
+                                    : Colors.grey[300]!,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -571,7 +608,10 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                         Text(
                           '+254',
                           style: TextStyle(
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            color:
+                                isDarkMode
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                             fontSize: kNormalTextSize,
                           ),
                         ),

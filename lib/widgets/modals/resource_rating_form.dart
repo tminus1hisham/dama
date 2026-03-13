@@ -73,13 +73,10 @@ class _ResourceRatingFormState extends State<ResourceRatingForm> {
           const SizedBox(height: 8),
           Text(
             'How would you rate your reading experience?',
-            style: TextStyle(
-              fontSize: 14,
-              color: kGrey,
-            ),
+            style: TextStyle(fontSize: 14, color: kGrey),
           ),
           const SizedBox(height: 24),
-          
+
           // Star Rating Input
           Center(
             child: Row(
@@ -146,14 +143,12 @@ class _ResourceRatingFormState extends State<ResourceRatingForm> {
               maxLines: 4,
               maxLength: 500,
               decoration: InputDecoration(
-                hintText: 'Tell other members what you think about this resource...',
+                hintText:
+                    'Tell other members what you think about this resource...',
                 hintStyle: TextStyle(color: kGrey),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.all(16),
-                counterStyle: TextStyle(
-                  color: kGrey,
-                  fontSize: 12,
-                ),
+                counterStyle: TextStyle(color: kGrey, fontSize: 12),
               ),
               style: TextStyle(
                 color: isDarkMode ? kWhite : kBlack,
@@ -178,22 +173,23 @@ class _ResourceRatingFormState extends State<ResourceRatingForm> {
                 ),
                 elevation: 0,
               ),
-              child: widget.isLoading
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(kWhite),
+              child:
+                  widget.isLoading
+                      ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(kWhite),
+                        ),
+                      )
+                      : Text(
+                        'Submit Rating',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    )
-                  : Text(
-                      'Submit Rating',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
             ),
           ),
           const SizedBox(height: 16),

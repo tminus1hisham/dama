@@ -15,127 +15,129 @@ class BlogCardSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Skeletonizer(
-      child: Skeletonizer(
-        enabled: true,
-        effect: ShimmerEffect(
-          baseColor: themeProvider.isDark ? Color(0xFF222531) : Color(0xFFF4F6FF),
-          highlightColor:
-          themeProvider.isDark ? Color(0xFF2C2F3E) : Color(0xFFE4E0E1),
-          duration: Duration(seconds: 1),
-        ),
-        child: Container(
-          color: isDarkMode ? kBlack : kWhite,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Top Row (time + News button)
-              Padding(
-                padding: EdgeInsets.only(left: 10, right: 15, top: 15),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Skeleton.leaf(
-                          child: Container(
-                            height: 50,
-                            width: 50,
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
+        child: Skeletonizer(
+          enabled: true,
+          effect: ShimmerEffect(
+            baseColor:
+                themeProvider.isDark ? Color(0xFF222531) : Color(0xFFF4F6FF),
+            highlightColor:
+                themeProvider.isDark ? Color(0xFF2C2F3E) : Color(0xFFE4E0E1),
+            duration: Duration(seconds: 1),
+          ),
+          child: Container(
+            color: isDarkMode ? kBlack : kWhite,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Top Row (time + News button)
+                Padding(
+                  padding: EdgeInsets.only(left: 10, right: 15, top: 15),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Skeleton.leaf(
+                            child: Container(
+                              height: 50,
+                              width: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Skeleton.leaf(
-                              child: Container(
-                                height: 10,
-                                width: 80,
-                                decoration: BoxDecoration(
-                                  color: kGrey,
-                                  borderRadius: BorderRadius.circular(8),
+                          SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Skeleton.leaf(
+                                child: Container(
+                                  height: 10,
+                                  width: 80,
+                                  decoration: BoxDecoration(
+                                    color: kGrey,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 10),
-                            Skeleton.leaf(
-                              child: Container(
-                                height: 10,
-                                width: 60,
-                                decoration: BoxDecoration(
-                                  color: kGrey,
-                                  borderRadius: BorderRadius.circular(8),
+                              SizedBox(height: 10),
+                              Skeleton.leaf(
+                                child: Container(
+                                  height: 10,
+                                  width: 60,
+                                  decoration: BoxDecoration(
+                                    color: kGrey,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    // "News" badge skeleton
-                    Skeleton.leaf(
-                      child: Container(
-                        height: 25,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          color: kGrey,
-                          borderRadius: BorderRadius.circular(20),
+                            ],
+                          ),
+                        ],
+                      ),
+                      // "News" badge skeleton
+                      Skeleton.leaf(
+                        child: Container(
+                          height: 25,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            color: kGrey,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.only(
-                  top: 10,
-                  left: 10,
-                  right: kSidePadding,
-                  bottom: 10,
-                ),
-                child: Skeleton.leaf(
-                  child: Container(
-                    height: 15,
-                    width: 30,
-                    decoration: BoxDecoration(
-                      color: kGrey,
-                      borderRadius: BorderRadius.circular(8),
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: 10,
+                    left: 10,
+                    right: kSidePadding,
+                    bottom: 10,
+                  ),
+                  child: Skeleton.leaf(
+                    child: Container(
+                      height: 15,
+                      width: 30,
+                      decoration: BoxDecoration(
+                        color: kGrey,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.only(
-                  left: 10,
-                  right: kSidePadding,
-                  bottom: 10,
-                ),
-                child: Skeleton.leaf(
-                  child: Container(
-                    height: 15,
-                    width: 30,
-                    decoration: BoxDecoration(
-                      color: kGrey,
-                      borderRadius: BorderRadius.circular(8),
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 10,
+                    right: kSidePadding,
+                    bottom: 10,
+                  ),
+                  child: Skeleton.leaf(
+                    child: Container(
+                      height: 15,
+                      width: 30,
+                      decoration: BoxDecoration(
+                        color: kGrey,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              Skeleton.leaf(
-                child: Container(
-                  height: 180,
-                  width: double.infinity,
-                  color: kGrey,
+                Skeleton.leaf(
+                  child: Container(
+                    height: 180,
+                    width: double.infinity,
+                    color: kGrey,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 }

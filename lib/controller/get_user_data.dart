@@ -4,7 +4,6 @@ import 'package:dama/utils/constants.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
-
 class GetUserProfileController extends GetxController {
   var profile = Rxn<GetUserModel>();
   var isLoading = false.obs;

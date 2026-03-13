@@ -81,7 +81,9 @@ class CertificateController extends GetxController {
 
       final isEligible = await checkCertificateEligibility(trainingId);
       if (!isEligible) {
-        throw Exception('Certificate generation failed: training not completed');
+        throw Exception(
+          'Certificate generation failed: training not completed',
+        );
       }
 
       final certificate = await _apiService.generateCertificate(
@@ -220,8 +222,9 @@ class CertificateController extends GetxController {
       final userId = await StorageService.getData('userId');
       if (userId == null) return false;
 
-      final trainingDetails =
-          await _apiService.getUserTrainingDetails(trainingId);
+      final trainingDetails = await _apiService.getUserTrainingDetails(
+        trainingId,
+      );
       final training = trainingDetails['training'];
       final userData = trainingDetails['userData'];
 

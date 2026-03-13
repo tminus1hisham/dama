@@ -207,7 +207,8 @@ class _NotificationPreferencesScreenState
               value: value,
               onChanged: onChanged,
               activeColor: kBlue,
-              inactiveThumbColor: isDarkMode ? Color(0xFF4a5568) : Color(0xFFe5e7eb),
+              inactiveThumbColor:
+                  isDarkMode ? Color(0xFF4a5568) : Color(0xFFe5e7eb),
               inactiveTrackColor:
                   isDarkMode ? Color(0xFF2d3748) : Color(0xFFd1d5db),
             ),

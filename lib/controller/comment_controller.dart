@@ -50,27 +50,28 @@ class CommentController extends GetxController {
   }
 
   void initializeComments(String blogId, List<dynamic> apiComments) {
-    final formattedComments = apiComments.map((e) {
-      DateTime createdAt;
+    final formattedComments =
+        apiComments.map((e) {
+          DateTime createdAt;
 
-      try {
-        // parse from string or assign fallback
-        createdAt = e.createdAt != null
-            ? DateTime.parse(e.createdAt.toString())
-            : DateTime.now();
-      } catch (_) {
-        createdAt = DateTime.now();
-      }
+          try {
+            // parse from string or assign fallback
+            createdAt =
+                e.createdAt != null
+                    ? DateTime.parse(e.createdAt.toString())
+                    : DateTime.now();
+          } catch (_) {
+            createdAt = DateTime.now();
+          }
 
-      return CommentData(
-        createdAt: createdAt,
-        name: '${e.user.firstName ?? 'User'} ${e.user.lastName ?? ''}',
-        comment: e.comment ?? '',
-        profileImageUrl: e.user.profilePicture ?? DEFAULT_IMAGE_URL,
-      );
-    }).toList();
+          return CommentData(
+            createdAt: createdAt,
+            name: '${e.user.firstName ?? 'User'} ${e.user.lastName ?? ''}',
+            comment: e.comment ?? '',
+            profileImageUrl: e.user.profilePicture ?? DEFAULT_IMAGE_URL,
+          );
+        }).toList();
 
     comments[blogId] = formattedComments;
   }
-
 }

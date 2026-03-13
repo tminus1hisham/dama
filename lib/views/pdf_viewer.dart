@@ -15,8 +15,8 @@ class PDFViewerPage extends StatefulWidget {
   final VoidCallback? onBack;
 
   const PDFViewerPage({
-    super.key, 
-    required this.pdfUrl, 
+    super.key,
+    required this.pdfUrl,
     required this.title,
     this.onBack,
   });
@@ -41,48 +41,56 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
   Future<void> loadPDF() async {
     try {
       print('[PDFViewer] Loading PDF from: ${widget.pdfUrl}');
-      
+
       // Get authentication token
       final accessToken = await StorageService.getData("access_token");
-      print('[PDFViewer] Token available: ${accessToken != null && accessToken.isNotEmpty}');
-      
+      print(
+        '[PDFViewer] Token available: ${accessToken != null && accessToken.isNotEmpty}',
+      );
+
       // Make authenticated request
       final response = await http.get(
         Uri.parse(widget.pdfUrl),
-        headers: accessToken != null && accessToken.isNotEmpty
-            ? {'Authorization': 'Bearer $accessToken'}
-            : {},
+        headers:
+            accessToken != null && accessToken.isNotEmpty
+                ? {'Authorization': 'Bearer $accessToken'}
+                : {},
       );
-      
+
       print('[PDFViewer] Response status: ${response.statusCode}');
       print('[PDFViewer] Content-Type: ${response.headers['content-type']}');
       print('[PDFViewer] Content length: ${response.bodyBytes.length} bytes');
 
       if (response.statusCode == 200) {
         // Check if response is actually a PDF
-        final contentType = response.headers['content-type']?.toLowerCase() ?? '';
-        final isPdf = contentType.contains('pdf') || 
-                      widget.pdfUrl.toLowerCase().endsWith('.pdf');
+        final contentType =
+            response.headers['content-type']?.toLowerCase() ?? '';
+        final isPdf =
+            contentType.contains('pdf') ||
+            widget.pdfUrl.toLowerCase().endsWith('.pdf');
         final isHtml = contentType.contains('html');
-        
+
         // If response is HTML or not a PDF, open in browser immediately
         if (isHtml || !isPdf) {
-          print('[PDFViewer] Error: Response is not PDF (Content-Type: $contentType)');
+          print(
+            '[PDFViewer] Error: Response is not PDF (Content-Type: $contentType)',
+          );
           if (response.body.trim().startsWith('<')) {
             print('[PDFViewer] Response starts with HTML tag');
           }
-          
+
           // Open in browser immediately without showing error
           _openInBrowser();
           return;
         }
-        
+
         // Save PDF to temporary file
         final dir = await getTemporaryDirectory();
-        final fileName = 'certificate_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final fileName =
+            'certificate_${DateTime.now().millisecondsSinceEpoch}.pdf';
         final file = File("${dir.path}/$fileName");
         await file.writeAsBytes(response.bodyBytes, flush: true);
-        
+
         print('[PDFViewer] PDF saved to: ${file.path}');
         print('[PDFViewer] File size: ${await file.length()} bytes');
 
@@ -99,10 +107,11 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
       } else {
         print('[PDFViewer] Failed to load PDF: ${response.statusCode}');
         setState(() {
-          errorMessage = 'Failed to load certificate (${response.statusCode}). Opening in browser...';
+          errorMessage =
+              'Failed to load certificate (${response.statusCode}). Opening in browser...';
           isLoading = false;
         });
-        
+
         // Fallback to browser
         await Future.delayed(Duration(seconds: 1));
         _openInBrowser();
@@ -158,9 +167,7 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
                 ),
             ],
           ),
-          Expanded(
-            child: _buildContent(),
-          ),
+          Expanded(child: _buildContent()),
         ],
       ),
     );
@@ -193,19 +200,12 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
+              Icon(Icons.error_outline, size: 64, color: Colors.red),
               SizedBox(height: 16),
               Text(
                 errorMessage!,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.grey[700],
-                  fontSize: 16,
-                ),
+                style: TextStyle(color: Colors.grey[700], fontSize: 16),
               ),
               SizedBox(height: 24),
               Row(
@@ -273,8 +273,6 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
       );
     }
 
-    return Center(
-      child: Text('Something went wrong'),
-    );
+    return Center(child: Text('Something went wrong'));
   }
 }

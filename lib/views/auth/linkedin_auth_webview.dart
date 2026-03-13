@@ -18,27 +18,31 @@ class _LinkedInAuthWebViewState extends State<LinkedInAuthWebView> {
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onNavigationRequest: (NavigationRequest request) {
-            // Check if this is the callback URL
-            if (request.url.startsWith('https://api.damakenya.org/v1/user/linkedin/callback/mobile') ||
-                request.url.contains('linkedin') && request.url.contains('code=')) {
-              // Extract parameters and handle
-              final uri = Uri.parse(request.url);
-              final linkedInController = Get.find<LinkedInController>();
-              linkedInController.handleDeepLink(uri);
-              // Close the webview
-              Get.back();
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(widget.authUrl));
+    _controller =
+        WebViewController()
+          ..setJavaScriptMode(JavaScriptMode.unrestricted)
+          ..setNavigationDelegate(
+            NavigationDelegate(
+              onNavigationRequest: (NavigationRequest request) {
+                // Check if this is the callback URL
+                if (request.url.startsWith(
+                      'https://api.damakenya.org/v1/user/linkedin/callback/mobile',
+                    ) ||
+                    request.url.contains('linkedin') &&
+                        request.url.contains('code=')) {
+                  // Extract parameters and handle
+                  final uri = Uri.parse(request.url);
+                  final linkedInController = Get.find<LinkedInController>();
+                  linkedInController.handleDeepLink(uri);
+                  // Close the webview
+                  Get.back();
+                  return NavigationDecision.prevent;
+                }
+                return NavigationDecision.navigate;
+              },
+            ),
+          )
+          ..loadRequest(Uri.parse(widget.authUrl));
   }
 
   @override

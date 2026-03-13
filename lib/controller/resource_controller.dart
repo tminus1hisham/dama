@@ -29,10 +29,8 @@ class ResourceController extends GetxController {
 
     isLoading.value = true;
     try {
-      List<ResourceModel> fetchedResources = await _resourceService.getResources(
-        page: currentPage.value,
-        limit: _limit,
-      );
+      List<ResourceModel> fetchedResources = await _resourceService
+          .getResources(page: currentPage.value, limit: _limit);
 
       if (refresh) {
         resourceList.assignAll(fetchedResources);
@@ -56,10 +54,8 @@ class ResourceController extends GetxController {
     currentPage.value++;
 
     try {
-      List<ResourceModel> fetchedResources = await _resourceService.getResources(
-        page: currentPage.value,
-        limit: _limit,
-      );
+      List<ResourceModel> fetchedResources = await _resourceService
+          .getResources(page: currentPage.value, limit: _limit);
 
       resourceList.addAll(fetchedResources);
 
@@ -89,18 +85,16 @@ class ResourceController extends GetxController {
       );
 
       debugPrint('Fetched ${allResources.length} total resources');
-      
+
       // Filter out current resource and get 3-4 similar ones
-      final filtered = allResources
-          .where((r) => r.id != currentResourceId)
-          .take(4)
-          .toList();
-      
+      final filtered =
+          allResources.where((r) => r.id != currentResourceId).take(4).toList();
+
       debugPrint('Filtered to ${filtered.length} related resources');
       for (var r in filtered) {
         debugPrint('  - ${r.title} (${r.id})');
       }
-      
+
       relatedResources.assignAll(filtered);
       debugPrint('relatedResources.length: ${relatedResources.length}');
       update(); // Notify GetBuilder listeners
@@ -130,7 +124,9 @@ class ResourceController extends GetxController {
         createdAt: oldResource.createdAt,
         averageRating: newAverageRating,
       );
-      debugPrint('[ResourceController] Updated rating for resource $resourceId to $newAverageRating');
+      debugPrint(
+        '[ResourceController] Updated rating for resource $resourceId to $newAverageRating',
+      );
     }
 
     // Also update in related resources if present

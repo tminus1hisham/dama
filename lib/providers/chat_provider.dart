@@ -7,30 +7,32 @@ class ChatProvider with ChangeNotifier {
   List<Conversation> _conversations = [];
   List<Message> _messages = [];
   bool _isConnected = false;
-  
+
   List<Conversation> get conversations => _conversations;
   List<Message> get messages => _messages;
   bool get isConnected => _isConnected;
-  
+
   void initializeChat(String token) {
     _chatService.initialize(token, onMessageReceived: _handleIncomingMessage);
     _isConnected = true;
     notifyListeners();
   }
-  
+
   void _handleIncomingMessage(Map<String, dynamic> data) {
     // Assuming the data is a message object
     final message = Message.fromJson(data);
     _messages.add(message);
     notifyListeners();
   }
-  
+
   Future<void> loadConversations(String userId) async {
     try {
       final response = await _chatService.getUserConversations(userId);
       if (response['success'] == true) {
         _conversations = List<Conversation>.from(
-          (response['conversations'] as List).map((x) => Conversation.fromJson(x))
+          (response['conversations'] as List).map(
+            (x) => Conversation.fromJson(x),
+          ),
         );
         notifyListeners();
       }
@@ -38,13 +40,13 @@ class ChatProvider with ChangeNotifier {
       print('Error loading conversations: $e');
     }
   }
-  
+
   Future<void> loadMessages(String conversationId) async {
     try {
       final response = await _chatService.getMessages(conversationId);
       if (response['success'] == true) {
         _messages = List<Message>.from(
-          (response['messages'] as List).map((x) => Message.fromJson(x))
+          (response['messages'] as List).map((x) => Message.fromJson(x)),
         );
         notifyListeners();
       }
@@ -52,7 +54,7 @@ class ChatProvider with ChangeNotifier {
       print('Error loading messages: $e');
     }
   }
-  
+
   void sendMessage({
     required String conversationId,
     required String senderId,
@@ -64,15 +66,15 @@ class ChatProvider with ChangeNotifier {
       content: content,
     );
   }
-  
+
   void joinChatRoom(String conversationId) {
     _chatService.joinConversation(conversationId);
   }
-  
+
   void leaveChatRoom(String conversationId) {
     _chatService.leaveConversation(conversationId);
   }
-  
+
   void disconnect() {
     _chatService.disconnect();
     _isConnected = false;

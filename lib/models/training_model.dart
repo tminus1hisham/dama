@@ -49,8 +49,12 @@ class Certificate {
     return Certificate(
       issued: json['issued'] as bool?,
       certificateNumber: json['certificateNumber'] as String?,
-      issuedAt: json['issuedAt'] != null ? DateTime.tryParse(json['issuedAt']) : null,
-      expiresAt: json['expiresAt'] != null ? DateTime.tryParse(json['expiresAt']) : null,
+      issuedAt:
+          json['issuedAt'] != null ? DateTime.tryParse(json['issuedAt']) : null,
+      expiresAt:
+          json['expiresAt'] != null
+              ? DateTime.tryParse(json['expiresAt'])
+              : null,
     );
   }
 }
@@ -60,19 +64,16 @@ class CertificateConfig {
   final String? templateId;
   final List<String>? requirements;
 
-  CertificateConfig({
-    this.enabled = false,
-    this.templateId,
-    this.requirements,
-  });
+  CertificateConfig({this.enabled = false, this.templateId, this.requirements});
 
   factory CertificateConfig.fromJson(Map<String, dynamic> json) {
     return CertificateConfig(
       enabled: json['enabled'] as bool? ?? false,
       templateId: json['templateId'] as String?,
-      requirements: json['requirements'] != null 
-          ? List<String>.from(json['requirements']) 
-          : null,
+      requirements:
+          json['requirements'] != null
+              ? List<String>.from(json['requirements'])
+              : null,
     );
   }
 }
@@ -126,7 +127,12 @@ class TrainingModel {
 
   factory TrainingModel.fromJson(Map<String, dynamic> json) {
     return TrainingModel(
-      id: json['_id'] is String ? json['_id'] : json['id'] is String ? json['id'] : '',
+      id:
+          json['_id'] is String
+              ? json['_id']
+              : json['id'] is String
+              ? json['id']
+              : '',
       title: json['title'] is String ? json['title'] : '',
       description: json['description'] is String ? json['description'] : '',
       learningTracks:
@@ -135,8 +141,12 @@ class TrainingModel {
               .map((e) => LearningTrack.fromJson(e))
               .toList() ??
           [],
-      targetAudience: List<String>.from((json['target_audience'] as List?)?.whereType<String>() ?? []),
-      learningOutcomes: List<String>.from((json['learning_outcomes'] as List?)?.whereType<String>() ?? []),
+      targetAudience: List<String>.from(
+        (json['target_audience'] as List?)?.whereType<String>() ?? [],
+      ),
+      learningOutcomes: List<String>.from(
+        (json['learning_outcomes'] as List?)?.whereType<String>() ?? [],
+      ),
       courseOutline:
           (json['course_outline'] as List?)
               ?.whereType<Map<String, dynamic>>()
@@ -166,38 +176,40 @@ class TrainingModel {
             ),
           ],
       sessions:
-          (json['sessions'] as List?)
-              ?.whereType<Map<String, dynamic>>()
-              .map((e) {
-                try {
-                  return TrainingSession.fromJson(e);
-                } catch (error) {
-                  // Return a default session if parsing fails
-                  return TrainingSession(
-                    id: e['_id']?.toString() ?? e['sessionNumber']?.toString() ?? '',
-                    trainingId: '',
-                    title: e['title']?.toString() ?? 'Session',
-                    description: e['description']?.toString() ?? '',
-                    startTime: DateTime.now(),
-                    endTime: DateTime.now(),
-                    status: 'scheduled',
-                    meetingLink: null,
-                    meetingPlatform: null,
-                    meetingUrl: null,
-                    notes: null,
-                    resources: [],
-                    materials: [],
-                    attendance: [],
-                    createdAt: DateTime.now(),
-                    updatedAt: DateTime.now(),
-                    isJoined: null,
-                    type: null,
-                    duration: null,
-                    recordingUrl: null,
-                  );
-                }
-              })
-              .toList() ??
+          (json['sessions'] as List?)?.whereType<Map<String, dynamic>>().map((
+            e,
+          ) {
+            try {
+              return TrainingSession.fromJson(e);
+            } catch (error) {
+              // Return a default session if parsing fails
+              return TrainingSession(
+                id:
+                    e['_id']?.toString() ??
+                    e['sessionNumber']?.toString() ??
+                    '',
+                trainingId: '',
+                title: e['title']?.toString() ?? 'Session',
+                description: e['description']?.toString() ?? '',
+                startTime: DateTime.now(),
+                endTime: DateTime.now(),
+                status: 'scheduled',
+                meetingLink: null,
+                meetingPlatform: null,
+                meetingUrl: null,
+                notes: null,
+                resources: [],
+                materials: [],
+                attendance: [],
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+                isJoined: null,
+                type: null,
+                duration: null,
+                recordingUrl: null,
+              );
+            }
+          }).toList() ??
           <TrainingSession>[],
       createdAt:
           DateTime.tryParse(json['created_at'] ?? '') ??
@@ -205,25 +217,41 @@ class TrainingModel {
       updatedAt:
           DateTime.tryParse(json['updated_at'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      registrationStatus: json['registration_status'] is String ? json['registration_status'] : null,
-      progress: json['progress'] is int ? json['progress'] : null,
-      trainer: json['trainer'] is Map<String, dynamic> 
-          ? Trainer.fromJson(json['trainer']) 
-          : json['trainer'] is String 
-              ? Trainer(firstName: json['trainer'], lastName: '') 
+      registrationStatus:
+          json['registration_status'] is String
+              ? json['registration_status']
               : null,
-      endDate: json['endDate'] != null && json['endDate'] is String ? DateTime.tryParse(json['endDate']) : null,
-      analytics: json['analytics'] is Map<String, dynamic> ? json['analytics'] : null,
-      startDate: json['startDate'] != null && json['startDate'] is String 
-          ? DateTime.tryParse(json['startDate']) 
-          : json['date'] != null && json['date'] is String 
-              ? DateTime.tryParse(json['date']) 
+      progress: json['progress'] is int ? json['progress'] : null,
+      trainer:
+          json['trainer'] is Map<String, dynamic>
+              ? Trainer.fromJson(json['trainer'])
+              : json['trainer'] is String
+              ? Trainer(firstName: json['trainer'], lastName: '')
+              : null,
+      endDate:
+          json['endDate'] != null && json['endDate'] is String
+              ? DateTime.tryParse(json['endDate'])
+              : null,
+      analytics:
+          json['analytics'] is Map<String, dynamic> ? json['analytics'] : null,
+      startDate:
+          json['startDate'] != null && json['startDate'] is String
+              ? DateTime.tryParse(json['startDate'])
+              : json['date'] != null && json['date'] is String
+              ? DateTime.tryParse(json['date'])
               : null,
       status: json['status'] is String ? json['status'] : null,
-      userData: json['userData'] is Map<String, dynamic> ? json['userData'] : null,
+      userData:
+          json['userData'] is Map<String, dynamic> ? json['userData'] : null,
       category: json['category'] is String ? json['category'] : null,
-      certificate: json['certificate'] is Map<String, dynamic> ? Certificate.fromJson(json['certificate']) : null,
-      certificateConfig: json['certificateConfig'] is Map<String, dynamic> ? CertificateConfig.fromJson(json['certificateConfig']) : null,
+      certificate:
+          json['certificate'] is Map<String, dynamic>
+              ? Certificate.fromJson(json['certificate'])
+              : null,
+      certificateConfig:
+          json['certificateConfig'] is Map<String, dynamic>
+              ? CertificateConfig.fromJson(json['certificateConfig'])
+              : null,
     );
   }
 
@@ -303,7 +331,10 @@ class LearningTrack {
       duration: json['duration'] is String ? json['duration'] : '',
       price: json['price'] is int ? json['price'] : 0,
       currency: json['currency'] is String ? json['currency'] : 'KES',
-      registrationStatus: json['registration_status'] is String ? json['registration_status'] : '',
+      registrationStatus:
+          json['registration_status'] is String
+              ? json['registration_status']
+              : '',
     );
   }
 }

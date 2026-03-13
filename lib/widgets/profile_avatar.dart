@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:dama/utils/constants.dart';
 
@@ -26,7 +25,8 @@ class ProfileAvatar extends StatefulWidget {
     this.child,
     this.borderColor,
     this.borderWidth = 3.0,
-    this.animateBorder = false, // Default: no animation (border only, for Home page)
+    this.animateBorder =
+        false, // Default: no animation (border only, for Home page)
     this.glowColor,
   });
 
@@ -51,18 +51,12 @@ class _ProfileAvatarState extends State<ProfileAvatar>
 
     // Scale animation: scales from 1.0 to 1.12 (subtle breathing effect)
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.12).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
     // Opacity animation: fades from 0.3 to 0.8 for the glow effect
     _opacityAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
     // Start the animation if enabled
@@ -80,8 +74,9 @@ class _ProfileAvatarState extends State<ProfileAvatar>
   @override
   Widget build(BuildContext context) {
     // Use black as default border color
-    final Color borderColor = widget.borderColor ?? ProfileAvatar.defaultBorderColor;
-    
+    final Color borderColor =
+        widget.borderColor ?? ProfileAvatar.defaultBorderColor;
+
     // Use blue as default glow color
     final Color glowColor = widget.glowColor ?? ProfileAvatar.defaultGlowColor;
 
@@ -94,31 +89,33 @@ class _ProfileAvatarState extends State<ProfileAvatar>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               // Solid black border (3-4px)
-              border: Border.all(
-                color: borderColor,
-                width: widget.borderWidth,
-              ),
+              border: Border.all(color: borderColor, width: widget.borderWidth),
               // Animated blue glow/pulse effect surrounding the black border
-              boxShadow: widget.animateBorder
-                  ? [
-                      BoxShadow(
-                        color: glowColor.withValues(alpha: _opacityAnimation.value),
-                        blurRadius: 15 * _scaleAnimation.value,
-                        spreadRadius: 2 * _scaleAnimation.value,
-                      ),
-                      BoxShadow(
-                        color: glowColor.withValues(alpha: _opacityAnimation.value * 0.5),
-                        blurRadius: 25 * _scaleAnimation.value,
-                        spreadRadius: 4 * _scaleAnimation.value,
-                      ),
-                    ]
-                  : [
-                      BoxShadow(
-                        color: borderColor.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
+              boxShadow:
+                  widget.animateBorder
+                      ? [
+                        BoxShadow(
+                          color: glowColor.withValues(
+                            alpha: _opacityAnimation.value,
+                          ),
+                          blurRadius: 15 * _scaleAnimation.value,
+                          spreadRadius: 2 * _scaleAnimation.value,
+                        ),
+                        BoxShadow(
+                          color: glowColor.withValues(
+                            alpha: _opacityAnimation.value * 0.5,
+                          ),
+                          blurRadius: 25 * _scaleAnimation.value,
+                          spreadRadius: 4 * _scaleAnimation.value,
+                        ),
+                      ]
+                      : [
+                        BoxShadow(
+                          color: borderColor.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
             ),
             child: CircleAvatar(
               radius: widget.radius,
@@ -132,4 +129,3 @@ class _ProfileAvatarState extends State<ProfileAvatar>
     );
   }
 }
-

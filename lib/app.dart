@@ -21,8 +21,12 @@ import 'package:dama/views/drawer_screen/notifications_screen.dart';
 import 'package:dama/views/drawer_screen/plans_screen.dart';
 import 'package:dama/views/drawer_screen/profile_screen.dart';
 import 'package:dama/views/drawer_screen/settings_screen.dart';
+import 'package:dama/views/drawer_screen/support_screen.dart';
 import 'package:dama/views/drawer_screen/transactions.dart';
+import 'package:dama/views/legal/termsAndConditionScreen.dart';
+import 'package:dama/views/legal/privacyPolicyScreen.dart';
 import 'package:dama/views/my_trainings_screen.dart';
+import 'package:dama/views/my_referrals_screen.dart';
 import 'package:dama/views/personal_details.dart';
 import 'package:dama/views/professional_details.dart';
 import 'package:dama/views/splash_screen.dart';
@@ -134,16 +138,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugPrint('🔵 [App] Checking for initial deep link on app resume...');
       final deepLinkService = Get.find<DeepLinkService>();
       final initialUri = await deepLinkService.getInitialLink();
-      
+
       if (initialUri != null) {
         debugPrint('🔵 [App] Initial URI received: $initialUri');
-        
+
         if (deepLinkService.isLinkedInCallback(initialUri)) {
-          debugPrint('✅ [App] LinkedIn callback detected, delegating to LinkedInController...');
+          debugPrint(
+            '✅ [App] LinkedIn callback detected, delegating to LinkedInController...',
+          );
           final linkedInController = Get.find<LinkedInController>();
           await linkedInController.handleDeepLink(initialUri);
         } else {
-          debugPrint('🔵 [App] Deep link received but not LinkedIn: $initialUri');
+          debugPrint(
+            '🔵 [App] Deep link received but not LinkedIn: $initialUri',
+          );
         }
       } else {
         debugPrint('🔵 [App] No initial deep link found');
@@ -175,25 +183,89 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   getPages: [
                     GetPage(name: AppRoutes.splash, page: () => SplashScreen()),
                     GetPage(name: AppRoutes.login, page: () => LoginScreen()),
-                    GetPage(name: AppRoutes.register, page: () => RegisterScreen()),
+                    GetPage(
+                      name: AppRoutes.register,
+                      page: () => RegisterScreen(),
+                    ),
                     GetPage(name: AppRoutes.home, page: () => Dashboard()),
                     GetPage(name: AppRoutes.otp, page: () => OtpScreen()),
-                    GetPage(name: AppRoutes.personal_details, page: () => PersonalDetails()),
-                    GetPage(name: AppRoutes.professional_details, page: () => ProfessionalDetails()),
+                    GetPage(
+                      name: AppRoutes.personal_details,
+                      page: () => PersonalDetails(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.professional_details,
+                      page: () => ProfessionalDetails(),
+                    ),
                     GetPage(name: AppRoutes.plans, page: () => PlansScreen()),
-                    GetPage(name: AppRoutes.profile, page: () => ProfileScreen()),
-                    GetPage(name: AppRoutes.transcation, page: () => Transactions()),
-                    GetPage(name: AppRoutes.usersChatScreen, page: () => ChatUsersScreen()),
-                    GetPage(name: AppRoutes.notifications, page: () => NotificationsScreen()),
-                    GetPage(name: AppRoutes.aboutDama, page: () => AboutScreen()),
-                    GetPage(name: AppRoutes.settingsPage, page: () => SettingsScreen()),
-                    GetPage(name: AppRoutes.notificationPreferences, page: () => NotificationPreferencesScreen()),
-                    GetPage(name: AppRoutes.changePassword, page: () => ChangePassword()),
-                    GetPage(name: AppRoutes.requestChangePassword, page: () => RequestChangePassword()),
-                    GetPage(name: AppRoutes.resetPassword, page: () => ResetPassword()),
-                    GetPage(name: AppRoutes.trainings, page: () => TrainingScreen()),
-                    GetPage(name: AppRoutes.todaySessions, page: () => TodaySessionsScreen()),
-                    GetPage(name: AppRoutes.myTrainings, page: () => MyTrainingsScreen()),
+                    GetPage(
+                      name: AppRoutes.profile,
+                      page: () => ProfileScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.transcation,
+                      page: () => Transactions(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.usersChatScreen,
+                      page: () => ChatUsersScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.notifications,
+                      page: () => NotificationsScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.aboutDama,
+                      page: () => AboutScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.support,
+                      page: () => SupportScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.settingsPage,
+                      page: () => SettingsScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.notificationPreferences,
+                      page: () => NotificationPreferencesScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.changePassword,
+                      page: () => ChangePassword(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.requestChangePassword,
+                      page: () => RequestChangePassword(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.resetPassword,
+                      page: () => ResetPassword(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.trainings,
+                      page: () => TrainingScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.todaySessions,
+                      page: () => TodaySessionsScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.myTrainings,
+                      page: () => MyTrainingsScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.myReferrals,
+                      page: () => MyReferralsScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.termsAndConditionPage,
+                      page: () => TermsScreen(),
+                    ),
+                    GetPage(
+                      name: AppRoutes.privacyPolicyPage,
+                      page: () => PrivacyScreen(),
+                    ),
                   ],
                 ),
                 // Modern Alert Stack (overlaid on top)

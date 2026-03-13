@@ -18,12 +18,12 @@ class PaymentController extends GetxController {
   Future<bool> pay(BuildContext context) async {
     isLoading.value = true;
     errorMessage.value = '';
-    
+
     try {
       // Format phone number for M-Pesa: remove '+' if present
       // M-Pesa API expects format like "254712345678" not "+254712345678"
       String formattedPhone = phoneNumber.value.replaceFirst('+', '');
-      
+
       final paymentModel = PaymentModel(
         objectId: object_id.value,
         model: model.value,
@@ -34,8 +34,10 @@ class PaymentController extends GetxController {
       print("=== PAYMENT DEBUG ===");
       print("Original Phone: ${phoneNumber.value}");
       print("Formatted Phone: ${paymentModel.phoneNumber}");
-      print("Payment Request: objectId=${paymentModel.objectId}, model=${paymentModel.model}, amount=${paymentModel.amountToPay}, phone=${paymentModel.phoneNumber}");
-      
+      print(
+        "Payment Request: objectId=${paymentModel.objectId}, model=${paymentModel.model}, amount=${paymentModel.amountToPay}, phone=${paymentModel.phoneNumber}",
+      );
+
       final result = await _paymentService.pay(paymentModel);
       print("Payment API Response: $result");
 
@@ -46,18 +48,19 @@ class PaymentController extends GetxController {
         final status = result['status']?.toString().toLowerCase() ?? '';
         final message = result['message']?.toString() ?? '';
         final transaction = result['transaction'];
-        
+
         print("Payment Status: $status");
         print("Payment Message: $message");
         print("Transaction Data: $transaction");
-        
+
         // Check if transaction failed (even though we got a response)
         if (status == 'failed') {
           // Transaction was initiated but failed - common M-Pesa issues
           String errorDetail = message;
           if (transaction != null && transaction['status'] == 'Failed') {
             // Common M-Pesa failure reasons
-            errorDetail = "M-Pesa transaction failed. Possible reasons:\n"
+            errorDetail =
+                "M-Pesa transaction failed. Possible reasons:\n"
                 "• Insufficient funds in your M-Pesa account\n"
                 "• Wrong PIN entered on your phone\n"
                 "• M-Pesa service temporarily unavailable\n"
@@ -65,7 +68,7 @@ class PaymentController extends GetxController {
           }
           throw Exception(errorDetail);
         }
-        
+
         // If we got a response from the API, the STK push was initiated successfully
         // The actual payment happens on the user's phone
         // Show STK push initiated message
@@ -79,10 +82,11 @@ class PaymentController extends GetxController {
         );
         return true;
       }
-      
+
       // Payment API returned null - likely a network error
-      throw Exception("Payment service unavailable. Please check your connection and try again.");
-      
+      throw Exception(
+        "Payment service unavailable. Please check your connection and try again.",
+      );
     } catch (e) {
       print("Payment Error: $e");
       errorMessage.value = e.toString();

@@ -55,7 +55,9 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   final GetUserProfileController _getUserProfileController = Get.put(
     GetUserProfileController(),
   );
-  final UserEventsController _userEventsController = Get.put(UserEventsController());
+  final UserEventsController _userEventsController = Get.put(
+    UserEventsController(),
+  );
   bool _isPaymentProcessing = false;
 
   late final GlobalKey<ScaffoldState> _scaffoldKey;
@@ -94,14 +96,18 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
         _userEventsController.fetchUserEvents().then((_) {
           if (mounted) {
             setState(() {
-              isUserRegistered = _userEventsController.isUserRegisteredForEvent(widget.eventID);
+              isUserRegistered = _userEventsController.isUserRegisteredForEvent(
+                widget.eventID,
+              );
             });
           }
         });
       } else {
         if (mounted) {
           setState(() {
-            isUserRegistered = _userEventsController.isUserRegisteredForEvent(widget.eventID);
+            isUserRegistered = _userEventsController.isUserRegisteredForEvent(
+              widget.eventID,
+            );
           });
         }
       }
@@ -109,7 +115,9 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   }
 
   Future<void> _registerForEvent() async {
-    final success = await _userEventsController.registerForEvent(widget.eventID);
+    final success = await _userEventsController.registerForEvent(
+      widget.eventID,
+    );
     if (success) {
       setState(() {
         isUserRegistered = true;
@@ -118,7 +126,9 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   }
 
   Future<void> _unregisterFromEvent() async {
-    final success = await _userEventsController.unregisterFromEvent(widget.eventID);
+    final success = await _userEventsController.unregisterFromEvent(
+      widget.eventID,
+    );
     if (success) {
       setState(() {
         isUserRegistered = false;
@@ -162,9 +172,10 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   Future<void> _downloadTicketAsPdf() async {
     final pdf = pw.Document();
     final attendeeName = '$firstName $lastName'.trim();
-    final ticketId = widget.eventID.length >= 8 
-        ? widget.eventID.substring(0, 8).toUpperCase() 
-        : widget.eventID.toUpperCase();
+    final ticketId =
+        widget.eventID.length >= 8
+            ? widget.eventID.substring(0, 8).toUpperCase()
+            : widget.eventID.toUpperCase();
 
     pdf.addPage(
       pw.Page(
@@ -200,54 +211,83 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                     pw.Text(
                       widget.title,
                       style: pw.TextStyle(
-                          fontSize: 22, fontWeight: pw.FontWeight.bold),
+                        fontSize: 22,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
                     ),
                     pw.SizedBox(height: 20),
-                    pw.Row(children: [
-                      pw.Text('Date: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text(DateFormat('EEEE, MMMM dd, yyyy')
-                          .format(widget.date)),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Date: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(
+                          DateFormat('EEEE, MMMM dd, yyyy').format(widget.date),
+                        ),
+                      ],
+                    ),
                     pw.SizedBox(height: 8),
-                    pw.Row(children: [
-                      pw.Text('Time: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text(DateFormat('h:mm a').format(widget.date)),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Time: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(DateFormat('h:mm a').format(widget.date)),
+                      ],
+                    ),
                     pw.SizedBox(height: 8),
                     pw.Row(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('Location: ',
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text(
+                          'Location: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
                         pw.Expanded(child: pw.Text(widget.location)),
                       ],
                     ),
                     pw.SizedBox(height: 8),
-                    pw.Row(children: [
-                      pw.Text('Price: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text(widget.price == 0 ? 'FREE' : 'Kes ${widget.price}'),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Price: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(
+                          widget.price == 0 ? 'FREE' : 'Kes ${widget.price}',
+                        ),
+                      ],
+                    ),
                     pw.SizedBox(height: 16),
                     pw.Divider(color: PdfColors.grey300),
                     pw.SizedBox(height: 16),
-                    pw.Row(children: [
-                      pw.Text('Attendee: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text(attendeeName.isNotEmpty ? attendeeName : 'N/A'),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Attendee: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(attendeeName.isNotEmpty ? attendeeName : 'N/A'),
+                      ],
+                    ),
                     pw.SizedBox(height: 8),
-                    pw.Row(children: [
-                      pw.Text('Ticket ID: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text(ticketId),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Ticket ID: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(ticketId),
+                      ],
+                    ),
                     pw.SizedBox(height: 20),
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: pw.BoxDecoration(
                         color: PdfColors.green50,
                         borderRadius: pw.BorderRadius.circular(20),
@@ -269,8 +309,10 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                 style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600),
               ),
               pw.SizedBox(height: 5),
-              pw.Text('www.damakenya.org',
-                  style: pw.TextStyle(fontSize: 12, color: PdfColors.blue)),
+              pw.Text(
+                'www.damakenya.org',
+                style: pw.TextStyle(fontSize: 12, color: PdfColors.blue),
+              ),
             ],
           );
         },
@@ -286,7 +328,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
   void _showPhoneNumberModal(bool isDark) {
     final isIOS = UnifiedPaymentService.isIOS;
     bool isProcessing = false;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -313,7 +355,10 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                         // Payment method icon - platform specific
                         if (isIOS)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.black,
                               borderRadius: BorderRadius.circular(8),
@@ -321,7 +366,11 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.apple, color: Colors.white, size: 28),
+                                Icon(
+                                  Icons.apple,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
                                 SizedBox(width: 8),
                                 Text(
                                   'Pay',
@@ -367,16 +416,24 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                   decoration: InputDecoration(
                                     hintText: "7*******",
                                     hintStyle: TextStyle(
-                                      color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                      color:
+                                          isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[700],
                                     ),
                                     counterText: '',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: BorderSide(color: Colors.grey),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: BorderSide(color: kBlue, width: 1.0),
+                                      borderSide: BorderSide(
+                                        color: kBlue,
+                                        width: 1.0,
+                                      ),
                                     ),
                                   ),
                                   disableLengthCheck: true,
@@ -387,7 +444,9 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                     if (phone.number.length != 9) {
                                       return 'Phone number must be exactly 9 digits';
                                     }
-                                    if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                                    if (!RegExp(
+                                      r'^[0-9]+$',
+                                    ).hasMatch(phone.number)) {
                                       return 'Phone number must contain only digits';
                                     }
                                     return null;
@@ -418,93 +477,121 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 15),
                           child: SizedBox(
                             width: double.infinity,
-                            child: isProcessing
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    decoration: BoxDecoration(
-                                      color: isIOS ? Colors.black.withValues(alpha: 0.7) : kBlue.withValues(alpha: 0.5),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            color: kWhite,
-                                            strokeWidth: 2,
+                            child:
+                                isProcessing
+                                    ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isIOS
+                                                ? Colors.black.withValues(
+                                                  alpha: 0.7,
+                                                )
+                                                : kBlue.withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: kWhite,
+                                              strokeWidth: 2,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          isIOS ? 'Processing Apple Pay...' : 'Processing Payment...',
-                                          style: const TextStyle(
-                                            color: kWhite,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: kLargeHeaderSize,
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            isIOS
+                                                ? 'Processing Apple Pay...'
+                                                : 'Processing Payment...',
+                                            style: const TextStyle(
+                                              color: kWhite,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: kLargeHeaderSize,
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : isIOS
+                                        ],
+                                      ),
+                                    )
+                                    : isIOS
                                     // Apple Pay button for iOS
                                     ? GestureDetector(
-                                        onTap: () {
-                                          setModalState(() {
-                                            isProcessing = true;
-                                          });
+                                      onTap: () {
+                                        setModalState(() {
+                                          isProcessing = true;
+                                        });
+                                        Navigator.pop(modalContext);
+                                        _payForEvent(
+                                          context,
+                                          widget.title,
+                                          widget.date
+                                              .toLocal()
+                                              .toString()
+                                              .split(' ')[0],
+                                          widget.location,
+                                          isDark,
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: const Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.apple,
+                                              color: Colors.white,
+                                              size: 24,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Pay with Apple Pay',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: kLargeHeaderSize,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                    // M-Pesa button for Android
+                                    : CustomButton(
+                                      callBackFunction: () {
+                                        if (_paymentFormKey.currentState!
+                                            .validate()) {
+                                          phoneNumber =
+                                              completePhoneNumber ?? '';
                                           Navigator.pop(modalContext);
                                           _payForEvent(
                                             context,
                                             widget.title,
-                                            widget.date.toLocal().toString().split(' ')[0],
+                                            widget.date
+                                                .toLocal()
+                                                .toString()
+                                                .split(' ')[0],
                                             widget.location,
                                             isDark,
                                           );
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(Icons.apple, color: Colors.white, size: 24),
-                                              SizedBox(width: 8),
-                                              Text(
-                                                'Pay with Apple Pay',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: kLargeHeaderSize,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      )
-                                    // M-Pesa button for Android
-                                    : CustomButton(
-                                        callBackFunction: () {
-                                          if (_paymentFormKey.currentState!.validate()) {
-                                            phoneNumber = completePhoneNumber ?? '';
-                                            Navigator.pop(modalContext);
-                                            _payForEvent(
-                                              context,
-                                              widget.title,
-                                              widget.date.toLocal().toString().split(' ')[0],
-                                              widget.location,
-                                              isDark,
-                                            );
-                                          }
-                                        },
-                                        label: "Confirm Payment",
-                                        backgroundColor: kBlue,
-                                      ),
+                                        }
+                                      },
+                                      label: "Confirm Payment",
+                                      backgroundColor: kBlue,
+                                    ),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -530,9 +617,9 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
     setState(() {
       _isPaymentProcessing = true;
     });
-    
+
     final isIOS = UnifiedPaymentService.isIOS;
-    
+
     final paymentResult = await UnifiedPaymentService.pay(
       objectId: widget.eventID,
       model: 'Event',
@@ -540,11 +627,11 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
       itemName: widget.title,
       phoneNumber: isIOS ? null : phoneNumber,
     );
-    
+
     setState(() {
       _isPaymentProcessing = false;
     });
-    
+
     if (paymentResult.success) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final context = _scaffoldKey.currentContext;
@@ -618,7 +705,10 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                         onRegister: _registerForEvent,
                                         onUnregister: _unregisterFromEvent,
                                         isRegistered: isUserRegistered,
-                                        isRegistering: _userEventsController.isRegistering.value,
+                                        isRegistering:
+                                            _userEventsController
+                                                .isRegistering
+                                                .value,
                                         isPaid: widget.isPaid,
                                         description: widget.description,
                                         heading: widget.title,
@@ -755,7 +845,8 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                                                 TextAlign
                                                                     .center,
                                                             style: TextStyle(
-                                                              fontSize: kSmallTextSize,
+                                                              fontSize:
+                                                                  kSmallTextSize,
                                                               color:
                                                                   isDarkMode
                                                                       ? kWhite

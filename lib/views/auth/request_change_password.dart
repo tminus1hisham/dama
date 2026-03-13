@@ -113,15 +113,27 @@ class _RequestChangePasswordState extends State<RequestChangePassword> {
                                       decoration: InputDecoration(
                                         hintText: "712345678",
                                         hintStyle: TextStyle(
-                                          color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                                          color:
+                                              isDarkMode
+                                                  ? Colors.grey[400]
+                                                  : Colors.grey[700],
                                         ),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10.0),
-                                          borderSide: BorderSide(color: Colors.grey),
+                                          borderRadius: BorderRadius.circular(
+                                            10.0,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey,
+                                          ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10.0),
-                                          borderSide: BorderSide(color: kBlue, width: 1.0),
+                                          borderRadius: BorderRadius.circular(
+                                            10.0,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: kBlue,
+                                            width: 1.0,
+                                          ),
                                         ),
                                       ),
                                       style: TextStyle(
@@ -135,22 +147,27 @@ class _RequestChangePasswordState extends State<RequestChangePassword> {
                                         color: isDarkMode ? kWhite : kBlack,
                                       ),
                                       initialCountryCode: 'KE',
-                                      disableLengthCheck: true, // Disable default country-based validation
+                                      disableLengthCheck:
+                                          true, // Disable default country-based validation
                                       validator: (PhoneNumber? phone) {
-                                        if (phone == null || phone.number.isEmpty) {
+                                        if (phone == null ||
+                                            phone.number.isEmpty) {
                                           return 'Please enter a phone number';
                                         }
                                         if (phone.number.length != 9) {
                                           return 'Phone number must be exactly 9 digits';
                                         }
                                         // Ensure phone number contains only digits
-                                        if (!RegExp(r'^[0-9]+$').hasMatch(phone.number)) {
+                                        if (!RegExp(
+                                          r'^[0-9]+$',
+                                        ).hasMatch(phone.number)) {
                                           return 'Phone number must contain only digits';
                                         }
                                         return null;
                                       },
                                       onChanged: (PhoneNumber phone) {
-                                        completePhoneNumber = phone.completeNumber;
+                                        completePhoneNumber =
+                                            phone.completeNumber;
                                       },
                                       onCountryChanged: (country) {
                                         countryCode = '+${country.dialCode}';

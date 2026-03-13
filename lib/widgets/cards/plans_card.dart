@@ -108,9 +108,7 @@ class plansCard extends StatelessWidget {
     final lower = planType.toLowerCase();
 
     if (lower.contains('student')) {
-      return [
-        'Latest News Updates',
-      ];
+      return ['Latest News Updates'];
     } else if (lower.contains('professional')) {
       return [
         'Exclusive Member Area Access',
@@ -135,27 +133,15 @@ class plansCard extends StatelessWidget {
   // Get hardcoded plan data
   Map<String, dynamic> _getPlanData(String planType) {
     final lower = planType.toLowerCase();
-    
+
     if (lower.contains('student')) {
-      return {
-        'title': 'Student',
-        'amount': '6,000',
-      };
+      return {'title': 'Student', 'amount': '6,000'};
     } else if (lower.contains('professional')) {
-      return {
-        'title': 'Professional',
-        'amount': '12,000',
-      };
+      return {'title': 'Professional', 'amount': '12,000'};
     } else if (lower.contains('corporate')) {
-      return {
-        'title': 'Corporate',
-        'amount': '60,000',
-      };
+      return {'title': 'Corporate', 'amount': '60,000'};
     } else {
-      return {
-        'title': planType,
-        'amount': amount,
-      };
+      return {'title': planType, 'amount': amount};
     }
   }
 
@@ -181,7 +167,11 @@ class plansCard extends StatelessWidget {
     final displayAmount = planData['amount'];
 
     return Padding(
-      padding: EdgeInsets.only(top: 10, left: kSidePadding, right: kSidePadding),
+      padding: EdgeInsets.only(
+        top: 10,
+        left: kSidePadding,
+        right: kSidePadding,
+      ),
       child: Container(
         decoration: BoxDecoration(
           gradient: cardGradient,
@@ -345,7 +335,10 @@ class plansCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 8),
-                  Text("/year", style: TextStyle(color: secondaryTextColor, fontSize: 14)),
+                  Text(
+                    "/year",
+                    style: TextStyle(color: secondaryTextColor, fontSize: 14),
+                  ),
                 ],
               ),
             ),
@@ -358,23 +351,31 @@ class plansCard extends StatelessWidget {
               child: CustomButton(
                 callBackFunction: isEnabled ? onPrimaryClick : null,
                 label: buttonText,
-                backgroundColor: isEnabled 
-                  ? actualButtonColor 
-                  : actualButtonColor.withOpacity(0.5),
+                backgroundColor:
+                    isEnabled
+                        ? actualButtonColor
+                        : actualButtonColor.withOpacity(0.5),
               ),
             ),
 
             // Secondary button (if provided) - placed above View Details
             if (secondaryButton != null)
               Padding(
-                padding: EdgeInsets.only(left: kSidePadding, right: kSidePadding, top: 8),
+                padding: EdgeInsets.only(
+                  left: kSidePadding,
+                  right: kSidePadding,
+                  top: 8,
+                ),
                 child: secondaryButton!,
               ),
 
             // View Details button (if needed)
             if (showViewDetails && onViewDetails != null)
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: kSidePadding, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                  horizontal: kSidePadding,
+                  vertical: 8,
+                ),
                 child: CustomButton(
                   callBackFunction: onViewDetails,
                   label: "View Details",

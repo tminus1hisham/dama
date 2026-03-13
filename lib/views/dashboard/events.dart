@@ -81,14 +81,15 @@ class _EventsState extends State<Events>
   void _loadData() async {
     final url = await StorageService.getData('profile_picture');
     final userId = await StorageService.getData('userId');
-    
+
     // Use the proper getUserRoles() method for consistent role retrieval
     final roles = await StorageService.getUserRoles();
-    
+
     debugPrint('🎫 Events: Loaded user roles: $roles');
-    final canScan = roles.contains('event_verify') || 
-                    roles.contains('admin') ||
-                    roles.contains('manager');
+    final canScan =
+        roles.contains('event_verify') ||
+        roles.contains('admin') ||
+        roles.contains('manager');
     debugPrint('🎫 Events: Can scan tickets: $canScan');
 
     setState(() {
@@ -104,7 +105,9 @@ class _EventsState extends State<Events>
   }
 
   Future<void> _downloadTicketAsPdf(
-      UserEventModel event, String? qrCode) async {
+    UserEventModel event,
+    String? qrCode,
+  ) async {
     final pdf = pw.Document();
 
     final firstName = await StorageService.getData('firstName') ?? '';
@@ -116,7 +119,6 @@ class _EventsState extends State<Events>
     if (qrCode != null) {
       qrBytes = base64Decode(qrCode.split(',').last);
     }
-
 
     pdf.addPage(
       pw.Page(
@@ -152,54 +154,83 @@ class _EventsState extends State<Events>
                     pw.Text(
                       event.eventTitle,
                       style: pw.TextStyle(
-                          fontSize: 22, fontWeight: pw.FontWeight.bold),
+                        fontSize: 22,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
                     ),
                     pw.SizedBox(height: 20),
-                    pw.Row(children: [
-                      pw.Text('Date: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text(DateFormat('EEEE, MMMM dd, yyyy')
-                          .format(event.eventDate)),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Date: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(
+                          DateFormat(
+                            'EEEE, MMMM dd, yyyy',
+                          ).format(event.eventDate),
+                        ),
+                      ],
+                    ),
                     pw.SizedBox(height: 8),
-                    pw.Row(children: [
-                      pw.Text('Time: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text(DateFormat('h:mm a').format(event.eventDate)),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Time: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(DateFormat('h:mm a').format(event.eventDate)),
+                      ],
+                    ),
                     pw.SizedBox(height: 8),
                     pw.Row(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('Location: ',
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text(
+                          'Location: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
                         pw.Expanded(child: pw.Text(event.location)),
                       ],
                     ),
                     pw.SizedBox(height: 8),
-                    pw.Row(children: [
-                      pw.Text('Price: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text('Kes ${event.price}'),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Price: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text('Kes ${event.price}'),
+                      ],
+                    ),
                     pw.SizedBox(height: 16),
                     pw.Divider(color: PdfColors.grey300),
                     pw.SizedBox(height: 16),
-                    pw.Row(children: [
-                      pw.Text('Attendee: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text(attendeeName.isNotEmpty ? attendeeName : 'N/A'),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Attendee: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(attendeeName.isNotEmpty ? attendeeName : 'N/A'),
+                      ],
+                    ),
                     pw.SizedBox(height: 8),
-                    pw.Row(children: [
-                      pw.Text('Ticket ID: ',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text(ticketId),
-                    ]),
+                    pw.Row(
+                      children: [
+                        pw.Text(
+                          'Ticket ID: ',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        pw.Text(ticketId),
+                      ],
+                    ),
                     pw.SizedBox(height: 20),
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: pw.BoxDecoration(
                         color: PdfColors.green50,
                         borderRadius: pw.BorderRadius.circular(20),
@@ -217,8 +248,10 @@ class _EventsState extends State<Events>
               ),
               pw.SizedBox(height: 30),
               if (qrBytes != null) ...[
-                pw.Text('Scan QR code to check in',
-                    style: pw.TextStyle(color: PdfColors.grey600)),
+                pw.Text(
+                  'Scan QR code to check in',
+                  style: pw.TextStyle(color: PdfColors.grey600),
+                ),
                 pw.SizedBox(height: 15),
                 pw.Container(
                   padding: const pw.EdgeInsets.all(15),
@@ -226,8 +259,11 @@ class _EventsState extends State<Events>
                     border: pw.Border.all(color: PdfColors.grey300),
                     borderRadius: pw.BorderRadius.circular(12),
                   ),
-                  child: pw.Image(pw.MemoryImage(qrBytes),
-                      height: 180, width: 180),
+                  child: pw.Image(
+                    pw.MemoryImage(qrBytes),
+                    height: 180,
+                    width: 180,
+                  ),
                 ),
               ],
               pw.Spacer(),
@@ -236,8 +272,10 @@ class _EventsState extends State<Events>
                 style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600),
               ),
               pw.SizedBox(height: 5),
-              pw.Text('www.damakenya.org',
-                  style: pw.TextStyle(fontSize: 12, color: PdfColors.blue)),
+              pw.Text(
+                'www.damakenya.org',
+                style: pw.TextStyle(fontSize: 12, color: PdfColors.blue),
+              ),
             ],
           );
         },
@@ -255,8 +293,9 @@ class _EventsState extends State<Events>
     if (events.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('No events available to scan'),
-            backgroundColor: kRed),
+          content: Text('No events available to scan'),
+          backgroundColor: kRed,
+        ),
       );
       return;
     }
@@ -290,18 +329,21 @@ class _EventsState extends State<Events>
                 itemBuilder: (context, index) {
                   final event = events[index];
                   return ListTile(
-                    leading: Icon(Icons.event,
-                        color: isDarkMode ? kWhite : kBlack),
-                    title: Text(event.eventTitle,
-                        style: TextStyle(
-                            color: isDarkMode ? kWhite : kBlack)),
+                    leading: Icon(
+                      Icons.event,
+                      color: isDarkMode ? kWhite : kBlack,
+                    ),
+                    title: Text(
+                      event.eventTitle,
+                      style: TextStyle(color: isDarkMode ? kWhite : kBlack),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              QRScannerScreen(eventId: event.id),
+                          builder:
+                              (context) => QRScannerScreen(eventId: event.id),
                         ),
                       );
                     },
@@ -346,23 +388,23 @@ class _EventsState extends State<Events>
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            SelectedEventScreen(
-          isPaid: isPaid,
-          eventID: event.id,
-          speakers: event.speakers,
-          description: event.description,
-          title: event.eventTitle,
-          price: event.price,
-          // date: event.createdAt,
-          date: event.eventDate,
-          imageUrl: event.eventImageUrl.isNotEmpty
-              ? event.eventImageUrl
-              : DEFAULT_IMAGE_URL,
-          location: event.location,
-        ),
-        transitionsBuilder:
-            (context, animation, secondaryAnimation, child) {
+        pageBuilder:
+            (context, animation, secondaryAnimation) => SelectedEventScreen(
+              isPaid: isPaid,
+              eventID: event.id,
+              speakers: event.speakers,
+              description: event.description,
+              title: event.eventTitle,
+              price: event.price,
+              // date: event.createdAt,
+              date: event.eventDate,
+              imageUrl:
+                  event.eventImageUrl.isNotEmpty
+                      ? event.eventImageUrl
+                      : DEFAULT_IMAGE_URL,
+              location: event.location,
+            ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 200),
@@ -370,8 +412,7 @@ class _EventsState extends State<Events>
     );
   }
 
-  Widget _buildTrendingCard(
-      EventModel event, bool isDarkMode, bool isPaid) {
+  Widget _buildTrendingCard(EventModel event, bool isDarkMode, bool isPaid) {
     return GestureDetector(
       onTap: () => _navigateToEvent(event, isPaid),
       child: Container(
@@ -382,9 +423,10 @@ class _EventsState extends State<Events>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: isDarkMode
-                  ? Colors.black.withOpacity(0.3)
-                  : Colors.black.withOpacity(0.08),
+              color:
+                  isDarkMode
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.08),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -394,8 +436,9 @@ class _EventsState extends State<Events>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
               child: SizedBox(
                 height: 75,
                 width: double.infinity,
@@ -412,19 +455,18 @@ class _EventsState extends State<Events>
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Container(
-                          color: isDarkMode
-                              ? const Color(0xFF2a3040)
-                              : kLightGrey,
+                          color:
+                              isDarkMode ? const Color(0xFF2a3040) : kLightGrey,
                         );
                       },
-                      errorBuilder: (context, error, stackTrace) =>
-                          Container(
-                        color: isDarkMode
-                            ? const Color(0xFF2a3040)
-                            : kLightGrey,
-                        child:
-                            Icon(Icons.event, size: 24, color: kGrey),
-                      ),
+                      errorBuilder:
+                          (context, error, stackTrace) => Container(
+                            color:
+                                isDarkMode
+                                    ? const Color(0xFF2a3040)
+                                    : kLightGrey,
+                            child: Icon(Icons.event, size: 24, color: kGrey),
+                          ),
                     ),
                     Positioned(
                       bottom: 0,
@@ -438,9 +480,7 @@ class _EventsState extends State<Events>
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              (isDarkMode
-                                      ? const Color(0xFF1a1f2e)
-                                      : kWhite)
+                              (isDarkMode ? const Color(0xFF1a1f2e) : kWhite)
                                   .withOpacity(0.5),
                             ],
                           ),
@@ -471,8 +511,7 @@ class _EventsState extends State<Events>
     );
   }
 
-  List<EventModel> _filterEventsByType(
-      List<EventModel> events, String filter) {
+  List<EventModel> _filterEventsByType(List<EventModel> events, String filter) {
     final now = DateTime.now();
     switch (filter) {
       case 'upcoming':
@@ -488,8 +527,11 @@ class _EventsState extends State<Events>
     }
   }
 
-  Widget _buildEventsTab(bool isDarkMode,
-      {String? filter, bool showPopular = false}) {
+  Widget _buildEventsTab(
+    bool isDarkMode, {
+    String? filter,
+    bool showPopular = false,
+  }) {
     return RefreshIndicator(
       color: kWhite,
       backgroundColor: kBlue,
@@ -506,22 +548,26 @@ class _EventsState extends State<Events>
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             children: [
-              SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.3),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.3),
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.calendar_month,
-                        size: 48, color: Colors.grey[400]),
+                    Icon(
+                      Icons.calendar_month,
+                      size: 48,
+                      color: Colors.grey[400],
+                    ),
                     const SizedBox(height: 16),
-                    Text("No event available",
-                        style: TextStyle(
-                            fontSize: 16, color: Colors.grey[600])),
+                    Text(
+                      "No event available",
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    ),
                     const SizedBox(height: 8),
-                    Text("The events will appear here",
-                        style: TextStyle(
-                            fontSize: 14, color: Colors.grey[500])),
+                    Text(
+                      "The events will appear here",
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                    ),
                   ],
                 ),
               ),
@@ -531,14 +577,14 @@ class _EventsState extends State<Events>
 
         final paidEventIds =
             _userEventsController.eventsList.map((e) => e.id).toSet();
-        final filteredEvents = filter != null
-            ? _filterEventsByType(_eventsController.eventsList, filter)
-            : _eventsController.eventsList;
+        final filteredEvents =
+            filter != null
+                ? _filterEventsByType(_eventsController.eventsList, filter)
+                : _eventsController.eventsList;
 
         return CustomScrollView(
           slivers: [
-            if (showPopular &&
-                _eventsController.popularEvents.isNotEmpty)
+            if (showPopular && _eventsController.popularEvents.isNotEmpty)
               SliverToBoxAdapter(
                 child: Container(
                   color: isDarkMode ? kBlack : kWhite,
@@ -547,8 +593,7 @@ class _EventsState extends State<Events>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding:
-                            const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
                         child: Row(
                           children: [
                             Container(
@@ -557,8 +602,11 @@ class _EventsState extends State<Events>
                                 color: kBlue.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.trending_up,
-                                  size: 18, color: kBlue),
+                              child: const Icon(
+                                Icons.trending_up,
+                                size: 18,
+                                color: kBlue,
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Text(
@@ -576,17 +624,17 @@ class _EventsState extends State<Events>
                         height: 130,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12),
-                          itemCount:
-                              _eventsController.popularEvents.length,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: _eventsController.popularEvents.length,
                           itemBuilder: (context, index) {
-                            final event = _eventsController
-                                .popularEvents[index];
-                            final isPaid =
-                                paidEventIds.contains(event.id);
+                            final event =
+                                _eventsController.popularEvents[index];
+                            final isPaid = paidEventIds.contains(event.id);
                             return _buildTrendingCard(
-                                event, isDarkMode, isPaid);
+                              event,
+                              isDarkMode,
+                              isPaid,
+                            );
                           },
                         ),
                       ),
@@ -596,8 +644,9 @@ class _EventsState extends State<Events>
               ),
             SliverToBoxAdapter(
               child: Container(
-                  height: 8,
-                  color: isDarkMode ? kDarkThemeBg : kBGColor),
+                height: 8,
+                color: isDarkMode ? kDarkThemeBg : kBGColor,
+              ),
             ),
             Builder(
               builder: (context) {
@@ -607,61 +656,66 @@ class _EventsState extends State<Events>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.calendar_month,
-                              size: 48, color: Colors.grey[400]),
+                          Icon(
+                            Icons.calendar_month,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             filter != null
                                 ? "No $filter events available"
                                 : "No events available",
                             style: TextStyle(
-                                fontSize: 16, color: Colors.grey[600]),
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),
                     ),
                   );
                 }
-                
+
                 return SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   sliver: SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 2 : 1,
+                      crossAxisCount:
+                          MediaQuery.of(context).size.width > 600 ? 2 : 1,
                       childAspectRatio: 1.0,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 12,
                     ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final event = filteredEvents[index];
-                        final isPaid = paidEventIds.contains(event.id);
-                        final isReserved = _userEventsController.eventsList
-                            .any((e) => e.id == event.id);
-                        
-                        return EventCard(
-                          heading: event.eventTitle,
-                          imageUrl: event.eventImageUrl.isNotEmpty
-                              ? event.eventImageUrl
-                              : DEFAULT_IMAGE_URL,
-                          date: event.eventDate,
-                          location: event.location,
-                          price: event.price,
-                          eventId: event.id,
-                          isConfirmed: isReserved,
-                          attendees: event.attendees.length,
-                          onCardTap: () => _navigateToEvent(event, isPaid),
-                          onBookPress: () => _showBookingModal(event),
-                          onViewTicket: () {
-                            // Navigate to My Events tab
-                            setState(() {
-                              selectedTab = 1;
-                            });
-                          },
-                        );
-                      },
-                      childCount: filteredEvents.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final event = filteredEvents[index];
+                      final isPaid = paidEventIds.contains(event.id);
+                      final isReserved = _userEventsController.eventsList.any(
+                        (e) => e.id == event.id,
+                      );
+
+                      return EventCard(
+                        heading: event.eventTitle,
+                        imageUrl:
+                            event.eventImageUrl.isNotEmpty
+                                ? event.eventImageUrl
+                                : DEFAULT_IMAGE_URL,
+                        date: event.eventDate,
+                        location: event.location,
+                        price: event.price,
+                        eventId: event.id,
+                        isConfirmed: isReserved,
+                        attendees: event.attendees.length,
+                        onCardTap: () => _navigateToEvent(event, isPaid),
+                        onBookPress: () => _showBookingModal(event),
+                        onViewTicket: () {
+                          // Navigate to My Events tab
+                          setState(() {
+                            selectedTab = 1;
+                          });
+                        },
+                      );
+                    }, childCount: filteredEvents.length),
                   ),
                 );
               },
@@ -692,34 +746,34 @@ class _EventsState extends State<Events>
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  SizedBox(
-                      height:
-                          MediaQuery.of(context).size.height * 0.2),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.2),
                   Center(
                     child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.confirmation_number_outlined,
-                              size: 64, color: Colors.grey[400]),
+                          Icon(
+                            Icons.confirmation_number_outlined,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
                           const SizedBox(height: 24),
                           Text(
                             "No event tickets yet",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: isDarkMode
-                                  ? kWhite
-                                  : Colors.grey[800],
+                              color: isDarkMode ? kWhite : Colors.grey[800],
                             ),
                           ),
                           const SizedBox(height: 12),
                           Text(
                             "You haven't booked any events yet. Browse our upcoming events and join the DAMA Kenya community!",
                             style: TextStyle(
-                                fontSize: 14, color: Colors.grey[500]),
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),
@@ -732,16 +786,19 @@ class _EventsState extends State<Events>
                             style: ElevatedButton.styleFrom(
                               backgroundColor: kBlue,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 32, vertical: 12),
+                                horizontal: 32,
+                                vertical: 12,
+                              ),
                               shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(8)),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                             child: Text(
                               'Browse Events',
                               style: TextStyle(
-                                  color: kWhite,
-                                  fontWeight: FontWeight.w600),
+                                color: kWhite,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -764,19 +821,19 @@ class _EventsState extends State<Events>
                       child: SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: () =>
-                              _showEventSelectionForScanner(isDarkMode),
-                          icon: Icon(Icons.qr_code_scanner,
-                              color: kBlue),
-                          label: Text('Scan Tickets',
-                              style: TextStyle(color: kBlue)),
+                          onPressed:
+                              () => _showEventSelectionForScanner(isDarkMode),
+                          icon: Icon(Icons.qr_code_scanner, color: kBlue),
+                          label: Text(
+                            'Scan Tickets',
+                            style: TextStyle(color: kBlue),
+                          ),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: kBlue),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(8)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
                       ),
@@ -785,79 +842,92 @@ class _EventsState extends State<Events>
                     child: GridView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 2 : 1,
+                        crossAxisCount:
+                            MediaQuery.of(context).size.width > 600 ? 2 : 1,
                         childAspectRatio: 1.0,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 12,
                       ),
-                      itemCount:
-                          _userEventsController.eventsList.length,
+                      itemCount: _userEventsController.eventsList.length,
                       itemBuilder: (context, index) {
-                        final event =
-                            _userEventsController.eventsList[index];
+                        final event = _userEventsController.eventsList[index];
                         return EventCard(
                           heading: event.eventTitle,
-                          imageUrl: event.eventImageUrl.isNotEmpty
-                              ? event.eventImageUrl
-                              : DEFAULT_IMAGE_URL,
+                          imageUrl:
+                              event.eventImageUrl.isNotEmpty
+                                  ? event.eventImageUrl
+                                  : DEFAULT_IMAGE_URL,
                           date: event.eventDate,
                           location: event.location,
                           price: event.price,
                           isConfirmed: true,
                           onViewTicket: () async {
                             // Download ticket as PDF in My Events tab
-                            final userProfile = _getUserProfileController.profile.value;
+                            final userProfile =
+                                _getUserProfileController.profile.value;
                             String? qrCode;
-                            
-                            if (userProfile?.eventQRCode != null && _currentUserId == userProfile!.id) {
-                              final matchingQRCode = userProfile.eventQRCode
-                                  .where((qr) => qr.eventId == event.id)
-                                  .firstOrNull;
+
+                            if (userProfile?.eventQRCode != null &&
+                                _currentUserId == userProfile!.id) {
+                              final matchingQRCode =
+                                  userProfile.eventQRCode
+                                      .where((qr) => qr.eventId == event.id)
+                                      .firstOrNull;
                               if (matchingQRCode != null) {
                                 qrCode = matchingQRCode.qrCode;
                               }
                             }
-                            
+
                             if (qrCode == null) {
-                              final memberId = await StorageService.getData('memberId') ?? '';
+                              final memberId =
+                                  await StorageService.getData('memberId') ??
+                                  '';
                               if (memberId.isNotEmpty) {
-                                final qrData = jsonEncode({'memberId': memberId, 'eventId': event.id});
-                                qrCode = 'data:image/png;base64,${base64Encode(utf8.encode(qrData))}';
+                                final qrData = jsonEncode({
+                                  'memberId': memberId,
+                                  'eventId': event.id,
+                                });
+                                qrCode =
+                                    'data:image/png;base64,${base64Encode(utf8.encode(qrData))}';
                               }
                             }
-                            
+
                             await _downloadTicketAsPdf(event, qrCode);
                           },
                           onCardTap: () {
                             Navigator.push(
                               context,
                               PageRouteBuilder(
-                                pageBuilder: (context, animation,
-                                        secondaryAnimation) =>
-                                    SelectedEventScreen(
-                                  isPaid: true,
-                                  eventID: event.id,
-                                  speakers: event.speakers,
-                                  description: event.description,
-                                  title: event.eventTitle,
-                                  price: event.price,
-                                  date: event.eventDate,
-                                  imageUrl: event
-                                          .eventImageUrl.isNotEmpty
-                                      ? event.eventImageUrl
-                                      : DEFAULT_IMAGE_URL,
-                                  location: event.location,
-                                ),
-                                transitionsBuilder: (context,
-                                    animation,
-                                    secondaryAnimation,
-                                    child) {
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        SelectedEventScreen(
+                                          isPaid: true,
+                                          eventID: event.id,
+                                          speakers: event.speakers,
+                                          description: event.description,
+                                          title: event.eventTitle,
+                                          price: event.price,
+                                          date: event.eventDate,
+                                          imageUrl:
+                                              event.eventImageUrl.isNotEmpty
+                                                  ? event.eventImageUrl
+                                                  : DEFAULT_IMAGE_URL,
+                                          location: event.location,
+                                        ),
+                                transitionsBuilder: (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
                                   return FadeTransition(
-                                      opacity: animation,
-                                      child: child);
+                                    opacity: animation,
+                                    child: child,
+                                  );
                                 },
-                                transitionDuration:
-                                    const Duration(milliseconds: 200),
+                                transitionDuration: const Duration(
+                                  milliseconds: 200,
+                                ),
                               ),
                             );
                           },
@@ -870,32 +940,36 @@ class _EventsState extends State<Events>
                             Navigator.push(
                               context,
                               PageRouteBuilder(
-                                pageBuilder: (context, animation,
-                                        secondaryAnimation) =>
-                                    SelectedEventScreen(
-                                  isPaid: true,
-                                  eventID: event.id,
-                                  speakers: event.speakers,
-                                  description: event.description,
-                                  title: event.eventTitle,
-                                  price: event.price,
-                                  date: event.eventDate,
-                                  imageUrl: event
-                                          .eventImageUrl.isNotEmpty
-                                      ? event.eventImageUrl
-                                      : DEFAULT_IMAGE_URL,
-                                  location: event.location,
-                                ),
-                                transitionsBuilder: (context,
-                                    animation,
-                                    secondaryAnimation,
-                                    child) {
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        SelectedEventScreen(
+                                          isPaid: true,
+                                          eventID: event.id,
+                                          speakers: event.speakers,
+                                          description: event.description,
+                                          title: event.eventTitle,
+                                          price: event.price,
+                                          date: event.eventDate,
+                                          imageUrl:
+                                              event.eventImageUrl.isNotEmpty
+                                                  ? event.eventImageUrl
+                                                  : DEFAULT_IMAGE_URL,
+                                          location: event.location,
+                                        ),
+                                transitionsBuilder: (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
                                   return FadeTransition(
-                                      opacity: animation,
-                                      child: child);
+                                    opacity: animation,
+                                    child: child,
+                                  );
                                 },
-                                transitionDuration:
-                                    const Duration(milliseconds: 200),
+                                transitionDuration: const Duration(
+                                  milliseconds: 200,
+                                ),
                               ),
                             );
                           },
@@ -922,36 +996,36 @@ class _EventsState extends State<Events>
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 4,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? kBlue
-              : (isDarkMode ? const Color(0xFF1a1f2e) : kWhite),
+          color:
+              isSelected
+                  ? kBlue
+                  : (isDarkMode ? const Color(0xFF1a1f2e) : kWhite),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected
-                ? kBlue
-                : (isDarkMode ? const Color(0xFF2a3040) : kGrey),
+            color:
+                isSelected
+                    ? kBlue
+                    : (isDarkMode ? const Color(0xFF2a3040) : kGrey),
             width: 1.0,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: kBlue.withOpacity(0.35),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : null,
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: kBlue.withOpacity(0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                  : null,
         ),
         child: Text(
           text,
           style: TextStyle(
             color: isSelected ? kWhite : (isDarkMode ? kWhite : kGrey),
-            fontWeight: FontWeight.w600,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             fontSize: 11,
           ),
         ),
@@ -981,10 +1055,10 @@ class _EventsState extends State<Events>
               // Single horizontal scrollable tab bar
               Container(
                 color: isDarkMode ? kBlack : kWhite,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                padding: EdgeInsets.only(top: 12, bottom: 12),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Row(
                     children: [
                       _buildTabButton("All", 0, isDarkMode),

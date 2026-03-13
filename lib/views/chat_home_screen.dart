@@ -15,32 +15,32 @@ class ChatHomeScreen extends StatefulWidget {
 
 class _ChatHomeScreenState extends State<ChatHomeScreen> {
   String? _currentUserId;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _initializeChat();
   }
-  
+
   Future<void> _initializeChat() async {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     final token = await StorageService.getData("access_token");
     _currentUserId = await StorageService.getData("user_id");
-    
+
     if (token != null && _currentUserId != null) {
       chatProvider.initializeChat(token);
       chatProvider.loadConversations(_currentUserId!);
     }
   }
-  
+
   @override
   void dispose() {
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
     chatProvider.disconnect();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,25 +60,19 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
                   SizedBox(height: 20),
                   Text(
                     'No conversations yet',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Start chatting with other DAMA Kenya members',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             );
           }
-          
+
           return ListView.builder(
             itemCount: chatProvider.conversations.length,
             itemBuilder: (context, index) {
@@ -90,11 +84,13 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
                 (id) => id != _currentUserId,
                 orElse: () => '',
               );
-              
+
               return ListTile(
                 leading: ProfileAvatar(
                   // Add profile picture if available
-                  child: Text(otherUserId.isNotEmpty ? otherUserId[0].toUpperCase() : '?'),
+                  child: Text(
+                    otherUserId.isNotEmpty ? otherUserId[0].toUpperCase() : '?',
+                  ),
                 ),
                 title: Text('User $otherUserId'), // Replace with actual name
                 subtitle: Text(conversation.lastMessage?.content ?? ''),
@@ -104,14 +100,15 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
                     id: otherUserId,
                     fullName: 'User $otherUserId', // Replace with actual name
                   );
-                  
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        conversationId: conversation.id,
-                        otherUser: otherUser,
-                      ),
+                      builder:
+                          (context) => ChatScreen(
+                            conversationId: conversation.id,
+                            otherUser: otherUser,
+                          ),
                     ),
                   );
                 },

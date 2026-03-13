@@ -12,8 +12,7 @@ class ThemeProvider extends ChangeNotifier {
     }
 
     return _useSystemTheme
-        ? WidgetsBinding.instance.window.platformBrightness ==
-            Brightness.dark
+        ? WidgetsBinding.instance.window.platformBrightness == Brightness.dark
         : _isDark;
   }
 

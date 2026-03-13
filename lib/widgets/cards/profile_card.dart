@@ -63,9 +63,7 @@ class ProfileCard extends StatelessWidget {
                         radius: 50,
                         backgroundColor: kLightGrey,
                         backgroundImage:
-                            imageUrl.isNotEmpty
-                                ? NetworkImage(imageUrl)
-                                : null,
+                            imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
                         borderColor: kBlue,
                         borderWidth: 3,
                         animateBorder: true,
@@ -192,8 +190,7 @@ class ProfileCard extends StatelessWidget {
                               children: [
                                 Icon(
                                   Icons.workspace_premium,
-                                  color:
-                                      isDarkMode ? kWhite : Colors.grey[700],
+                                  color: isDarkMode ? kWhite : Colors.grey[700],
                                   size: 20,
                                 ),
                                 SizedBox(width: 10),

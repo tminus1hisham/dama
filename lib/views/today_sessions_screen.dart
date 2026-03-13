@@ -19,7 +19,9 @@ class TodaySessionsScreen extends StatefulWidget {
 }
 
 class _TodaySessionsScreenState extends State<TodaySessionsScreen> {
-  final UserProgressController _progressController = Get.put(UserProgressController());
+  final UserProgressController _progressController = Get.put(
+    UserProgressController(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -84,14 +86,12 @@ class _TodaySessionsScreenState extends State<TodaySessionsScreen> {
                       SizedBox(height: 16),
                       Text(
                         "Failed to load today's sessions",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                       ),
                       SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () => _progressController.refreshTodaySessions(),
+                        onPressed:
+                            () => _progressController.refreshTodaySessions(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kBlue,
                           foregroundColor: kWhite,
@@ -108,18 +108,11 @@ class _TodaySessionsScreenState extends State<TodaySessionsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.event_note,
-                        size: 48,
-                        color: Colors.grey[400],
-                      ),
+                      Icon(Icons.event_note, size: 48, color: Colors.grey[400]),
                       SizedBox(height: 16),
                       Text(
                         "No sessions scheduled for today",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -152,13 +145,20 @@ class _TodaySessionsScreenState extends State<TodaySessionsScreen> {
   }
 
   void _joinSession(TrainingSession session) async {
-    final result = await _progressController.joinSession(session.trainingId, session.id);
+    final result = await _progressController.joinSession(
+      session.trainingId,
+      session.id,
+    );
     final success = result['success'] == true;
     final message = result['message'];
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Successfully joined ${session.title}' : (message ?? 'Failed to join ${session.title}')),
+          content: Text(
+            success
+                ? 'Successfully joined ${session.title}'
+                : (message ?? 'Failed to join ${session.title}'),
+          ),
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
@@ -166,13 +166,20 @@ class _TodaySessionsScreenState extends State<TodaySessionsScreen> {
   }
 
   void _leaveSession(TrainingSession session) async {
-    final result = await _progressController.leaveSession(session.trainingId, session.id);
+    final result = await _progressController.leaveSession(
+      session.trainingId,
+      session.id,
+    );
     final success = result['success'] == true;
     final message = result['message'];
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Left ${session.title}' : (message ?? 'Failed to leave ${session.title}')),
+          content: Text(
+            success
+                ? 'Left ${session.title}'
+                : (message ?? 'Failed to leave ${session.title}'),
+          ),
           backgroundColor: success ? Colors.orange : Colors.red,
         ),
       );
@@ -207,16 +214,15 @@ class SessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final isOngoing = session.startTime.isBefore(now) && session.endTime.isAfter(now);
+    final isOngoing =
+        session.startTime.isBefore(now) && session.endTime.isAfter(now);
     final isUpcoming = session.startTime.isAfter(now);
     final isCompleted = session.endTime.isBefore(now);
 
     return Card(
       color: isDarkMode ? kDarkCard : kWhite,
       margin: EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -237,9 +243,10 @@ class SessionCard extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isOngoing
-                        ? Colors.green.withOpacity(0.2)
-                        : isUpcoming
+                    color:
+                        isOngoing
+                            ? Colors.green.withOpacity(0.2)
+                            : isUpcoming
                             ? Colors.blue.withOpacity(0.2)
                             : Colors.grey.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -248,14 +255,15 @@ class SessionCard extends StatelessWidget {
                     isOngoing
                         ? 'ONGOING'
                         : isUpcoming
-                            ? 'UPCOMING'
-                            : 'COMPLETED',
+                        ? 'UPCOMING'
+                        : 'COMPLETED',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: isOngoing
-                          ? Colors.green
-                          : isUpcoming
+                      color:
+                          isOngoing
+                              ? Colors.green
+                              : isUpcoming
                               ? Colors.blue
                               : Colors.grey,
                     ),
@@ -290,7 +298,8 @@ class SessionCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (session.meetingLink != null && session.meetingLink!.isNotEmpty) ...[
+            if (session.meetingLink != null &&
+                session.meetingLink!.isNotEmpty) ...[
               SizedBox(height: 12),
               if (_canJoinSession())
                 SizedBox(
@@ -299,7 +308,8 @@ class SessionCard extends StatelessWidget {
                     onPressed: () async {
                       var url = session.meetingLink!;
                       // Ensure URL has proper scheme
-                      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                      if (!url.startsWith('http://') &&
+                          !url.startsWith('https://')) {
                         url = 'https://$url';
                       }
                       final uri = Uri.parse(url);
@@ -311,10 +321,7 @@ class SessionCard extends StatelessWidget {
                         );
                         if (!launched && context.mounted) {
                           // Fallback to in-app webview
-                          await launchUrl(
-                            uri,
-                            mode: LaunchMode.inAppWebView,
-                          );
+                          await launchUrl(uri, mode: LaunchMode.inAppWebView);
                         }
                       } catch (e) {
                         if (context.mounted) {
@@ -390,7 +397,8 @@ class SessionCard extends StatelessWidget {
                       child: Text(isOngoing ? 'Join Now' : 'Join Session'),
                     ),
                   ),
-                  if (false) ...[ // session.attendees.contains('current_user_id')
+                  if (false) ...[
+                    // session.attendees.contains('current_user_id')
                     SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: onLeavePressed,

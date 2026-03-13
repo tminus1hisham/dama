@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ChatNavigationAppbar extends StatelessWidget {
-  const ChatNavigationAppbar({super.key, required this.imageUrl, required this.name});
+  const ChatNavigationAppbar({
+    super.key,
+    required this.imageUrl,
+    required this.name,
+  });
 
   final String? imageUrl;
   final String name;
@@ -40,7 +44,7 @@ class ChatNavigationAppbar extends StatelessWidget {
                       : null,
             ),
             const SizedBox(width: 10),
-            Text(name, style: TextStyle(color: isDarkMode ? kWhite : kBlack),),
+            Text(name, style: TextStyle(color: isDarkMode ? kWhite : kBlack)),
           ],
         ),
       ),

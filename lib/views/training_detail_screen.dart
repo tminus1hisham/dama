@@ -45,9 +45,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     _training = widget.training;
   }
 
-  bool get _isEnrolled => _userTrainingController.userTrainings.any(
-        (t) => t.id == _training.id,
-      );
+  bool get _isEnrolled =>
+      _userTrainingController.userTrainings.any((t) => t.id == _training.id);
 
   String get _status {
     if (!_isEnrolled) return 'available';
@@ -56,7 +55,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       orElse: () => _training,
     );
     if (userTraining.status?.toLowerCase() == 'completed' ||
-        (userTraining.progress ?? 0) >= 100) return 'completed';
+        (userTraining.progress ?? 0) >= 100)
+      return 'completed';
     if ((userTraining.progress ?? 0) > 0) return 'in-progress';
     return 'upcoming';
   }
@@ -74,16 +74,27 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     return status
         .replaceAll('-', ' ')
         .split(' ')
-        .map((w) =>
-            w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+        .map(
+          (w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '',
+        )
         .join(' ');
   }
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'TBD';
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -107,14 +118,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => TrainingDetailModal(
-          training: _training,
-          isDarkMode: isDarkMode,
-          onRefreshPressed: () {
-            _userTrainingController.refreshUserTrainings();
-            setState(() {});
-          },
-        ),
+        builder:
+            (_) => TrainingDetailModal(
+              training: _training,
+              isDarkMode: isDarkMode,
+              onRefreshPressed: () {
+                _userTrainingController.refreshUserTrainings();
+                setState(() {});
+              },
+            ),
       );
     }
   }
@@ -125,7 +137,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     final isDarkMode = themeProvider.isDark;
 
     // ✅ Check if training is valid (has at least an ID and title)
-    final isValidTraining = _training.id.isNotEmpty && _training.title.isNotEmpty;
+    final isValidTraining =
+        _training.id.isNotEmpty && _training.title.isNotEmpty;
 
     if (!isValidTraining) {
       return _buildTrainingNotFoundScreen(isDarkMode);
@@ -185,11 +198,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           shape: BoxShape.circle,
                           color: kBlue.withOpacity(0.1),
                         ),
-                        child: Icon(
-                          Icons.school,
-                          size: 50,
-                          color: kBlue,
-                        ),
+                        child: Icon(Icons.school, size: 50, color: kBlue),
                       ),
                       const SizedBox(height: 24),
 
@@ -207,7 +216,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
                       // ✅ Action button
                       CustomButton(
-                        callBackFunction: () => Get.off(() => const TrainingScreen()),
+                        callBackFunction:
+                            () => Get.off(() => const TrainingScreen()),
                         label: 'Back to Trainings',
                         backgroundColor: kBlue,
                       ),
@@ -229,8 +239,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       child: Row(
         children: [
           IconButton(
-            icon:
-                Icon(Icons.arrow_back, color: isDarkMode ? kWhite : kBlack),
+            icon: Icon(Icons.arrow_back, color: isDarkMode ? kWhite : kBlack),
             onPressed: () => Get.back(),
           ),
           Text(
@@ -248,9 +257,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Widget _buildHeroCard(bool isDarkMode, String status) {
     final trainer = _training.trainer;
-    final trainerName = trainer != null
-        ? '${trainer.firstName} ${trainer.lastName}'.trim()
-        : null;
+    final trainerName =
+        trainer != null
+            ? '${trainer.firstName} ${trainer.lastName}'.trim()
+            : null;
 
     return Container(
       decoration: BoxDecoration(
@@ -265,8 +275,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: _statusBgColors[status],
               borderRadius: BorderRadius.circular(20),
@@ -327,9 +336,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           child: _buildInfoTile(
             icon: Icons.schedule,
             label: 'Duration',
-            value: _training.learningTracks.isNotEmpty
-                ? _training.learningTracks.first.duration
-                : 'TBD',
+            value:
+                _training.learningTracks.isNotEmpty
+                    ? _training.learningTracks.first.duration
+                    : 'TBD',
             isDarkMode: isDarkMode,
           ),
         ),
@@ -357,12 +367,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isPrimary
-            ? kBlue.withOpacity(0.08)
-            : (isDarkMode ? Colors.grey[850] : Colors.grey[100]),
+        color:
+            isPrimary
+                ? kBlue.withOpacity(0.08)
+                : (isDarkMode ? Colors.grey[850] : Colors.grey[100]),
         borderRadius: BorderRadius.circular(12),
-        border:
-            isPrimary ? Border.all(color: kBlue.withOpacity(0.3)) : null,
+        border: isPrimary ? Border.all(color: kBlue.withOpacity(0.3)) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,9 +380,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: isPrimary
-                  ? kBlue.withOpacity(0.15)
-                  : kBlue.withOpacity(0.1),
+              color:
+                  isPrimary ? kBlue.withOpacity(0.15) : kBlue.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: kBlue, size: 16),
@@ -393,8 +402,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             style: TextStyle(
               fontSize: isPrimary ? 15 : 13,
               fontWeight: FontWeight.bold,
-              color:
-                  isPrimary ? kBlue : (isDarkMode ? kWhite : kBlack),
+              color: isPrimary ? kBlue : (isDarkMode ? kWhite : kBlack),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -423,8 +431,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Instructor',
-                style: TextStyle(fontSize: 12, color: kGrey)),
+            const Text(
+              'Instructor',
+              style: TextStyle(fontSize: 12, color: kGrey),
+            ),
             Text(
               name,
               style: TextStyle(
@@ -444,7 +454,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     final hasOutcomes = _training.learningOutcomes.isNotEmpty;
     final hasTracks = _training.learningTracks.isNotEmpty;
     final hasTargetAudience = _training.targetAudience.isNotEmpty;
-    final hasSchedule = _training.learningTracks.isNotEmpty &&
+    final hasSchedule =
+        _training.learningTracks.isNotEmpty &&
         _training.learningTracks.first.schedule.isNotEmpty;
 
     return Column(
@@ -455,29 +466,33 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             icon: Icons.check_circle_outline,
             title: "What You'll Learn",
             child: Column(
-              children: _training.learningOutcomes.map((item) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.chevron_right,
-                          color: kBlue, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          item,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode ? kGrey : Colors.grey[700],
-                            height: 1.4,
+              children:
+                  _training.learningOutcomes.map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.chevron_right,
+                            color: kBlue,
+                            size: 20,
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              item,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDarkMode ? kGrey : Colors.grey[700],
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ),
           const SizedBox(height: 16),
@@ -490,45 +505,45 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             child: Column(
               children:
                   _training.courseOutline.asMap().entries.map((entry) {
-                final i = entry.key;
-                final item = entry.value;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 26,
-                        height: 26,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: kBlue.withOpacity(0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '${i + 1}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: kBlue,
+                    final i = entry.key;
+                    final item = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 26,
+                            height: 26,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: kBlue.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '${i + 1}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: kBlue,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          item.topic,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode ? kWhite : kBlack,
-                            height: 1.4,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              item.topic,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDarkMode ? kWhite : kBlack,
+                                height: 1.4,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ),
           const SizedBox(height: 16),
@@ -539,101 +554,112 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             icon: Icons.track_changes,
             title: 'Learning Tracks',
             child: Column(
-              children: _training.learningTracks.map((track) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? Colors.grey[850]
-                        : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
+              children:
+                  _training.learningTracks.map((track) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? Colors.grey[850] : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: isDarkMode
-                                    ? Colors.grey[700]!
-                                    : Colors.grey[300]!,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              track.type,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      isDarkMode ? kWhite : kBlack),
-                            ),
-                          ),
-                          if (track.registrationStatus.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: track.registrationStatus
-                                            .toLowerCase() ==
-                                        'ongoing'
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.grey.withOpacity(0.1),
-                                borderRadius:
-                                    BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                track.registrationStatus,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: track.registrationStatus
-                                              .toLowerCase() ==
-                                          'ongoing'
-                                      ? Colors.green
-                                      : kGrey,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color:
+                                        isDarkMode
+                                            ? Colors.grey[700]!
+                                            : Colors.grey[300]!,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  track.type,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDarkMode ? kWhite : kBlack,
+                                  ),
                                 ),
                               ),
+                              if (track.registrationStatus.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        track.registrationStatus
+                                                    .toLowerCase() ==
+                                                'ongoing'
+                                            ? Colors.green.withOpacity(0.1)
+                                            : Colors.grey.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    track.registrationStatus,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          track.registrationStatus
+                                                      .toLowerCase() ==
+                                                  'ongoing'
+                                              ? Colors.green
+                                              : kGrey,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          if (track.schedule.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              track.schedule,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: kGrey,
+                              ),
                             ),
+                          ],
+                          if (track.duration.isNotEmpty || track.price > 0) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                if (track.duration.isNotEmpty)
+                                  Text(
+                                    track.duration,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: kGrey,
+                                    ),
+                                  ),
+                                if (track.price > 0)
+                                  Text(
+                                    '${track.currency ?? 'KES'} ${track.price.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: kBlue,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
-                      if (track.schedule.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(track.schedule,
-                            style: const TextStyle(
-                                fontSize: 13, color: kGrey)),
-                      ],
-                      if (track.duration.isNotEmpty ||
-                          track.price > 0) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
-                          children: [
-                            if (track.duration.isNotEmpty)
-                              Text(track.duration,
-                                  style: const TextStyle(
-                                      fontSize: 13, color: kGrey)),
-                            if (track.price > 0)
-                              Text(
-                                '${track.currency ?? 'KES'} ${track.price.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: kBlue),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ),
           const SizedBox(height: 16),
@@ -646,9 +672,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             child: Text(
               _training.learningTracks.first.schedule,
               style: TextStyle(
-                  fontSize: 14,
-                  color: isDarkMode ? kGrey : Colors.grey[700],
-                  height: 1.5),
+                fontSize: 14,
+                color: isDarkMode ? kGrey : Colors.grey[700],
+                height: 1.5,
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -660,29 +687,33 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             title: 'Target Audience',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: _training.targetAudience.map((item) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.chevron_right,
-                          color: kBlue, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          item,
-                          style: TextStyle(
-                              fontSize: 14,
-                              color:
-                                  isDarkMode ? kGrey : Colors.grey[700],
-                              height: 1.4),
-                        ),
+              children:
+                  _training.targetAudience.map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.chevron_right,
+                            color: kBlue,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              item,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDarkMode ? kGrey : Colors.grey[700],
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ),
         ],
@@ -739,16 +770,13 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           color: isDarkMode ? kDarkCard : kWhite,
           border: Border(
             top: BorderSide(
-              color:
-                  isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+              color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
             ),
           ),
         ),
         child: CustomButton(
           callBackFunction: _handleEnrollOrDashboard,
-          label: enrolled
-              ? 'Go to Dashboard'
-              : 'Enroll Now - $_formattedPrice',
+          label: enrolled ? 'Go to Dashboard' : 'Enroll Now - $_formattedPrice',
           backgroundColor: kBlue,
         ),
       );

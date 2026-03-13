@@ -33,7 +33,8 @@ class UserEventModel {
     final eventTitle = json['event_title'] ?? '';
 
     // Try multiple field name variations to find the date
-    final eventDateValue = json['event_date'] ?? json['eventDate'] ?? json['event_date_time'];
+    final eventDateValue =
+        json['event_date'] ?? json['eventDate'] ?? json['event_date_time'];
 
     return UserEventModel(
       id: json['_id'] ?? '',
@@ -49,11 +50,13 @@ class UserEventModel {
       // FIXED: Convert UTC to local time for consistency
       createdAt:
           json['created_at'] != null
-              ? (DateTime.tryParse(json['created_at'])?.toLocal() ?? DateTime.now())
+              ? (DateTime.tryParse(json['created_at'])?.toLocal() ??
+                  DateTime.now())
               : DateTime.now(),
       updatedAt:
           json['updated_at'] != null
-              ? (DateTime.tryParse(json['updated_at'])?.toLocal() ?? DateTime.now())
+              ? (DateTime.tryParse(json['updated_at'])?.toLocal() ??
+                  DateTime.now())
               : DateTime.now(),
       eventImageUrl: json['event_image_url'] ?? '',
     );
@@ -64,15 +67,15 @@ class UserEventModel {
     if (dateStr == null) {
       return DateTime.now();
     }
-    
+
     try {
       final dateString = dateStr.toString().trim();
-      
+
       final parsed = DateTime.tryParse(dateString);
       if (parsed == null) {
         return DateTime.now();
       }
-      
+
       final local = parsed.toLocal();
       return local;
     } catch (e) {

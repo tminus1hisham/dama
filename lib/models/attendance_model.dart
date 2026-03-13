@@ -21,7 +21,10 @@ class AttendanceRecord {
       userId: json['user_id'] ?? '',
       userName: json['user_name'] ?? '',
       present: json['present'] ?? false,
-      markedAt: json['marked_at'] != null ? DateTime.tryParse(json['marked_at']) : null,
+      markedAt:
+          json['marked_at'] != null
+              ? DateTime.tryParse(json['marked_at'])
+              : null,
       markedBy: json['marked_by'],
     );
   }
@@ -31,17 +34,16 @@ class AttendanceResponse {
   final bool success;
   final List<AttendanceRecord> attendance;
 
-  AttendanceResponse({
-    required this.success,
-    required this.attendance,
-  });
+  AttendanceResponse({required this.success, required this.attendance});
 
   factory AttendanceResponse.fromJson(Map<String, dynamic> json) {
     return AttendanceResponse(
       success: json['success'] ?? false,
-      attendance: (json['attendance'] as List?)
-          ?.map((e) => AttendanceRecord.fromJson(e))
-          .toList() ?? [],
+      attendance:
+          (json['attendance'] as List?)
+              ?.map((e) => AttendanceRecord.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }

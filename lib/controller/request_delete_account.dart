@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class RequestDeleteAccountController extends GetxController {
-
   var isLoading = false.obs;
 
   final AuthService _authService = AuthService();
@@ -13,7 +12,6 @@ class RequestDeleteAccountController extends GetxController {
     isLoading.value = true;
 
     try {
-
       final result = await _authService.requestDeleteAccount();
 
       if (result != null) {

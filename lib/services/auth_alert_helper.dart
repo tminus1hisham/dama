@@ -36,7 +36,8 @@ class AuthAlertHelper {
     getInstance().show(
       title: title,
       description: description,
-      variant: AlertVariant.info,    );
+      variant: AlertVariant.info,
+    );
   }
 
   static void clearAll() {

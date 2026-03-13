@@ -43,7 +43,7 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
 
   void _loadUserData() async {
     print('=== PROFESSIONAL DETAILS - LOADING DATA ===');
-    
+
     String? image = await StorageService.getData("userImageUrl");
     String? fName = await StorageService.getData("firstName");
     String? mName = await StorageService.getData("middleName");
@@ -53,7 +53,7 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
     String? phone = await StorageService.getData("phoneNumber");
     String? userId = await StorageService.getData("userId");
     String? storedPassword = await StorageService.getData("password");
-    
+
     // Load LinkedIn-specific data
     String? linkedInTitle = await StorageService.getData("title");
     String? linkedInCompany = await StorageService.getData("company");
@@ -80,13 +80,13 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
       selectedCounty = county ?? '';
       phoneNumber = phone ?? '';
       password = storedPassword ?? '';
-      
+
       // Pre-populate LinkedIn data if available
       _titleController.text = linkedInTitle ?? '';
       _companyController.text = linkedInCompany ?? '';
       _briefBioController.text = linkedInBrief ?? '';
     });
-    
+
     print('[ProfDetails] State updated:');
     print('  selectedNationality: $selectedNationality');
   }
@@ -101,7 +101,7 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
 
   void _submitDetails() async {
     print('=== PROFESSIONAL DETAILS - SUBMITTING ===');
-    
+
     if (!_professionalKey.currentState!.validate()) {
       print('Validation failed');
       return;
@@ -130,7 +130,7 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
     updateUserProfileController.title.value = _titleController.text;
     updateUserProfileController.company.value = _companyController.text;
     updateUserProfileController.brief.value = _briefBioController.text;
-    
+
     // Set password and password_set flag
     if (password.isNotEmpty) {
       updateUserProfileController.password.value = password;
@@ -140,22 +140,22 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
 
     // Call update and wait for completion using a completer
     final completer = Completer<void>();
-    
+
     // Listen for loading state changes
     ever(updateUserProfileController.isLoading, (bool loading) {
       if (!loading && !completer.isCompleted) {
         completer.complete();
       }
     });
-    
+
     // Trigger the update
     print('Triggering updateUser...');
     updateUserProfileController.updateUser();
-    
+
     // Wait for update to complete
     await completer.future;
     print('Update completed');
-    
+
     // After successful professional details submission, initiate 2FA for all users
     // including LinkedIn users (to verify phone number via OTP)
     print('Initiating 2FA...');
@@ -170,7 +170,7 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
       final userId = await StorageService.getData('userId');
       final email = await StorageService.getData('email');
       final phone = await StorageService.getData('phoneNumber');
-      
+
       print('[2FA] Data from Storage:');
       print('  Token exists: ${token != null && token.isNotEmpty}');
       print('  Token length: ${token?.length ?? 0}');
@@ -178,7 +178,7 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
       print('  Email: $email');
       print('  Phone: $phone');
       print('================================');
-      
+
       // Show loading
       Get.dialog(
         Center(child: CircularProgressIndicator()),
@@ -188,11 +188,11 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
       // Store OTP flow flag for professional details flow
       await StorageService.storeData({'otp_flow': 'professional_details'});
       print('[2FA] Stored otp_flow flag');
-      
+
       // Call initiate2fa API to trigger OTP
       print('[2FA] Calling initiate2fa endpoint...');
       final result = await _authService.initiate2fa();
-      
+
       // Close loading dialog
       Get.back();
 
@@ -202,7 +202,9 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
         print('[2FA] OTP initiated successfully, navigating to OTP screen');
         Get.offAllNamed(AppRoutes.otp);
       } else {
-        print('[2FA] initiate2fa returned null, but still navigating to OTP screen');
+        print(
+          '[2FA] initiate2fa returned null, but still navigating to OTP screen',
+        );
         Get.offAllNamed(AppRoutes.otp);
       }
     } catch (e) {
@@ -210,9 +212,9 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
-      
+
       print('[2FA] Error in _initiate2faAndNavigate: $e');
-      
+
       // Show error but still allow user to proceed to OTP
       Get.snackbar(
         margin: EdgeInsets.only(top: 15, left: 15, right: 15),
@@ -222,7 +224,7 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
         backgroundColor: kOrange.withOpacity(0.9),
         duration: Duration(seconds: 5),
       );
-      
+
       // Still navigate to OTP screen so user can try
       Future.delayed(Duration(seconds: 2), () {
         Get.offAllNamed(AppRoutes.otp);
@@ -245,7 +247,7 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
 
     return Obx(
       () => Scaffold(
-        backgroundColor:  isDarkMode ? kDarkThemeBg : kWhite,
+        backgroundColor: isDarkMode ? kDarkThemeBg : kWhite,
         body: Form(
           key: _professionalKey,
           child: Stack(
@@ -289,7 +291,10 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
                         padding: EdgeInsets.only(left: 15),
                         child: Text(
                           'We need your personal infomation to setup your profile.',
-                          style: TextStyle(fontSize: kNormalTextSize, color: isDarkMode ? kWhite : kBlack),
+                          style: TextStyle(
+                            fontSize: kNormalTextSize,
+                            color: isDarkMode ? kWhite : kBlack,
+                          ),
                         ),
                       ),
                       InputField(
@@ -331,9 +336,7 @@ class _ProfessionalDetailsState extends State<ProfessionalDetails> {
                       ),
                       SizedBox(height: 10),
                       Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: kSidePadding,
-                        ),
+                        padding: EdgeInsets.symmetric(horizontal: kSidePadding),
                         child: CustomButton(
                           callBackFunction: () {
                             _submitDetails();

@@ -34,15 +34,16 @@ class PlansController extends GetxController {
         // API returns 'plans' not 'data'
         final data = (resp['plans'] ?? resp['data']) as List<dynamic>? ?? [];
         debugPrint('[PlansController] Received ${data.length} plans from API');
-        List<PlanModel> fetchedPlans = data
-            .map((e) => PlanModel.fromJson(e as Map<String, dynamic>))
-            .toList();
-        
+        List<PlanModel> fetchedPlans =
+            data
+                .map((e) => PlanModel.fromJson(e as Map<String, dynamic>))
+                .toList();
+
         // Log the prices
         for (var plan in fetchedPlans) {
           debugPrint('[PlansController] ${plan.membership}: KES ${plan.price}');
         }
-        
+
         // Use API prices directly - they are correct
         plansList.assignAll(fetchedPlans);
       } else {
@@ -216,7 +217,7 @@ class PlansController extends GetxController {
       // Factor 3: Check expiry date (use freeUntil or membershipExp)
       var expiryDateStr = await StorageService.getData('freeUntil');
       expiryDateStr ??= await StorageService.getData('membershipExp');
-      
+
       if (expiryDateStr == null || expiryDateStr.toString().isEmpty) {
         return false;
       }
@@ -224,10 +225,10 @@ class PlansController extends GetxController {
       try {
         final expiryDate = DateTime.parse(expiryDateStr.toString());
         final isFree = DateTime.now().isBefore(expiryDate);
-        
+
         // Optionally validate with API (async, non-blocking)
         _validateWithApiAsync();
-        
+
         return isFree;
       } catch (e) {
         debugPrint('Error parsing expiry date from local storage: $e');
@@ -246,7 +247,7 @@ class PlansController extends GetxController {
       if (response != null && response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
         final apiFreeTrial = data['freeUntil'];
-        
+
         if (apiFreeTrial != null) {
           // Sync API data with local storage if different
           final localFreeUntil = await StorageService.getData('freeUntil');
@@ -271,13 +272,13 @@ class PlansController extends GetxController {
       // First check if membership is free
       final isFree = await isProfessionalMembershipFree();
       if (!isFree) return 0;
-      
+
       // Get expiry date
       var expiryDateStr = await StorageService.getData('freeUntil');
       expiryDateStr ??= await StorageService.getData('membershipExp');
-      
+
       if (expiryDateStr == null || expiryDateStr.toString().isEmpty) return 0;
-      
+
       try {
         final expiryDate = DateTime.parse(expiryDateStr.toString());
         final daysRemaining = expiryDate.difference(DateTime.now()).inDays;
@@ -296,8 +297,9 @@ class PlansController extends GetxController {
   /// Fetches free trial status from API
   Future<int> getEffectivePrice(PlanModel plan) async {
     // Always use correct hardcoded prices, not API prices
-    final correctPrice = _correctPrices[plan.membership.toLowerCase()] ?? plan.price;
-    
+    final correctPrice =
+        _correctPrices[plan.membership.toLowerCase()] ?? plan.price;
+
     // For professional membership, check if it's currently free via API
     if (plan.membership.toLowerCase().contains('professional')) {
       final isFree = await isProfessionalMembershipFree();
@@ -311,10 +313,10 @@ class PlansController extends GetxController {
   Future<Map<String, dynamic>> getProfessionalMembershipStatus() async {
     try {
       debugPrint('[PlansController] Getting professional membership status...');
-      
+
       // Check if membership is free using 3-factor validation
       final isFree = await isProfessionalMembershipFree();
-      
+
       if (!isFree) {
         return {
           'isFree': false,
@@ -328,20 +330,20 @@ class PlansController extends GetxController {
       // Get expiry date
       var expiryDateStr = await StorageService.getData('freeUntil');
       expiryDateStr ??= await StorageService.getData('membershipExp');
-      
+
       if (expiryDateStr != null && expiryDateStr.toString().isNotEmpty) {
         try {
           final expiryDate = DateTime.parse(expiryDateStr.toString());
           final daysRemaining = expiryDate.difference(DateTime.now()).inDays;
           final startDate = await StorageService.getData('membershipStartDate');
-          
+
           debugPrint('[PlansController] Professional membership is free:');
           debugPrint('  Days Remaining: $daysRemaining');
           debugPrint('  Expires: $expiryDateStr');
-          
+
           // Async API validation (non-blocking)
           _validateWithApiAsync();
-          
+
           return {
             'isFree': true,
             'daysRemaining': daysRemaining > 0 ? daysRemaining : 0,
@@ -467,24 +469,27 @@ class PlansController extends GetxController {
           return plan.membership;
         }
       }
-      
+
       // Fallback: try by currentUserPlan name (set by getCurrentUserPlan)
       if (currentUserPlan.value.isNotEmpty) {
         final plan = plansList.firstWhereOrNull(
-          (plan) => plan.membership.toLowerCase() == currentUserPlan.value.toLowerCase(),
+          (plan) =>
+              plan.membership.toLowerCase() ==
+              currentUserPlan.value.toLowerCase(),
         );
         if (plan != null) {
           return plan.membership;
         }
         // If we have a plan type but can't find it in list, capitalize and return it
-        return currentUserPlan.value[0].toUpperCase() + currentUserPlan.value.substring(1);
+        return currentUserPlan.value[0].toUpperCase() +
+            currentUserPlan.value.substring(1);
       }
-      
+
       // Final fallback: check hasActivePlan
       if (hasActivePlan.value) {
         return 'Professional'; // Default to Professional if active but unknown
       }
-      
+
       return 'No Active Membership';
     } catch (e) {
       return 'No Active Membership';
@@ -501,24 +506,26 @@ class PlansController extends GetxController {
   Future<bool> validateAndSyncFreeTrialFromServer() async {
     try {
       debugPrint('[PlansController] Validating free trial with server...');
-      
+
       final response = await _plansService.getUserMembershipWithFreeTrial();
-      
+
       if (response != null && response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
-        
+
         if (data['freeTrialActive'] == true) {
           final serverFreeUntil = data['freeUntil'];
           final serverMembershipStart = data['membershipStartDate'];
-          
+
           if (serverFreeUntil != null) {
             // Sync with local storage
             await StorageService.storeData({
               'freeUntil': serverFreeUntil,
               'membershipStartDate': serverMembershipStart,
             });
-            
-            debugPrint('[PlansController] Free trial synced from server: $serverFreeUntil');
+
+            debugPrint(
+              '[PlansController] Free trial synced from server: $serverFreeUntil',
+            );
             return true;
           }
         }
@@ -541,28 +548,28 @@ class PlansController extends GetxController {
   Future<bool> isMembershipExpired() async {
     try {
       final hasMembership = await StorageService.getData('hasMembership');
-      
+
       // If user never had membership, it's not "expired" - just inactive
       if (hasMembership != true && hasMembership != 'true') {
         return false;
       }
-      
+
       // Check freeUntil first (for free trial users)
       var expiryDateStr = await StorageService.getData('freeUntil');
       expiryDateStr ??= await StorageService.getData('membershipExp');
-      
+
       if (expiryDateStr == null || expiryDateStr.toString().isEmpty) {
         return false;
       }
-      
+
       try {
         final expiryDate = DateTime.parse(expiryDateStr.toString());
         final isExpired = DateTime.now().isAfter(expiryDate);
-        
+
         if (isExpired) {
           debugPrint('[PlansController] Membership EXPIRED on $expiryDateStr');
         }
-        
+
         return isExpired;
       } catch (e) {
         debugPrint('Error parsing expiry date: $e');
@@ -582,19 +589,23 @@ class PlansController extends GetxController {
       // Factor 1: Check hasMembership flag
       final hasMembership = await StorageService.getData('hasMembership');
       if (hasMembership != true && hasMembership != 'true') {
-        debugPrint('[PlansController] hasValidMembership: false (no membership flag)');
+        debugPrint(
+          '[PlansController] hasValidMembership: false (no membership flag)',
+        );
         return false;
       }
-      
+
       // Factor 2: Check memberId exists
       final memberId = await StorageService.getData('memberId');
       final membershipId = await StorageService.getData('membershipId');
-      if ((memberId == null || memberId.toString().isEmpty) && 
+      if ((memberId == null || memberId.toString().isEmpty) &&
           (membershipId == null || membershipId.toString().isEmpty)) {
-        debugPrint('[PlansController] hasValidMembership: false (no member ID)');
+        debugPrint(
+          '[PlansController] hasValidMembership: false (no member ID)',
+        );
         return false;
       }
-      
+
       // Factor 3: Check not expired
       final isExpired = await isMembershipExpired();
       if (isExpired) {
@@ -604,7 +615,7 @@ class PlansController extends GetxController {
         hasActivePlan.value = false;
         return false;
       }
-      
+
       debugPrint('[PlansController] hasValidMembership: true');
       return true;
     } catch (e) {
@@ -618,7 +629,7 @@ class PlansController extends GetxController {
     try {
       var expiryDateStr = await StorageService.getData('freeUntil');
       expiryDateStr ??= await StorageService.getData('membershipExp');
-      
+
       if (expiryDateStr == null || expiryDateStr.toString().isEmpty) {
         return {
           'hasExpiry': false,
@@ -628,17 +639,30 @@ class PlansController extends GetxController {
           'formattedExpiry': 'No expiry date',
         };
       }
-      
+
       final expiryDate = DateTime.parse(expiryDateStr.toString());
       final now = DateTime.now();
       final isExpired = now.isAfter(expiryDate);
       final daysRemaining = isExpired ? 0 : expiryDate.difference(now).inDays;
-      
+
       // Format the date nicely
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      final formattedDate = '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
-      
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      final formattedDate =
+          '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
+
       return {
         'hasExpiry': true,
         'isExpired': isExpired,
@@ -663,9 +687,9 @@ class PlansController extends GetxController {
   void showRenewalPrompt({String? featureName}) {
     final context = Get.context;
     if (context == null) return;
-    
+
     final feature = featureName ?? 'this feature';
-    
+
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -709,7 +733,10 @@ class PlansController extends GetxController {
                   const Expanded(
                     child: Text(
                       'Professional Membership\nKES 12,000/year',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -725,7 +752,9 @@ class PlansController extends GetxController {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: kBlue,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
               Get.back();
@@ -744,7 +773,7 @@ class PlansController extends GetxController {
   /// Returns true if membership is valid, false if expired (and shows prompt)
   Future<bool> checkMembershipOrPrompt({String? featureName}) async {
     final isValid = await hasValidMembership();
-    
+
     if (!isValid) {
       final wasExpired = await isMembershipExpired();
       if (wasExpired) {
@@ -752,7 +781,7 @@ class PlansController extends GetxController {
       }
       return false;
     }
-    
+
     return true;
   }
 

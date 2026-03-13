@@ -17,9 +17,10 @@ class TransactionSkeleton extends StatelessWidget {
       child: Skeletonizer(
         enabled: true,
         effect: ShimmerEffect(
-          baseColor: themeProvider.isDark ? Color(0xFF222531) : Color(0xFFF4F6FF),
+          baseColor:
+              themeProvider.isDark ? Color(0xFF222531) : Color(0xFFF4F6FF),
           highlightColor:
-          themeProvider.isDark ? Color(0xFF2C2F3E) : Color(0xFFE4E0E1),
+              themeProvider.isDark ? Color(0xFF2C2F3E) : Color(0xFFE4E0E1),
           duration: Duration(seconds: 1),
         ),
         child: Container(

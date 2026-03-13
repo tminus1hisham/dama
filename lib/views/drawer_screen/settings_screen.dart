@@ -43,9 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           elevation: 0,
         ),
-        body: Center(
-          child: CircularProgressIndicator(color: kBlue),
-        ),
+        body: Center(child: CircularProgressIndicator(color: kBlue)),
       );
     }
 
@@ -95,7 +93,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           color: kBlue.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(Icons.palette_outlined, color: kBlue, size: 24),
+                        child: Icon(
+                          Icons.palette_outlined,
+                          color: kBlue,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Column(
@@ -123,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Theme Mode label
                   Text(
                     'Theme Mode',
@@ -134,7 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Theme Mode Cards - 3 column grid
                   Row(
                     children: [
@@ -144,7 +146,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           isDarkMode: isDarkMode,
                           icon: Icons.light_mode_outlined,
                           label: 'Light',
-                          isSelected: !isDarkMode && !themeProvider.useSystemTheme,
+                          isSelected:
+                              !isDarkMode && !themeProvider.useSystemTheme,
                           onTap: () => themeProvider.setDarkMode(false),
                         ),
                       ),
@@ -155,7 +158,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           isDarkMode: isDarkMode,
                           icon: Icons.dark_mode_outlined,
                           label: 'Dark',
-                          isSelected: isDarkMode && !themeProvider.useSystemTheme,
+                          isSelected:
+                              isDarkMode && !themeProvider.useSystemTheme,
                           onTap: () => themeProvider.setDarkMode(true),
                         ),
                       ),
@@ -177,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
 
             const SizedBox(height: 8),
-            
+
             // Legal Card
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -218,56 +222,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                   ),
-                  
+
                   _buildDivider(isDarkMode),
-                  
+
                   // Privacy Policy
-                  _buildLegalItem(
-                    isDarkMode: isDarkMode,
-                    icon: Icons.privacy_tip_outlined,
-                    title: 'Privacy Policy',
-                    subtitle: 'How we handle your data',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LegalScreen(initialTab: 0),
-                      ),
-                    ),
-                  ),
-                  _buildDivider(isDarkMode),
-                  
                   // Terms of Use
                   _buildLegalItem(
                     isDarkMode: isDarkMode,
                     icon: Icons.description_outlined,
-                    title: 'Terms of Use',
-                    subtitle: 'Rules for using our services',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LegalScreen(initialTab: 1),
-                      ),
-                    ),
-                  ),
-                  _buildDivider(isDarkMode),
-                  
-                  // Cookie Policy
-                  _buildLegalItem(
-                    isDarkMode: isDarkMode,
-                    icon: Icons.cookie_outlined,
-                    title: 'Cookie Policy',
-                    subtitle: 'How we use cookies',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LegalScreen(initialTab: 2),
-                      ),
-                    ),
+                    title: 'Terms & Conditions',
+                    subtitle: 'Our terms of service',
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LegalScreen(),
+                          ),
+                        ),
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 40),
           ],
         ),
@@ -353,12 +329,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? kBlue.withOpacity(0.08) 
-              : (isDarkMode ? Color(0xFF1a1f2e) : Color(0xFFf8f9fa)),
+          color:
+              isSelected
+                  ? kBlue.withOpacity(0.08)
+                  : (isDarkMode ? Color(0xFF1a1f2e) : Color(0xFFf8f9fa)),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? kBlue : (isDarkMode ? Color(0xFF2a3040) : Color(0xFFe5e7eb)),
+            color:
+                isSelected
+                    ? kBlue
+                    : (isDarkMode ? Color(0xFF2a3040) : Color(0xFFe5e7eb)),
             width: isSelected ? 2 : 1,
           ),
         ),

@@ -5,7 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class InputField extends StatefulWidget {
-  const InputField({super.key, 
+  const InputField({
+    super.key,
     required this.hintText,
     this.password = false,
     this.onChanged,
@@ -55,12 +56,13 @@ class _InputFieldState extends State<InputField> {
         children: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-            child: Text(widget.label, style: TextStyle(color: isDarkMode ? kWhite : kBlack),),
+            child: Text(
+              widget.label,
+              style: TextStyle(color: isDarkMode ? kWhite : kBlack),
+            ),
           ),
           TextFormField(
-            style: TextStyle(
-              color: isDarkMode ? Colors.white : Colors.black,
-            ),
+            style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
             cursorColor: isDarkMode ? kWhite : kBlue,
             controller: widget.controller,
             obscureText: widget.password ? _obscureText : false,
@@ -69,7 +71,10 @@ class _InputFieldState extends State<InputField> {
             validator: widget.validator,
 
             keyboardType:
-                widget.keyboardType ?? (widget.integerOnly ? TextInputType.number : TextInputType.text),
+                widget.keyboardType ??
+                (widget.integerOnly
+                    ? TextInputType.number
+                    : TextInputType.text),
             inputFormatters:
                 widget.integerOnly
                     ? [FilteringTextInputFormatter.digitsOnly]

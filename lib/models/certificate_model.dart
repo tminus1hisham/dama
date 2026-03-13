@@ -32,17 +32,17 @@ class CertificateModel {
   factory CertificateModel.fromJson(Map<String, dynamic> json) {
     // Extract metadata if it exists
     final metadata = json['metadata'] as Map<String, dynamic>? ?? {};
-    
+
     // Extract userId - it could be a string or an object
     String userIdValue = '';
     String userNameValue = '';
-    
+
     if (json['userId'] is String) {
       userIdValue = json['userId'];
     } else if (json['userId'] is Map<String, dynamic>) {
       final userData = json['userId'] as Map<String, dynamic>;
       userIdValue = userData['_id'] ?? '';
-      
+
       // Build userName from firstName and lastName if available
       final firstName = userData['firstName'] ?? '';
       final lastName = userData['lastName'] ?? '';
@@ -50,12 +50,12 @@ class CertificateModel {
         userNameValue = '$firstName $lastName'.trim();
       }
     }
-    
+
     // If userName is still empty, try metadata or json directly
     if (userNameValue.isEmpty) {
       userNameValue = metadata['userName'] ?? json['userName'] ?? '';
     }
-    
+
     // If still empty, try to get from user data in metadata
     if (userNameValue.isEmpty && metadata['user'] is Map<String, dynamic>) {
       final userData = metadata['user'] as Map<String, dynamic>;
@@ -65,7 +65,7 @@ class CertificateModel {
         userNameValue = '$firstName $lastName'.trim();
       }
     }
-    
+
     // Extract trainingId - it could be a string or an object
     String trainingIdValue = '';
     if (json['trainingId'] is String) {

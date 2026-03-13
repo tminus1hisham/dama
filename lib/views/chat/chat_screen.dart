@@ -142,11 +142,32 @@ class _ChatScreenState extends State<ChatScreen> {
         return 'Yesterday';
       } else if (now.difference(messageDate).inDays < 7) {
         // Show day name for last 7 days
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const days = [
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+          'Sunday',
+        ];
         return days[dateTime.weekday - 1];
       } else {
         // Show full date
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
         return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}';
       }
     } catch (e) {
@@ -227,76 +248,87 @@ class _ChatScreenState extends State<ChatScreen> {
                         showDateHeader = true;
                       } else {
                         final prevMessage = _chatController.messages[index - 1];
-                        final currentDateKey = getDateKey('${message.createdAt}');
-                        final prevDateKey = getDateKey('${prevMessage.createdAt}');
+                        final currentDateKey = getDateKey(
+                          '${message.createdAt}',
+                        );
+                        final prevDateKey = getDateKey(
+                          '${prevMessage.createdAt}',
+                        );
                         showDateHeader = currentDateKey != prevDateKey;
                       }
 
                       return Column(
                         children: [
                           if (showDateHeader)
-                            _buildDateHeader(formatDateHeader('${message.createdAt}'), isDarkMode),
+                            _buildDateHeader(
+                              formatDateHeader('${message.createdAt}'),
+                              isDarkMode,
+                            ),
                           GestureDetector(
                             onLongPress:
-                                () => _showDeleteMessageDialog(message.id, isMe),
+                                () =>
+                                    _showDeleteMessageDialog(message.id, isMe),
                             child: ChatBubble(
                               clipper: ChatBubbleClipper1(
                                 type:
                                     isMe
-                                    ? BubbleType.sendBubble
-                                    : BubbleType.receiverBubble,
-                          ),
-                          alignment:
-                              isMe ? Alignment.topRight : Alignment.topLeft,
-                          margin: EdgeInsets.symmetric(vertical: 4),
-                          backGroundColor: isMe ? Colors.blue : kWhite,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(minWidth: 80),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  message.content,
-                                  style: TextStyle(
-                                    color: isMe ? Colors.white : Colors.black,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                        ? BubbleType.sendBubble
+                                        : BubbleType.receiverBubble,
+                              ),
+                              alignment:
+                                  isMe ? Alignment.topRight : Alignment.topLeft,
+                              margin: EdgeInsets.symmetric(vertical: 4),
+                              backGroundColor: isMe ? Colors.blue : kWhite,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(minWidth: 80),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      formatChatTime('${message.createdAt}'),
+                                      message.content,
                                       style: TextStyle(
-                                        fontSize: 12,
                                         color:
-                                            isMe
-                                                ? Colors.white70
-                                                : Colors.grey.shade600,
+                                            isMe ? Colors.white : Colors.black,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    if (isMe) ...[
-                                      SizedBox(width: 4),
-                                      Icon(
-                                        isTempMessage
-                                            ? Icons.access_time
-                                            : Icons.done_all,
-                                        size: 12,
-                                        color:
+                                    SizedBox(height: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          formatChatTime(
+                                            '${message.createdAt}',
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color:
+                                                isMe
+                                                    ? Colors.white70
+                                                    : Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        if (isMe) ...[
+                                          SizedBox(width: 4),
+                                          Icon(
                                             isTempMessage
-                                                ? Colors.white54
-                                                : Colors.white70,
-                                      ),
-                                    ],
+                                                ? Icons.access_time
+                                                : Icons.done_all,
+                                            size: 12,
+                                            color:
+                                                isTempMessage
+                                                    ? Colors.white54
+                                                    : Colors.white70,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
                         ],
                       );
                     },

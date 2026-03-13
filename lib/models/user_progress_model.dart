@@ -22,7 +22,10 @@ class UserTrainingProgress {
       completedSessions: json['completed_sessions'] ?? 0,
       totalSessions: json['total_sessions'] ?? 0,
       progressPercentage: (json['progress_percentage'] ?? 0.0).toDouble(),
-      lastAccessed: json['last_accessed'] != null ? DateTime.tryParse(json['last_accessed']) : null,
+      lastAccessed:
+          json['last_accessed'] != null
+              ? DateTime.tryParse(json['last_accessed'])
+              : null,
     );
   }
 }
@@ -50,8 +53,14 @@ class UserSessionProgress {
       title: json['title'] ?? '',
       joined: json['joined'] ?? false,
       completed: json['completed'] ?? false,
-      joinTime: json['join_time'] != null ? DateTime.tryParse(json['join_time']) : null,
-      leaveTime: json['leave_time'] != null ? DateTime.tryParse(json['leave_time']) : null,
+      joinTime:
+          json['join_time'] != null
+              ? DateTime.tryParse(json['join_time'])
+              : null,
+      leaveTime:
+          json['leave_time'] != null
+              ? DateTime.tryParse(json['leave_time'])
+              : null,
     );
   }
 }

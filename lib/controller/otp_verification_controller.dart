@@ -1,4 +1,5 @@
 import 'package:dama/routes/routes.dart';
+import 'package:dama/services/api_service.dart';
 import 'package:dama/services/auth_service.dart';
 import 'package:dama/services/local_storage_service.dart';
 import 'package:dama/utils/constants.dart';
@@ -25,12 +26,12 @@ class OtpVerificationController extends GetxController {
     final storedUserId = await StorageService.getData('userId');
     final authType = await StorageService.getData('authType');
     final phone = await StorageService.getData('phoneNumber');
-    
+
     print('[OTP] Data from Storage:');
     print('  userId: $storedUserId');
     print('  authType: $authType');
     print('  phoneNumber: $phone');
-    
+
     if (storedUserId != null) {
       userId.value = storedUserId;
       print('[OTP] userId set in controller: ${userId.value}');
@@ -44,7 +45,7 @@ class OtpVerificationController extends GetxController {
     print('=== OTP VERIFICATION STARTED ===');
     print('[OTP] userId: ${userId.value}');
     print('[OTP] otp: ${otp.value}');
-    
+
     isLoading.value = true;
 
     try {
@@ -52,14 +53,14 @@ class OtpVerificationController extends GetxController {
         userId: userId.value,
         otp: otp.value,
       );
-      
+
       print('[OTP] Sending verification request...');
 
       // Check which flow this OTP is for
       final otpFlow = await StorageService.getData('otp_flow');
-      
+
       Map<String, dynamic>? result;
-      
+
       if (otpFlow == 'registration' || otpFlow == 'professional_details') {
         // Use registration-specific OTP verification for profile setup flows
         result = await _otpVerificationService.verifyRegistrationOtp(
@@ -67,15 +68,13 @@ class OtpVerificationController extends GetxController {
         );
       } else {
         // Use login OTP verification
-        result = await _otpVerificationService.verifyOtp(
-          otpVerificationModel,
-        );
+        result = await _otpVerificationService.verifyOtp(otpVerificationModel);
       }
-      
+
       if (result != null) {
         // Clear the OTP flow flag
         await StorageService.removeData('otp_flow');
-        
+
         if (otpFlow == 'professional_details') {
           // Professional details flow - profile setup complete, go to home
           Get.snackbar(
@@ -106,6 +105,36 @@ class OtpVerificationController extends GetxController {
         margin: EdgeInsets.only(top: 15, left: 15, right: 15),
         "Error",
         "An error occurred",
+        colorText: kWhite,
+        backgroundColor: kRed.withOpacity(0.9),
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void verifyPhoneUpdate(String otp, String phone) async {
+    isLoading.value = true;
+
+    try {
+      final apiService = Get.find<ApiService>();
+      await apiService.verifyPhoneUpdate(phone, otp);
+
+      Get.back(); // Close OTP screen
+
+      Get.snackbar(
+        margin: EdgeInsets.only(top: 15, left: 15, right: 15),
+        "Success",
+        "Phone number updated successfully",
+        colorText: kWhite,
+        backgroundColor: kGreen.withOpacity(0.9),
+      );
+    } catch (e) {
+      debugPrint('Error verifying phone update: $e');
+      Get.snackbar(
+        margin: EdgeInsets.only(top: 15, left: 15, right: 15),
+        "Error",
+        e.toString().replaceFirst('Exception: ', ''),
         colorText: kWhite,
         backgroundColor: kRed.withOpacity(0.9),
       );

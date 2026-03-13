@@ -16,8 +16,8 @@ class CustomInfomationDialog {
       buttonText: "Okay",
       imagePath: 'images/logo.png',
       onTapDismiss:
-      onTap ??
-              () {
+          onTap ??
+          () {
             Navigator.of(context).pop();
           },
       panaraDialogType: dialogType,

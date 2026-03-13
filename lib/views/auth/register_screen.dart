@@ -26,13 +26,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   final RegisterController registerController = Get.find<RegisterController>();
-  
+
   String? completePhoneNumber;
   String? countryCode = '+254';
 
   final GlobalKey<FormState> _registerKey = GlobalKey<FormState>();
 
   String fcmToken = '';
+  bool _termsAccepted = false;
 
   @override
   void initState() {
@@ -60,6 +61,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       print("Form validation failed");
       return;
     }
+
+    // Check if terms and conditions are accepted
+    if (!_termsAccepted) {
+      Get.snackbar(
+        'Terms & Conditions',
+        'Please accept the Terms of Service and Privacy Policy',
+        backgroundColor: kRed,
+        colorText: kWhite,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
     print("Form validation passed");
 
     // Ensure FCM token is available
@@ -155,7 +169,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       vertical: 5,
                                     ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Padding(
                                           padding: EdgeInsets.symmetric(
@@ -165,71 +180,138 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           child: Text(
                                             "Phone Number *",
                                             style: TextStyle(
-                                              color: isDarkMode ? kWhite : kBlack,
+                                              color:
+                                                  isDarkMode ? kWhite : kBlack,
                                             ),
                                           ),
                                         ),
                                         FormField<String>(
                                           validator: (value) {
-                                            if (completePhoneNumber == null || completePhoneNumber!.isEmpty) {
+                                            if (completePhoneNumber == null ||
+                                                completePhoneNumber!.isEmpty) {
                                               return "Phone number is required";
                                             }
                                             // Extract the phone number without country code
-                                            final phoneNumber = completePhoneNumber!.replaceAll(RegExp(r'^\+\d{1,3}'), '');
+                                            final phoneNumber =
+                                                completePhoneNumber!.replaceAll(
+                                                  RegExp(r'^\+\d{1,3}'),
+                                                  '',
+                                                );
                                             if (phoneNumber.length != 9) {
                                               return "Phone number must be exactly 9 digits";
                                             }
-                                            if (!RegExp(r'^[0-9]+$').hasMatch(phoneNumber)) {
+                                            if (!RegExp(
+                                              r'^[0-9]+$',
+                                            ).hasMatch(phoneNumber)) {
                                               return "Phone number must contain only digits";
                                             }
                                             return null;
                                           },
-                                          builder: (FormFieldState<String> state) {
+                                          builder: (
+                                            FormFieldState<String> state,
+                                          ) {
                                             return Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 IntlPhoneField(
                                                   decoration: InputDecoration(
                                                     hintText: "7*******",
                                                     hintStyle: TextStyle(
-                                                      color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                                                      color:
+                                                          isDarkMode
+                                                              ? Colors.grey[400]
+                                                              : Colors
+                                                                  .grey[700],
                                                     ),
-                                                    errorText: state.errorText ?? (registerController.phoneError.value.isEmpty ? null : registerController.phoneError.value),
+                                                    errorText:
+                                                        state.errorText ??
+                                                        (registerController
+                                                                .phoneError
+                                                                .value
+                                                                .isEmpty
+                                                            ? null
+                                                            : registerController
+                                                                .phoneError
+                                                                .value),
                                                     border: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(10.0),
-                                                      borderSide: BorderSide(color: Colors.grey),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10.0,
+                                                          ),
+                                                      borderSide: BorderSide(
+                                                        color: Colors.grey,
+                                                      ),
                                                     ),
-                                                    focusedBorder: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(10.0),
-                                                      borderSide: BorderSide(color: kBlue, width: 1.0),
-                                                    ),
+                                                    focusedBorder:
+                                                        OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10.0,
+                                                              ),
+                                                          borderSide:
+                                                              BorderSide(
+                                                                color: kBlue,
+                                                                width: 1.0,
+                                                              ),
+                                                        ),
                                                     errorBorder: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(10.0),
-                                                      borderSide: BorderSide(color: Colors.red, width: 1.0),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10.0,
+                                                          ),
+                                                      borderSide: BorderSide(
+                                                        color: Colors.red,
+                                                        width: 1.0,
+                                                      ),
                                                     ),
-                                                    focusedErrorBorder: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(10.0),
-                                                      borderSide: BorderSide(color: Colors.red, width: 1.0),
-                                                    ),
+                                                    focusedErrorBorder:
+                                                        OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10.0,
+                                                              ),
+                                                          borderSide:
+                                                              BorderSide(
+                                                                color:
+                                                                    Colors.red,
+                                                                width: 1.0,
+                                                              ),
+                                                        ),
                                                   ),
                                                   style: TextStyle(
-                                                    color: isDarkMode ? kWhite : kBlack,
+                                                    color:
+                                                        isDarkMode
+                                                            ? kWhite
+                                                            : kBlack,
                                                   ),
                                                   dropdownTextStyle: TextStyle(
-                                                    color: isDarkMode ? kWhite : kBlack,
+                                                    color:
+                                                        isDarkMode
+                                                            ? kWhite
+                                                            : kBlack,
                                                   ),
                                                   dropdownIcon: Icon(
                                                     Icons.arrow_drop_down,
-                                                    color: isDarkMode ? kWhite : kBlack,
+                                                    color:
+                                                        isDarkMode
+                                                            ? kWhite
+                                                            : kBlack,
                                                   ),
                                                   initialCountryCode: 'KE',
                                                   disableLengthCheck: true,
-                                                  onChanged: (PhoneNumber phone) {
-                                                    completePhoneNumber = phone.completeNumber;
-                                                    state.didChange(phone.completeNumber);
+                                                  onChanged: (
+                                                    PhoneNumber phone,
+                                                  ) {
+                                                    completePhoneNumber =
+                                                        phone.completeNumber;
+                                                    state.didChange(
+                                                      phone.completeNumber,
+                                                    );
                                                   },
                                                   onCountryChanged: (country) {
-                                                    countryCode = '+${country.dialCode}';
+                                                    countryCode =
+                                                        '+${country.dialCode}';
                                                   },
                                                 ),
                                               ],
@@ -244,9 +326,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     hintText: "example@gmail.com",
                                     label: "Email *",
                                     isRequired: true,
-                                    errorText: registerController.emailError.value.isEmpty ? null : registerController.emailError.value,
+                                    errorText:
+                                        registerController
+                                                .emailError
+                                                .value
+                                                .isEmpty
+                                            ? null
+                                            : registerController
+                                                .emailError
+                                                .value,
                                     validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
                                         return "This field is required";
                                       }
                                       return null;
@@ -259,7 +350,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     password: true,
                                     isRequired: true,
                                     validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
                                         return "This field is required";
                                       }
                                       if (value.length < 6) {
@@ -267,6 +359,81 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       }
                                       return null;
                                     },
+                                  ),
+                                  // Terms and Conditions Checkbox
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Checkbox(
+                                          value: _termsAccepted,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _termsAccepted = value ?? false;
+                                            });
+                                          },
+                                          activeColor: kBlue,
+                                        ),
+                                        Expanded(
+                                          child: RichText(
+                                            text: TextSpan(
+                                              style: TextStyle(
+                                                color:
+                                                    isDarkMode
+                                                        ? kWhite
+                                                        : kBlack,
+                                                fontSize: kSmallTextSize,
+                                              ),
+                                              children: [
+                                                TextSpan(text: 'I accept the '),
+                                                TextSpan(
+                                                  text: 'Terms of Service',
+                                                  style: TextStyle(
+                                                    color: kBlue,
+                                                    decoration:
+                                                        TextDecoration
+                                                            .underline,
+                                                  ),
+                                                  recognizer:
+                                                      TapGestureRecognizer()
+                                                        ..onTap = () {
+                                                          // Navigate to Terms of Service page
+                                                          // You can add your terms page route here
+                                                          Get.toNamed(
+                                                            AppRoutes
+                                                                .termsAndConditionPage,
+                                                          );
+                                                        },
+                                                ),
+                                                TextSpan(text: ' and '),
+                                                TextSpan(
+                                                  text: 'Privacy Policy',
+                                                  style: TextStyle(
+                                                    color: kBlue,
+                                                    decoration:
+                                                        TextDecoration
+                                                            .underline,
+                                                  ),
+                                                  recognizer:
+                                                      TapGestureRecognizer()
+                                                        ..onTap = () {
+                                                          // Navigate to Privacy Policy page
+                                                          // You can add your privacy policy route here
+                                                          Get.toNamed(
+                                                            AppRoutes
+                                                                .privacyPolicyPage,
+                                                          );
+                                                        },
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   Padding(
                                     padding: EdgeInsets.symmetric(
@@ -277,7 +444,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       callBackFunction: _register,
                                       label: "Create Account",
                                       backgroundColor: kBlue,
-                                      isLoading: registerController.isLoading.value,
+                                      isLoading:
+                                          registerController.isLoading.value,
                                     ),
                                   ),
                                   SizedBox(height: screenHeight * 0.04),

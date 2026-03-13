@@ -16,6 +16,7 @@ import 'package:dama/models/payment_model.dart';
 import 'package:dama/models/plans_model.dart';
 import 'package:dama/models/rating_model.dart';
 import 'package:dama/models/resources_model.dart';
+import 'package:dama/models/support_model.dart';
 import 'package:dama/models/role_request_model.dart';
 import 'package:dama/models/transaction_model.dart';
 import 'package:dama/models/user_event_model.dart';
@@ -104,7 +105,8 @@ class ApiService {
         return json.decode(response.body);
       } else {
         throw Exception(
-            'Failed to initiate payment: ${response.statusCode} - ${response.body}');
+          'Failed to initiate payment: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       debugPrint('initiatePayment error: $e');
@@ -113,7 +115,8 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> handlePaymentCallback(
-      Map<String, dynamic> callbackData) async {
+    Map<String, dynamic> callbackData,
+  ) async {
     try {
       final accessToken = await StorageService.getData("access_token");
       final response = await http.post(
@@ -128,7 +131,8 @@ class ApiService {
         return json.decode(response.body);
       } else {
         throw Exception(
-            'Failed to handle payment callback: ${response.statusCode}');
+          'Failed to handle payment callback: ${response.statusCode}',
+        );
       }
     } catch (e) {
       debugPrint('handlePaymentCallback error: $e');
@@ -142,7 +146,8 @@ class ApiService {
 
       debugPrint('=== API PAYMENT DEBUG ===');
       debugPrint(
-          'Token available: ${accessToken != null && accessToken.isNotEmpty}');
+        'Token available: ${accessToken != null && accessToken.isNotEmpty}',
+      );
       debugPrint('Model: ${request.model}');
       debugPrint('ObjectId: ${request.objectId}');
       debugPrint('Amount: ${request.amountToPay}');
@@ -178,8 +183,7 @@ class ApiService {
               errorData['message'] ?? errorData['error'] ?? 'Unknown error';
           throw Exception('Payment failed: $errorMessage');
         } catch (_) {
-          throw Exception(
-              'Failed to complete payment: ${response.statusCode}');
+          throw Exception('Failed to complete payment: ${response.statusCode}');
         }
       }
     } on SocketException catch (_) {
@@ -236,7 +240,8 @@ class ApiService {
           throw Exception('Apple Pay setup failed: $errorMessage');
         } catch (_) {
           throw Exception(
-              'Failed to create payment intent: ${response.statusCode}');
+            'Failed to create payment intent: ${response.statusCode}',
+          );
         }
       }
     } on SocketException catch (_) {
@@ -262,8 +267,10 @@ class ApiService {
         if (jsonData.containsKey('transactions')) {
           List<dynamic> transactionData = jsonData['transactions'];
           return transactionData
-              .map((item) =>
-                  TransactionModel.fromJson(item as Map<String, dynamic>))
+              .map(
+                (item) =>
+                    TransactionModel.fromJson(item as Map<String, dynamic>),
+              )
               .toList();
         } else {
           throw Exception("No transaction key in response");
@@ -338,8 +345,7 @@ class ApiService {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
       } else {
-        throw Exception(
-            'Failed to post to $endpoint: ${response.statusCode}');
+        throw Exception('Failed to post to $endpoint: ${response.statusCode}');
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -389,20 +395,24 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data is List) {
-          final categories = data
-              .map((item) =>
-                  item is Map<String, dynamic> && item['name'] != null
-                      ? item['name'].toString()
-                      : null)
-              .whereType<String>()
-              .toList();
+          final categories =
+              data
+                  .map(
+                    (item) =>
+                        item is Map<String, dynamic> && item['name'] != null
+                            ? item['name'].toString()
+                            : null,
+                  )
+                  .whereType<String>()
+                  .toList();
           if (categories.isEmpty) {
             throw Exception('Empty categories list received from API');
           }
           return categories;
         }
         throw Exception(
-            'Invalid response format: expected List but got ${data.runtimeType}');
+          'Invalid response format: expected List but got ${data.runtimeType}',
+        );
       } else {
         throw Exception('Failed to load categories: ${response.statusCode}');
       }
@@ -428,8 +438,9 @@ class ApiService {
       if (category != null && category != 'All News') {
         queryParameters['category'] = category;
       }
-      final uri = Uri.parse('$BASE_URL/news/get/all')
-          .replace(queryParameters: queryParameters);
+      final uri = Uri.parse(
+        '$BASE_URL/news/get/all',
+      ).replace(queryParameters: queryParameters);
       final response = await http.get(
         uri,
         headers: {
@@ -474,12 +485,15 @@ class ApiService {
     }
   }
 
-  Future<List<NewsModel>> getPopularNews(
-      {int limit = 10, String? category}) async {
+  Future<List<NewsModel>> getPopularNews({
+    int limit = 10,
+    String? category,
+  }) async {
     try {
       final accessToken = await StorageService.getData("access_token");
-      final uri = Uri.parse('$BASE_URL/news/get/popular')
-          .replace(queryParameters: {'limit': limit.toString()});
+      final uri = Uri.parse(
+        '$BASE_URL/news/get/popular',
+      ).replace(queryParameters: {'limit': limit.toString()});
       final response = await http.get(
         uri,
         headers: {
@@ -512,8 +526,7 @@ class ApiService {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
       } else {
-        throw Exception(
-            'Failed to load popular news: ${response.statusCode}');
+        throw Exception('Failed to load popular news: ${response.statusCode}');
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -534,7 +547,19 @@ class ApiService {
         },
       );
       if (response.statusCode == 200) {
-        return NewsModel.fromJson(jsonDecode(response.body));
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+
+        // Handle wrapped response (if API returns { news: {...} } or { newsPost: {...} })
+        if (jsonData.containsKey('news')) {
+          return NewsModel.fromJson(jsonData['news'] as Map<String, dynamic>);
+        } else if (jsonData.containsKey('newsPost')) {
+          return NewsModel.fromJson(
+            jsonData['newsPost'] as Map<String, dynamic>,
+          );
+        } else {
+          // Direct response - unwrap from root level
+          return NewsModel.fromJson(jsonData);
+        }
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
@@ -622,20 +647,24 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data is List) {
-          final categories = data
-              .map((item) =>
-                  item is Map<String, dynamic> && item['name'] != null
-                      ? item['name'].toString()
-                      : null)
-              .whereType<String>()
-              .toList();
+          final categories =
+              data
+                  .map(
+                    (item) =>
+                        item is Map<String, dynamic> && item['name'] != null
+                            ? item['name'].toString()
+                            : null,
+                  )
+                  .whereType<String>()
+                  .toList();
           if (categories.isEmpty) {
             throw Exception('Empty categories list received from API');
           }
           return categories;
         }
         throw Exception(
-            'Invalid response format: expected List but got ${data.runtimeType}');
+          'Invalid response format: expected List but got ${data.runtimeType}',
+        );
       } else {
         throw Exception('Failed to load categories: ${response.statusCode}');
       }
@@ -656,20 +685,24 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data is List) {
-          final categories = data
-              .map((item) =>
-                  item is Map<String, dynamic> && item['name'] != null
-                      ? item['name'].toString()
-                      : null)
-              .whereType<String>()
-              .toList();
+          final categories =
+              data
+                  .map(
+                    (item) =>
+                        item is Map<String, dynamic> && item['name'] != null
+                            ? item['name'].toString()
+                            : null,
+                  )
+                  .whereType<String>()
+                  .toList();
           if (categories.isEmpty) {
             throw Exception('Empty categories list received from API');
           }
           return categories;
         }
         throw Exception(
-            'Invalid response format: expected List but got ${data.runtimeType}');
+          'Invalid response format: expected List but got ${data.runtimeType}',
+        );
       } else {
         throw Exception('Failed to load categories: ${response.statusCode}');
       }
@@ -695,8 +728,9 @@ class ApiService {
       if (category != null && category != 'All Blogs') {
         queryParameters['category'] = category;
       }
-      final uri = Uri.parse('$BASE_URL/blogs/get/all')
-          .replace(queryParameters: queryParameters);
+      final uri = Uri.parse(
+        '$BASE_URL/blogs/get/all',
+      ).replace(queryParameters: queryParameters);
       final response = await http.get(
         uri,
         headers: {
@@ -707,8 +741,9 @@ class ApiService {
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final blogResponse =
-            BlogResponse.fromJson(data as Map<String, dynamic>);
+        final blogResponse = BlogResponse.fromJson(
+          data as Map<String, dynamic>,
+        );
         return blogResponse.blogPosts;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         HandleUnauthorizedService.showUnauthorizedDialog();
@@ -821,10 +856,8 @@ class ApiService {
     try {
       final accessToken = await StorageService.getData("access_token");
       final uri = Uri.parse('$BASE_URL/resources/get/all').replace(
-          queryParameters: {
-            'page': page.toString(),
-            'limit': limit.toString()
-          });
+        queryParameters: {'page': page.toString(), 'limit': limit.toString()},
+      );
       final response = await http.get(
         uri,
         headers: {'Authorization': 'Bearer $accessToken'},
@@ -893,8 +926,18 @@ class ApiService {
     RatingModel request,
   ) async {
     try {
-      final accessToken = await StorageService.getData("access_token");
-      final response = await http.post(
+      var accessToken = await StorageService.getData("access_token");
+      final tokenPreview =
+          accessToken?.isNotEmpty == true
+              ? accessToken!.substring(0, min(20, accessToken.length))
+              : 'EMPTY';
+      debugPrint('[ApiService] Rating with token: $tokenPreview...');
+
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('No access token found. Please log in again.');
+      }
+
+      var response = await http.post(
         Uri.parse('$BASE_URL/resources/rate/$resourceId'),
         headers: {
           'Content-Type': 'application/json',
@@ -902,26 +945,94 @@ class ApiService {
         },
         body: json.encode(request.toJson()),
       );
+
+      final bodyPreview =
+          response.body.length > 100
+              ? response.body.substring(0, 100)
+              : response.body;
+      debugPrint(
+        '[ApiService] Rate response: ${response.statusCode} - $bodyPreview',
+      );
+
+      // If unauthorized, try to refresh token and retry once
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        debugPrint(
+          '[ApiService] Rate endpoint returned ${response.statusCode}, attempting token refresh',
+        );
+        final refreshToken = await StorageService.getData('refresh_token');
+        debugPrint(
+          '[ApiService] Refresh token exists: ${refreshToken != null && refreshToken.isNotEmpty}',
+        );
+
+        if (refreshToken == null || refreshToken.isEmpty) {
+          debugPrint('[ApiService] No refresh token available, cannot refresh');
+          HandleUnauthorizedService.showUnauthorizedDialog();
+          throw Exception('Session expired. Please log in again.');
+        }
+
+        final refreshed = await _refreshToken();
+        debugPrint('[ApiService] Token refresh result: $refreshed');
+
+        if (refreshed) {
+          accessToken = await StorageService.getData("access_token");
+          final newTokenPreview =
+              accessToken?.isNotEmpty == true
+                  ? accessToken!.substring(0, min(20, accessToken.length))
+                  : 'EMPTY';
+          debugPrint(
+            '[ApiService] Token refreshed (new token: $newTokenPreview...), retrying rate request',
+          );
+
+          response = await http.post(
+            Uri.parse('$BASE_URL/resources/rate/$resourceId'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $accessToken',
+            },
+            body: json.encode(request.toJson()),
+          );
+
+          debugPrint(
+            '[ApiService] Rate retry response: ${response.statusCode}',
+          );
+
+          // If retry also fails with 401/403, user session is truly invalid
+          if (response.statusCode == 401 || response.statusCode == 403) {
+            debugPrint(
+              '[ApiService] Rate retry also returned ${response.statusCode}, session invalid',
+            );
+            HandleUnauthorizedService.showUnauthorizedDialog();
+            throw Exception('Your session has expired. Please log in again.');
+          }
+        } else {
+          debugPrint('[ApiService] Token refresh failed');
+          HandleUnauthorizedService.showUnauthorizedDialog();
+          throw Exception('Session expired. Please log in again.');
+        }
+      }
+
       if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('[ApiService] Rating submitted successfully');
         return json.decode(response.body);
-      } else if (response.statusCode == 401 || response.statusCode == 403) {
-        HandleUnauthorizedService.showUnauthorizedDialog();
-        throw Exception('Unauthorized request');
       } else {
         try {
           final errorData = json.decode(response.body);
-          throw Exception(errorData['message'] ??
+          final errorMsg =
+              errorData['message'] ??
               errorData['error'] ??
-              'Failed to rate resource');
+              'Failed to rate resource';
+          debugPrint('[ApiService] Rate failed with error: $errorMsg');
+          throw Exception(errorMsg);
         } catch (_) {
-          throw Exception(
-              'Failed to rate resource: ${response.statusCode}');
+          throw Exception('Failed to rate resource: ${response.statusCode}');
         }
       }
-    } on SocketException catch (_) {
+    } on SocketException catch (e) {
+      debugPrint('[ApiService] SocketException during rating: $e');
       NetworkModal.showNetworkDialog();
-      throw Exception('Network error');
+      throw Exception('Network error: $e');
     } catch (e) {
+      debugPrint('[ApiService] Unexpected error during rating: $e');
       rethrow;
     }
   }
@@ -1018,7 +1129,8 @@ class ApiService {
         throw Exception('Unauthorized request');
       } else {
         throw Exception(
-            'Failed to load popular events: ${response.statusCode}');
+          'Failed to load popular events: ${response.statusCode}',
+        );
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -1039,8 +1151,9 @@ class ApiService {
         final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
         if (jsonData.containsKey('events')) {
           return (jsonData['events'] as List)
-              .map((item) =>
-                  UserEventModel.fromJson(item as Map<String, dynamic>))
+              .map(
+                (item) => UserEventModel.fromJson(item as Map<String, dynamic>),
+              )
               .toList();
         } else {
           throw Exception("No events key in response");
@@ -1049,8 +1162,7 @@ class ApiService {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
       } else {
-        throw Exception(
-            'Failed to load user events: ${response.statusCode}');
+        throw Exception('Failed to load user events: ${response.statusCode}');
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -1081,7 +1193,8 @@ class ApiService {
         throw Exception('Unauthorized request');
       } else {
         throw Exception(
-            'Failed to register for event: ${response.statusCode} - ${response.body}');
+          'Failed to register for event: ${response.statusCode} - ${response.body}',
+        );
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -1109,7 +1222,8 @@ class ApiService {
         throw Exception('Unauthorized request');
       } else {
         throw Exception(
-            'Failed to unregister from event: ${response.statusCode}');
+          'Failed to unregister from event: ${response.statusCode}',
+        );
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -1182,8 +1296,7 @@ class ApiService {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
       } else {
-        throw Exception(
-            'Failed to load notifications: ${response.statusCode}');
+        throw Exception('Failed to load notifications: ${response.statusCode}');
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -1347,8 +1460,9 @@ class ApiService {
       final membershipId = await StorageService.getData('membershipId');
       final membershipExp = await StorageService.getData('membershipExp');
       final freeUntil = await StorageService.getData('freeUntil');
-      final membershipStartDate =
-          await StorageService.getData('membershipStartDate');
+      final membershipStartDate = await StorageService.getData(
+        'membershipStartDate',
+      );
 
       bool isExpired = false;
       bool isFreeTrialActive = false;
@@ -1463,7 +1577,8 @@ class ApiService {
         throw Exception('Unauthorized request');
       } else {
         throw Exception(
-            'Failed to fetch current user data: ${response.statusCode}');
+          'Failed to fetch current user data: ${response.statusCode}',
+        );
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -1542,13 +1657,57 @@ class ApiService {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
       } else {
-        throw Exception(
-            'Failed to load article count: ${response.statusCode}');
+        throw Exception('Failed to load article count: ${response.statusCode}');
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
       throw Exception('Network error');
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<bool> sendSupportMessage(SupportModel support) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+      debugPrint('Sending feedback with data: ${support.toJson()}');
+      debugPrint('Using token: ${accessToken?.substring(0, 20)}...');
+
+      final response = await http.post(
+        Uri.parse('$BASE_URL/feedback/create'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode(support.toJson()),
+      );
+
+      debugPrint('Feedback response status: ${response.statusCode}');
+      debugPrint('Feedback response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('Feedback sent successfully');
+        return true;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        try {
+          final errorBody = jsonDecode(response.body);
+          final errorMessage =
+              errorBody['message'] ?? 'Failed to send feedback';
+          throw Exception(errorMessage);
+        } catch (e) {
+          throw Exception(
+            'Server error: ${response.statusCode} - ${response.body}',
+          );
+        }
+      }
+    } on SocketException catch (_) {
+      NetworkModal.showNetworkDialog();
+      throw Exception('Network error: Please check your internet connection');
+    } catch (e) {
+      debugPrint('Error sending support message: $e');
       rethrow;
     }
   }
@@ -1599,8 +1758,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      throw Exception(
-          'Failed to fetch conversations: ${response.statusCode}');
+      throw Exception('Failed to fetch conversations: ${response.statusCode}');
     }
   }
 
@@ -1680,8 +1838,7 @@ class ApiService {
     throw Exception("Failed to delete message");
   }
 
-  Future<bool> markMessagesAsRead(
-      String conversationId, String userId) async {
+  Future<bool> markMessagesAsRead(String conversationId, String userId) async {
     final accessToken = await StorageService.getData("access_token");
     final response = await http.post(
       Uri.parse('$CHAT_BASE_URL/chat/messages/read'),
@@ -1771,19 +1928,19 @@ class ApiService {
         HandleUnauthorizedService.showUnauthorizedDialog();
         return {
           'success': false,
-          'message': 'Unauthorized. Please log in again.'
+          'message': 'Unauthorized. Please log in again.',
         };
       } else {
         try {
           final errorData = json.decode(response.body);
           return {
             'success': false,
-            'message': errorData['message'] ?? 'Failed to enroll'
+            'message': errorData['message'] ?? 'Failed to enroll',
           };
         } catch (_) {
           return {
             'success': false,
-            'message': 'Failed to enroll: ${response.statusCode}'
+            'message': 'Failed to enroll: ${response.statusCode}',
           };
         }
       }
@@ -1791,15 +1948,14 @@ class ApiService {
       NetworkModal.showNetworkDialog();
       return {
         'success': false,
-        'message': 'Network error. Please check your connection.'
+        'message': 'Network error. Please check your connection.',
       };
     } catch (e) {
       return {'success': false, 'message': 'Error: $e'};
     }
   }
 
-  Future<Map<String, dynamic>> getUserTrainingDetails(
-      String trainingId) async {
+  Future<Map<String, dynamic>> getUserTrainingDetails(String trainingId) async {
     final accessToken = await StorageService.getData("access_token");
     final response = await http.get(
       Uri.parse('$BASE_URL/trainings/user/trainings/$trainingId'),
@@ -1812,8 +1968,7 @@ class ApiService {
     throw Exception('Failed to fetch training details');
   }
 
-  Future<Map<String, dynamic>> getTrainingSessions(
-      String trainingId) async {
+  Future<Map<String, dynamic>> getTrainingSessions(String trainingId) async {
     try {
       final accessToken = await StorageService.getData("access_token");
       final response = await http.get(
@@ -1840,14 +1995,17 @@ class ApiService {
         throw Exception('Unauthorized request');
       }
       throw Exception(
-          'Failed to fetch training sessions: ${response.statusCode}');
+        'Failed to fetch training sessions: ${response.statusCode}',
+      );
     } catch (e) {
       rethrow;
     }
   }
 
   Future<Map<String, dynamic>> joinSession(
-      String trainingId, String sessionId) async {
+    String trainingId,
+    String sessionId,
+  ) async {
     try {
       final accessToken = await StorageService.getData("access_token");
       final url =
@@ -1876,13 +2034,13 @@ class ApiService {
           }
           return {
             'success': false,
-            'message': 'Authentication failed. Please log in again.'
+            'message': 'Authentication failed. Please log in again.',
           };
         }
         HandleUnauthorizedService.showUnauthorizedDialog();
         return {
           'success': false,
-          'message': 'Session expired. Please log in again.'
+          'message': 'Session expired. Please log in again.',
         };
       } else {
         try {
@@ -1894,14 +2052,14 @@ class ApiService {
               errorMessage.toLowerCase().contains('closed')) {
             return {
               'success': false,
-              'message': 'This session has already ended.'
+              'message': 'This session has already ended.',
             };
           }
           return {'success': false, 'message': errorMessage};
         } catch (_) {
           return {
             'success': false,
-            'message': 'Failed to join session (Error ${response.statusCode})'
+            'message': 'Failed to join session (Error ${response.statusCode})',
           };
         }
       }
@@ -1911,7 +2069,9 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> leaveSession(
-      String trainingId, String sessionId) async {
+    String trainingId,
+    String sessionId,
+  ) async {
     try {
       final accessToken = await StorageService.getData("access_token");
       final url =
@@ -1940,28 +2100,28 @@ class ApiService {
           }
           return {
             'success': false,
-            'message': 'Authentication failed. Please log in again.'
+            'message': 'Authentication failed. Please log in again.',
           };
         }
         HandleUnauthorizedService.showUnauthorizedDialog();
         return {
           'success': false,
-          'message': 'Session expired. Please log in again.'
+          'message': 'Session expired. Please log in again.',
         };
       } else {
         try {
           final errorData = json.decode(response.body);
           return {
             'success': false,
-            'message': errorData['message'] ??
+            'message':
+                errorData['message'] ??
                 errorData['error'] ??
-                'Failed to leave session'
+                'Failed to leave session',
           };
         } catch (_) {
           return {
             'success': false,
-            'message':
-                'Failed to leave session (Error ${response.statusCode})'
+            'message': 'Failed to leave session (Error ${response.statusCode})',
           };
         }
       }
@@ -2025,7 +2185,8 @@ class ApiService {
         throw Exception('Unauthorized request');
       }
       throw Exception(
-          'Failed to fetch training progress: ${response.statusCode}');
+        'Failed to fetch training progress: ${response.statusCode}',
+      );
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
       throw Exception('Network error');
@@ -2057,8 +2218,7 @@ class ApiService {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception('Unauthorized request');
       } else {
-        throw Exception(
-            'Failed to load certificates: ${response.statusCode}');
+        throw Exception('Failed to load certificates: ${response.statusCode}');
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -2077,7 +2237,8 @@ class ApiService {
       if (accessToken == null || accessToken.isEmpty) {
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception(
-            'Session expired. Please log in again to generate the certificate.');
+          'Session expired. Please log in again to generate the certificate.',
+        );
       }
 
       final response = await http.get(
@@ -2090,7 +2251,8 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return CertificateModel.fromJson(
-            jsonDecode(response.body)['certificate']);
+          jsonDecode(response.body)['certificate'],
+        );
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         // Check if it's a business logic error first
         try {
@@ -2101,7 +2263,8 @@ class ApiService {
               msg.contains('not eligible') ||
               msg.contains('criteria')) {
             throw Exception(
-                'Failed to generate certificate: ${errorData['message']}');
+              'Failed to generate certificate: ${errorData['message']}',
+            );
           }
         } catch (e) {
           if (e.toString().contains('generate certificate')) rethrow;
@@ -2112,8 +2275,7 @@ class ApiService {
           final newToken = await StorageService.getData("access_token");
           if (newToken != null && newToken.isNotEmpty) {
             final retry = await http.get(
-              Uri.parse(
-                  '$BASE_URL/certificates/generate/$trainingId/$userId'),
+              Uri.parse('$BASE_URL/certificates/generate/$trainingId/$userId'),
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer $newToken',
@@ -2121,7 +2283,8 @@ class ApiService {
             );
             if (retry.statusCode == 200 || retry.statusCode == 201) {
               return CertificateModel.fromJson(
-                  jsonDecode(retry.body)['certificate']);
+                jsonDecode(retry.body)['certificate'],
+              );
             }
           }
         }
@@ -2129,15 +2292,18 @@ class ApiService {
         await _clearAuthTokens();
         HandleUnauthorizedService.showUnauthorizedDialog();
         throw Exception(
-            'Session expired. Please log in again to generate the certificate.');
+          'Session expired. Please log in again to generate the certificate.',
+        );
       } else {
         try {
           final errorData = jsonDecode(response.body);
           throw Exception(
-              'Failed to generate certificate: ${errorData['message'] ?? errorData['error'] ?? 'Unknown error'}');
+            'Failed to generate certificate: ${errorData['message'] ?? errorData['error'] ?? 'Unknown error'}',
+          );
         } catch (_) {
           throw Exception(
-              'Failed to generate certificate: ${response.statusCode}');
+            'Failed to generate certificate: ${response.statusCode}',
+          );
         }
       }
     } on SocketException catch (_) {
@@ -2157,9 +2323,9 @@ class ApiService {
         headers: {'Authorization': 'Bearer $accessToken'},
       );
 
-      final contentType =
-          response.headers['content-type']?.toLowerCase() ?? '';
-      final isPdf = response.bodyBytes.length >= 5 &&
+      final contentType = response.headers['content-type']?.toLowerCase() ?? '';
+      final isPdf =
+          response.bodyBytes.length >= 5 &&
           response.bodyBytes[0] == 0x25 &&
           response.bodyBytes[1] == 0x50 &&
           response.bodyBytes[2] == 0x44 &&
@@ -2170,10 +2336,12 @@ class ApiService {
         try {
           final errorData = jsonDecode(response.body);
           throw Exception(
-              'Server returned: ${errorData['message'] ?? errorData['error'] ?? 'Unknown error'}');
+            'Server returned: ${errorData['message'] ?? errorData['error'] ?? 'Unknown error'}',
+          );
         } catch (_) {
           throw Exception(
-              'Failed to download certificate: not a PDF file (${response.statusCode})');
+            'Failed to download certificate: not a PDF file (${response.statusCode})',
+          );
         }
       }
 
@@ -2190,7 +2358,8 @@ class ApiService {
         throw Exception('Unauthorized request');
       } else {
         throw Exception(
-            'Failed to download certificate: ${response.statusCode}');
+          'Failed to download certificate: ${response.statusCode}',
+        );
       }
     } on SocketException catch (_) {
       NetworkModal.showNetworkDialog();
@@ -2252,7 +2421,8 @@ class ApiService {
     );
     if (response.statusCode == 200) return json.decode(response.body);
     throw Exception(
-        'Failed to request account deletion: ${response.statusCode}');
+      'Failed to request account deletion: ${response.statusCode}',
+    );
   }
 
   Future<Map<String, dynamic>> changePassword(
@@ -2266,7 +2436,10 @@ class ApiService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
       },
-      body: json.encode({'oldPassword': oldPassword, 'newPassword': newPassword}),
+      body: json.encode({
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+      }),
     );
     if (response.statusCode == 200) return json.decode(response.body);
     throw Exception('Failed to change password: ${response.statusCode}');
@@ -2280,7 +2453,8 @@ class ApiService {
     );
     if (response.statusCode == 200) return json.decode(response.body);
     throw Exception(
-        'Failed to initiate password reset: ${response.statusCode}');
+      'Failed to initiate password reset: ${response.statusCode}',
+    );
   }
 
   Future<Map<String, dynamic>> resetPasswordWithOTP(
@@ -2312,10 +2486,12 @@ class ApiService {
   /// We capture the Location header WITHOUT following the redirect,
   /// then pass it to url_launcher to open in the device browser.
   Future<Map<String, dynamic>> getLinkedInAuthUrl({String? state}) async {
-    final uri = state != null
-        ? Uri.parse('$BASE_URL/user/linkedin/mobile')
-            .replace(queryParameters: {'state': state})
-        : Uri.parse('$BASE_URL/user/linkedin/mobile');
+    final uri =
+        state != null
+            ? Uri.parse(
+              '$BASE_URL/user/linkedin/mobile',
+            ).replace(queryParameters: {'state': state})
+            : Uri.parse('$BASE_URL/user/linkedin/mobile');
 
     debugPrint('=== LINKEDIN MOBILE AUTH URL REQUEST: $uri ===');
 
@@ -2328,9 +2504,10 @@ class ApiService {
       if (accessToken != null && accessToken.isNotEmpty) {
         headers['Authorization'] = 'Bearer $accessToken';
       }
-      final request = http.Request('GET', uri)
-        ..followRedirects = false
-        ..headers.addAll(headers);
+      final request =
+          http.Request('GET', uri)
+            ..followRedirects = false
+            ..headers.addAll(headers);
 
       final streamed = await client.send(request);
 
@@ -2343,7 +2520,9 @@ class ApiService {
 
       final body = await streamed.stream.bytesToString();
       debugPrint('Body length: ${body.length}');
-      debugPrint('Body preview: ${body.substring(0, body.length.clamp(0, 500))}');
+      debugPrint(
+        'Body preview: ${body.substring(0, body.length.clamp(0, 500))}',
+      );
       debugPrint('=== END LINKEDIN RAW RESPONSE ===');
 
       // ✅ Server returns 302 → Location header contains the LinkedIn OAuth URL.
@@ -2363,8 +2542,9 @@ class ApiService {
         final trimmed = body.trim();
         if (trimmed.startsWith('<')) {
           throw Exception(
-              'Server returned HTML — followRedirects=false not working. '
-              'Body preview: ${trimmed.substring(0, trimmed.length.clamp(0, 300))}');
+            'Server returned HTML — followRedirects=false not working. '
+            'Body preview: ${trimmed.substring(0, trimmed.length.clamp(0, 300))}',
+          );
         }
         return json.decode(trimmed) as Map<String, dynamic>;
       }
@@ -2378,7 +2558,8 @@ class ApiService {
       }
 
       throw Exception(
-          'Failed to get LinkedIn auth URL: \${streamed.statusCode}');
+        'Failed to get LinkedIn auth URL: \${streamed.statusCode}',
+      );
     } finally {
       client.close();
     }
@@ -2393,15 +2574,14 @@ class ApiService {
     String state,
     String platform,
   ) async {
-    final uri = Uri.parse('$BASE_URL/user/linkedin/callback/mobile').replace(
-      queryParameters: {
-        'code': code,
-        'state': state,
-      },
-    );
+    final uri = Uri.parse(
+      '$BASE_URL/user/linkedin/callback/mobile',
+    ).replace(queryParameters: {'code': code, 'state': state});
 
     debugPrint('🔵 [ApiService] Exchanging LinkedIn code for tokens...');
-    debugPrint('🔵 [ApiService] Code: ${code.substring(0, code.length.clamp(0, 20))}...');
+    debugPrint(
+      '🔵 [ApiService] Code: ${code.substring(0, code.length.clamp(0, 20))}...',
+    );
     debugPrint('🔵 [ApiService] State: $state');
     debugPrint('🔵 [ApiService] Endpoint: $uri');
 
@@ -2415,7 +2595,9 @@ class ApiService {
         debugPrint('❌ [ApiService] Server returned HTML (likely error page)');
         throw Exception('Server returned HTML instead of JSON.');
       }
-      debugPrint('🔵 [ApiService] Response body preview: ${body.substring(0, body.length.clamp(0, 200))}');
+      debugPrint(
+        '🔵 [ApiService] Response body preview: ${body.substring(0, body.length.clamp(0, 200))}',
+      );
       final decoded = json.decode(body) as Map<String, dynamic>;
       debugPrint('✅ [ApiService] LinkedIn code exchange successful');
       debugPrint('✅ [ApiService] Response keys: ${decoded.keys.toList()}');
@@ -2426,9 +2608,176 @@ class ApiService {
       throw Exception('Unauthorized request');
     }
 
-    debugPrint('❌ [ApiService] Code exchange failed: HTTP ${response.statusCode}');
+    debugPrint(
+      '❌ [ApiService] Code exchange failed: HTTP ${response.statusCode}',
+    );
     debugPrint('❌ [ApiService] Response body: ${response.body}');
     throw Exception(
-        'Failed to complete LinkedIn auth: ${response.statusCode} - ${response.body}');
+      'Failed to complete LinkedIn auth: ${response.statusCode} - ${response.body}',
+    );
+  }
+
+  // Get user's referrals
+  Future<Map<String, dynamic>> getMyReferrals() async {
+    try {
+      debugPrint(
+        '🟢🟢🟢 [ApiService] getMyReferrals() CALLED - making HTTP request 🟢🟢🟢',
+      );
+      final accessToken = await StorageService.getData("access_token");
+      debugPrint(
+        '🟢 Access token retrieved: ${accessToken?.substring(0, 10)}...',
+      );
+      final response = await http.get(
+        Uri.parse('$BASE_URL/referrals/get/mine'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        debugPrint(
+          '🌐 [ApiService] GET /referrals/get/mine - Status: ${response.statusCode}',
+        );
+        debugPrint('🌐 [ApiService] ========== RAW RESPONSE START ==========');
+        debugPrint('🌐 ${response.body}');
+        debugPrint('🌐 [ApiService] ========== RAW RESPONSE END ==========');
+        debugPrint('🌐 [ApiService] Response body keys: ${data.keys.toList()}');
+        debugPrint(
+          '🌐 [ApiService] Response has referrals?: ${data.containsKey('referrals')}',
+        );
+        if (data.containsKey('referrals') && data['referrals'] is List) {
+          debugPrint(
+            '🌐 [ApiService] Referrals count: ${(data['referrals'] as List).length}',
+          );
+          debugPrint(
+            '🌐 [ApiService] First referral: ${(data['referrals'] as List).isNotEmpty ? (data['referrals'] as List)[0] : 'N/A'}',
+          );
+        }
+        return data;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        final errorBody = jsonDecode(response.body);
+        final errorMessage =
+            errorBody['message'] ?? 'Failed to fetch referrals';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint('❌ [ApiService] Error fetching referrals: $e');
+      rethrow;
+    }
+  }
+
+  // Send referral invite
+  Future<Map<String, dynamic>> sendReferralInvite(String emailOrPhone) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+
+      // Determine if input is email or phone
+      final isEmail = emailOrPhone.contains('@');
+      final body =
+          isEmail ? {'email': emailOrPhone} : {'phoneNumber': emailOrPhone};
+
+      final response = await http.post(
+        Uri.parse('$BASE_URL/referrals/create'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Referral invite sent successfully: ${data.toString()}');
+        return data;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        final errorBody = jsonDecode(response.body);
+        final errorMessage = errorBody['message'] ?? 'Failed to send invite';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint('❌ [ApiService] Error sending referral invite: $e');
+      rethrow;
+    }
+  }
+
+  // Initiate phone number update (sends OTP)
+  Future<Map<String, dynamic>> initiatePhoneUpdate(String phone) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+      final userId = await StorageService.getData("userId");
+
+      final response = await http.post(
+        Uri.parse('$BASE_URL/user/phone/initiate-update'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode({'userId': userId, 'phone': phone}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Phone update initiated, OTP sent to: $phone');
+        return data;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        final errorBody = jsonDecode(response.body);
+        final errorMessage =
+            errorBody['message'] ?? 'Failed to initiate phone update';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint('❌ [ApiService] Error initiating phone update: $e');
+      rethrow;
+    }
+  }
+
+  // Verify phone number update with OTP
+  Future<Map<String, dynamic>> verifyPhoneUpdate(
+    String phone,
+    String otp,
+  ) async {
+    try {
+      final accessToken = await StorageService.getData("access_token");
+      final userId = await StorageService.getData("userId");
+
+      final response = await http.post(
+        Uri.parse('$BASE_URL/user/phone/verify-update'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode({'userId': userId, 'phone': phone, 'otp': otp}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Phone number updated successfully');
+        // Update local storage
+        await StorageService.storeData({'phoneNumber': phone});
+        return data;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        HandleUnauthorizedService.showUnauthorizedDialog();
+        throw Exception('Unauthorized request');
+      } else {
+        final errorBody = jsonDecode(response.body);
+        final errorMessage =
+            errorBody['message'] ?? 'Failed to verify phone update';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint('❌ [ApiService] Error verifying phone update: $e');
+      rethrow;
+    }
   }
 }

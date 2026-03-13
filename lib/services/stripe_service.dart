@@ -255,9 +255,6 @@ class StripeResult {
   }
 
   factory StripeResult.failure(String message) {
-    return StripeResult._(
-      success: false,
-      errorMessage: message,
-    );
+    return StripeResult._(success: false, errorMessage: message);
   }
 }

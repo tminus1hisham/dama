@@ -302,9 +302,11 @@ class TransactionDetailsModal extends StatelessWidget {
   Future<void> _generateAndDownloadReceipt(BuildContext context) async {
     try {
       final pdf = pw.Document();
-      
+
       // Format date and time
-      final formattedDate = DateFormat('MMM d, yyyy').format(transaction.createdAt);
+      final formattedDate = DateFormat(
+        'MMM d, yyyy',
+      ).format(transaction.createdAt);
       final formattedTime = DateFormat('h:mm a').format(transaction.createdAt);
 
       pdf.addPage(
@@ -351,10 +353,7 @@ class TransactionDetailsModal extends StatelessWidget {
                   children: [
                     _buildReceiptRow('Transaction ID', transaction.id),
                     _buildReceiptRow('Reference Number', 'N/A'),
-                    _buildReceiptRow(
-                      'Description',
-                      transaction.objectTitle,
-                    ),
+                    _buildReceiptRow('Description', transaction.objectTitle),
                     _buildReceiptRow('Transaction Type', transaction.onModel),
                     _buildReceiptRow(
                       'Date & Time',
@@ -458,10 +457,7 @@ class TransactionDetailsModal extends StatelessWidget {
           'Receipt_${transaction.id.substring(0, 8)}_${DateFormat('ddMMyyyy').format(transaction.createdAt)}.pdf';
 
       // Save and share
-      await Printing.sharePdf(
-        bytes: await pdf.save(),
-        filename: fileName,
-      );
+      await Printing.sharePdf(bytes: await pdf.save(), filename: fileName);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -492,10 +488,7 @@ class TransactionDetailsModal extends StatelessWidget {
         children: [
           pw.Text(
             label,
-            style: pw.TextStyle(
-              fontSize: 11,
-              fontWeight: pw.FontWeight.bold,
-            ),
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
           ),
           pw.Text(
             value,
@@ -513,7 +506,9 @@ class TransactionDetailsModal extends StatelessWidget {
     bool isDarkMode = themeProvider.isDark;
     final utils = Utils();
 
-    final formattedDate = DateFormat('MMM d, yyyy').format(transaction.createdAt);
+    final formattedDate = DateFormat(
+      'MMM d, yyyy',
+    ).format(transaction.createdAt);
     final formattedTime = DateFormat('h:mm a').format(transaction.createdAt);
 
     return Container(
@@ -572,7 +567,10 @@ class TransactionDetailsModal extends StatelessWidget {
                   // Main Card
                   Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: const Color(0xFF131C2B),
@@ -583,9 +581,10 @@ class TransactionDetailsModal extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: isDarkMode
-                              ? Colors.black.withOpacity(0.3)
-                              : Colors.grey.withOpacity(0.1),
+                          color:
+                              isDarkMode
+                                  ? Colors.black.withOpacity(0.3)
+                                  : Colors.grey.withOpacity(0.1),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -686,7 +685,8 @@ class TransactionDetailsModal extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
-                            onPressed: () => _generateAndDownloadReceipt(context),
+                            onPressed:
+                                () => _generateAndDownloadReceipt(context),
                             icon: const Icon(Icons.download),
                             label: const Text(
                               'Download Receipt',
@@ -719,11 +719,7 @@ class TransactionDetailsModal extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailSection(
-    String label,
-    String value,
-    bool isDarkMode,
-  ) {
+  Widget _buildDetailSection(String label, String value, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

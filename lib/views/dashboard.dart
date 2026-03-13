@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dama/controller/auth_controller.dart';
 import 'package:dama/controller/blog_controller.dart';
 import 'package:dama/controller/events_controller.dart';
+import 'package:dama/controller/global_search_controller.dart';
 import 'package:dama/controller/news_controller.dart';
 import 'package:dama/controller/notification_controller.dart';
 import 'package:dama/controller/plans_controller.dart';
@@ -31,6 +32,7 @@ import 'package:dama/widgets/cards/profile_card.dart';
 import 'package:dama/widgets/custom_appbar.dart';
 import 'package:dama/widgets/profile_avatar.dart';
 import 'package:dama/widgets/modals/alert_modal.dart';
+import 'package:dama/widgets/modals/referral_invite_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:motion_tab_bar_v2/motion-tab-bar.dart';
@@ -58,7 +60,6 @@ class _DashboardState extends State<Dashboard>
   final AuthController _authController = Get.find<AuthController>();
   late PageController _pageController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late TextEditingController _searchController;
 
   // Pulse animation for drawer avatar glow
   late AnimationController _pulseController;
@@ -95,9 +96,9 @@ class _DashboardState extends State<Dashboard>
 
   bool _isProfileDropdownOpen = false;
   bool _hasShownOfflineNotification = false;
-  
+
   // Notification polling timer
-  late Timer _notificationTimer;
+  Timer? _notificationTimer;
   static const Duration _notificationPollInterval = Duration(seconds: 15);
 
   List<Widget> get _screens => [
@@ -111,10 +112,11 @@ class _DashboardState extends State<Dashboard>
   @override
   void initState() {
     super.initState();
-    debugPrint('🏠 Dashboard initState: initialTab=${widget.initialTab}, initialSubTab=${widget.initialSubTab}');
+    debugPrint(
+      '🏠 Dashboard initState: initialTab=${widget.initialTab}, initialSubTab=${widget.initialSubTab}',
+    );
     _selectedIndex = widget.initialTab;
     _pageController = PageController(initialPage: _selectedIndex);
-    _searchController = TextEditingController();
     debugPrint('🏠 Dashboard _selectedIndex set to: $_selectedIndex');
 
     // Pulse animation controller for avatar glow in drawer
@@ -154,7 +156,10 @@ class _DashboardState extends State<Dashboard>
   /// Remove API noise from plan names
   String _cleanPlanName(String raw) {
     return raw
-        .replaceAll(RegExp(r'subscription transaction', caseSensitive: false), '')
+        .replaceAll(
+          RegExp(r'subscription transaction', caseSensitive: false),
+          '',
+        )
         .replaceAll(RegExp(r'plan transaction', caseSensitive: false), '')
         .replaceAll(RegExp(r'transaction', caseSensitive: false), '')
         .replaceAll(RegExp(r'\s*membership\s*', caseSensitive: false), '')
@@ -179,35 +184,48 @@ class _DashboardState extends State<Dashboard>
   LinearGradient _cardGradient(bool isDark) {
     if (_isStudent) {
       return LinearGradient(
-        colors: isDark
-            ? [const Color(0xFF703804).withOpacity(0.50), const Color(0xFF703804).withOpacity(0.45)]
-            : [const Color(0xFFFFD180), const Color(0xFFFFA726)],
+        colors:
+            isDark
+                ? [
+                  const Color(0xFF703804).withOpacity(0.50),
+                  const Color(0xFF703804).withOpacity(0.45),
+                ]
+                : [const Color(0xFFFFD180), const Color(0xFFFFA726)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       );
     }
     if (_isPro) {
       return LinearGradient(
-        colors: isDark
-            ? [const Color(0xFF6B6E6F).withOpacity(0.45), const Color(0xFF6B6E6F).withOpacity(0.40)]
-            : [const Color(0xFFCFD8DC), const Color(0xFF90A4AE)],
+        colors:
+            isDark
+                ? [
+                  const Color(0xFF6B6E6F).withOpacity(0.45),
+                  const Color(0xFF6B6E6F).withOpacity(0.40),
+                ]
+                : [const Color(0xFFCFD8DC), const Color(0xFF90A4AE)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       );
     }
     if (_isCorporate) {
       return LinearGradient(
-        colors: isDark
-            ? [const Color(0xFFE5B80B).withOpacity(0.30), const Color(0xFFE5B80B).withOpacity(0.25)]
-            : [const Color(0xFFFFF176), const Color(0xFFFFD600)],
+        colors:
+            isDark
+                ? [
+                  const Color(0xFFE5B80B).withOpacity(0.30),
+                  const Color(0xFFE5B80B).withOpacity(0.25),
+                ]
+                : [const Color(0xFFFFF176), const Color(0xFFFFD600)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       );
     }
     return LinearGradient(
-      colors: isDark
-          ? [const Color(0xFF1E1E1E), const Color(0xFF2C2C2C)]
-          : [const Color(0xFFF5F5F5), const Color(0xFFEEEEEE)],
+      colors:
+          isDark
+              ? [const Color(0xFF1E1E1E), const Color(0xFF2C2C2C)]
+              : [const Color(0xFFF5F5F5), const Color(0xFFEEEEEE)],
     );
   }
 
@@ -219,9 +237,12 @@ class _DashboardState extends State<Dashboard>
   }
 
   Color _planTextColor(bool isDark) {
-    if (_isStudent) return isDark ? const Color(0xFFFFA726) : const Color(0xFF703804);
-    if (_isPro) return isDark ? const Color(0xFFCFD8DC) : const Color(0xFF6B6E6F);
-    if (_isCorporate) return isDark ? const Color(0xFFFFD600) : const Color(0xFFE5B80B);
+    if (_isStudent)
+      return isDark ? const Color(0xFFFFA726) : const Color(0xFF703804);
+    if (_isPro)
+      return isDark ? const Color(0xFFCFD8DC) : const Color(0xFF6B6E6F);
+    if (_isCorporate)
+      return isDark ? const Color(0xFFFFD600) : const Color(0xFFE5B80B);
     return Colors.grey;
   }
 
@@ -236,13 +257,19 @@ class _DashboardState extends State<Dashboard>
 
   Color _cardBorderColor(bool isDark) {
     if (_isStudent) {
-      return isDark ? const Color(0xFF8A4505) : const Color(0xFFFFA726).withOpacity(0.6);
+      return isDark
+          ? const Color(0xFF8A4505)
+          : const Color(0xFFFFA726).withOpacity(0.6);
     }
     if (_isPro) {
-      return isDark ? const Color(0xFF7D8081) : const Color(0xFF6B6E6F).withOpacity(0.6);
+      return isDark
+          ? const Color(0xFF7D8081)
+          : const Color(0xFF6B6E6F).withOpacity(0.6);
     }
     if (_isCorporate) {
-      return isDark ? const Color(0xFFC9A00A) : const Color(0xFFFFD600).withOpacity(0.6);
+      return isDark
+          ? const Color(0xFFC9A00A)
+          : const Color(0xFFFFD600).withOpacity(0.6);
     }
     return Colors.grey.withOpacity(0.3);
   }
@@ -260,9 +287,12 @@ class _DashboardState extends State<Dashboard>
   /// Tappable for blogger/news_editor to access admin panel
   Widget? _roleBadgeWidget() {
     final roles = userRoles.map((r) => r.toLowerCase()).toList();
-    if (roles.contains('admin')) return _drawerChip('Admin', Colors.red, tappable: true);
-    if (roles.contains('news_editor')) return _drawerChip('Editor', Colors.blue, tappable: true);
-    if (roles.contains('blogger')) return _drawerChip('Blogger', Colors.purple, tappable: true);
+    if (roles.contains('admin'))
+      return _drawerChip('Admin', Colors.red, tappable: true);
+    if (roles.contains('news_editor'))
+      return _drawerChip('Editor', Colors.blue, tappable: true);
+    if (roles.contains('blogger'))
+      return _drawerChip('Blogger', Colors.purple, tappable: true);
     return null;
   }
 
@@ -286,16 +316,12 @@ class _DashboardState extends State<Dashboard>
           ),
           if (tappable) ...[
             const SizedBox(width: 3),
-            const Icon(
-              Icons.open_in_new,
-              color: Colors.white,
-              size: 9,
-            ),
+            const Icon(Icons.open_in_new, color: Colors.white, size: 9),
           ],
         ],
       ),
     );
-    
+
     if (tappable) {
       return GestureDetector(
         onTap: () {
@@ -314,7 +340,20 @@ class _DashboardState extends State<Dashboard>
     if (isoDate.isEmpty) return '';
     try {
       final dt = DateTime.parse(isoDate);
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
     } catch (_) {
       return isoDate;
@@ -428,13 +467,15 @@ class _DashboardState extends State<Dashboard>
       }
 
       final hasActivePlan = _plansController.hasActivePlan.value;
-      final membershipIdFromController = _plansController.currentMembershipId.value;
+      final membershipIdFromController =
+          _plansController.currentMembershipId.value;
 
       setState(() {
         hasMembership = hasActivePlan;
-        membershipName = hasActivePlan
-            ? _plansController.getMembershipName()
-            : 'No Active Membership';
+        membershipName =
+            hasActivePlan
+                ? _plansController.getMembershipName()
+                : 'No Active Membership';
         membershipId = membershipIdFromController;
       });
 
@@ -449,7 +490,9 @@ class _DashboardState extends State<Dashboard>
       }
     } catch (e) {
       try {
-        final storedHasMembership = await StorageService.getData('hasMembership');
+        final storedHasMembership = await StorageService.getData(
+          'hasMembership',
+        );
         final storedMembershipId = await StorageService.getData('membershipId');
         if (storedHasMembership == true || storedHasMembership == 'true') {
           setState(() {
@@ -474,8 +517,11 @@ class _DashboardState extends State<Dashboard>
 
   Future<void> _checkRoleApproval() async {
     try {
-      final hasBeenRedirected = await StorageService.getData('hasBeenRedirectedToAdmin');
-      if ((userRoles.contains('news_editor') || userRoles.contains('blogger')) &&
+      final hasBeenRedirected = await StorageService.getData(
+        'hasBeenRedirectedToAdmin',
+      );
+      if ((userRoles.contains('news_editor') ||
+              userRoles.contains('blogger')) &&
           hasBeenRedirected != 'true') {
         Future.delayed(Duration(seconds: 2), () {
           if (mounted) {
@@ -489,7 +535,9 @@ class _DashboardState extends State<Dashboard>
                   TextButton(
                     onPressed: () async {
                       Get.back();
-                      await StorageService.storeData({'hasBeenRedirectedToAdmin': 'true'});
+                      await StorageService.storeData({
+                        'hasBeenRedirectedToAdmin': 'true',
+                      });
                       launchUrl(
                         Uri.parse('https://admin.damakenya.org'),
                         mode: LaunchMode.externalApplication,
@@ -509,7 +557,9 @@ class _DashboardState extends State<Dashboard>
   Future<void> _checkAuthStatus() async {
     final token = await StorageService.getData('access_token');
     debugPrint('📱 [Dashboard] Checking auth status...');
-    debugPrint('📱 [Dashboard] Token present: ${token != null && token.isNotEmpty}');
+    debugPrint(
+      '📱 [Dashboard] Token present: ${token != null && token.isNotEmpty}',
+    );
     if (token == null || token.isEmpty) {
       Get.offAllNamed(AppRoutes.login);
     } else {
@@ -523,7 +573,7 @@ class _DashboardState extends State<Dashboard>
       _fetchAllData();
       debugPrint('📱 [Dashboard] Fetching notifications...');
       _notificationController.fetchnotifications();
-      
+
       // Start polling for new notifications every 15 seconds
       _startNotificationPolling();
       Future.delayed(Duration(milliseconds: 500), () {
@@ -535,34 +585,72 @@ class _DashboardState extends State<Dashboard>
   }
 
   Future<void> _checkAndShowAlerts() async {
-    if (!mounted) return;
+    debugPrint('[Dashboard] _checkAndShowAlerts: Starting...');
+    if (!mounted) {
+      debugPrint('[Dashboard] _checkAndShowAlerts: Not mounted');
+      return;
+    }
     final AlertController alertController = Get.find<AlertController>();
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    debugPrint('[Dashboard] _checkAndShowAlerts: Fetching alerts...');
     await alertController.fetchAlerts();
+    debugPrint(
+      '[Dashboard] _checkAndShowAlerts: Fetched ${alertController.alerts.length} total alerts',
+    );
+
     if (!mounted) return;
-    final activeAlerts = alertController.alerts.where((alert) => alert.isActive()).toList();
-    if (activeAlerts.isEmpty) return;
+    final activeAlerts =
+        alertController.alerts.where((alert) => alert.isActive()).toList();
+    debugPrint(
+      '[Dashboard] _checkAndShowAlerts: Found ${activeAlerts.length} active alerts',
+    );
+
+    if (activeAlerts.isEmpty) {
+      debugPrint(
+        '[Dashboard] _checkAndShowAlerts: No active alerts, showing referral modal',
+      );
+      // Show referral modal even if no alerts
+      await _showReferralModalIfNeeded();
+      return;
+    }
+
     for (var alert in activeAlerts) {
       if (!mounted) break;
       final shouldShow = await alertController.shouldShowAlert(alert.id);
+      debugPrint(
+        '[Dashboard] _checkAndShowAlerts: shouldShow alert ${alert.id}: $shouldShow',
+      );
       if (shouldShow && mounted) {
+        debugPrint(
+          '[Dashboard] _checkAndShowAlerts: Showing alert ${alert.id}',
+        );
         await showDialog(
           context: context,
           barrierDismissible: true,
-          builder: (context) => AlertDialogWidget(
-            alert: alert,
-            isDarkMode: themeProvider.isDark,
-            onClose: () {
-              if (mounted) {
-                Navigator.of(context).pop();
-                alertController.markAlertAsShown(alert.id);
-              }
-            },
-          ),
+          builder:
+              (context) => AlertDialogWidget(
+                alert: alert,
+                isDarkMode: themeProvider.isDark,
+                onClose: () {
+                  if (mounted) {
+                    Navigator.of(context).pop();
+                    alertController.markAlertAsShown(alert.id);
+                  }
+                },
+              ),
         );
         await alertController.markAlertAsShown(alert.id);
         if (mounted) await Future.delayed(const Duration(milliseconds: 300));
       }
+    }
+
+    debugPrint(
+      '[Dashboard] _checkAndShowAlerts: All alerts shown, now showing referral modal',
+    );
+    // Show referral modal after alerts
+    if (mounted) {
+      await _showReferralModalIfNeeded();
     }
   }
 
@@ -572,19 +660,55 @@ class _DashboardState extends State<Dashboard>
     await Future.delayed(Duration(milliseconds: 100));
   }
 
+  Future<void> _showReferralModalIfNeeded() async {
+    if (!mounted) {
+      debugPrint(
+        '[Dashboard] _showReferralModalIfNeeded: Not mounted, returning',
+      );
+      return;
+    }
+
+    debugPrint(
+      '[Dashboard] _showReferralModalIfNeeded: about to show referral modal',
+    );
+
+    try {
+      await showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withOpacity(0.6),
+        builder: (BuildContext dialogContext) {
+          return ReferralInviteModal(
+            onClose: () {
+              debugPrint('[Dashboard] ReferralInviteModal onClose called');
+              if (mounted) {
+                Navigator.of(dialogContext).pop();
+              }
+            },
+          );
+        },
+      );
+      debugPrint('[Dashboard] Referral modal closed');
+    } catch (e) {
+      debugPrint('[Dashboard] Error showing referral modal: $e');
+    }
+  }
+
   // Start polling for new notifications
   void _startNotificationPolling() {
     // Cancel existing timer if any
-    if (_notificationTimer.isActive) {
-      _notificationTimer.cancel();
+    if (_notificationTimer?.isActive ?? false) {
+      _notificationTimer?.cancel();
     }
-    
+
     _notificationTimer = Timer.periodic(_notificationPollInterval, (_) {
       if (mounted) {
         _notificationController.fetchnotifications();
       }
     });
-    debugPrint('✅ [Dashboard] Notification polling started (every ${_notificationPollInterval.inSeconds}s)');
+    debugPrint(
+      '✅ [Dashboard] Notification polling started (every ${_notificationPollInterval.inSeconds}s)',
+    );
   }
 
   void _toggleDrawer() {
@@ -607,11 +731,10 @@ class _DashboardState extends State<Dashboard>
   @override
   void dispose() {
     _pageController.dispose();
-    _searchController.dispose();
     _pulseController.dispose();
     // Cancel notification polling timer
-    if (_notificationTimer.isActive) {
-      _notificationTimer.cancel();
+    if (_notificationTimer?.isActive ?? false) {
+      _notificationTimer?.cancel();
       debugPrint('✅ [Dashboard] Notification polling stopped');
     }
     // Don't delete PlansController here - it may be needed by incoming Dashboard
@@ -623,8 +746,9 @@ class _DashboardState extends State<Dashboard>
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            SearchResultsScreen(query: query),
+        pageBuilder:
+            (context, animation, secondaryAnimation) =>
+                SearchResultsScreen(query: query),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -711,9 +835,10 @@ class _DashboardState extends State<Dashboard>
     bool isSelected = false,
   }) {
     // Selected state uses blue, otherwise default colors
-    final Color fg = isDestructive
-        ? const Color(0xFFEF4444)
-        : isSelected
+    final Color fg =
+        isDestructive
+            ? const Color(0xFFEF4444)
+            : isSelected
             ? kBlue
             : (isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151));
 
@@ -725,9 +850,7 @@ class _DashboardState extends State<Dashboard>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected 
-                ? kBlue.withOpacity(0.1) 
-                : Colors.transparent,
+            color: isSelected ? kBlue.withOpacity(0.1) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -748,9 +871,10 @@ class _DashboardState extends State<Dashboard>
               Icon(
                 Icons.chevron_right,
                 size: 15,
-                color: isDestructive
-                    ? const Color(0xFFEF4444).withOpacity(0.5)
-                    : fg.withOpacity(0.35),
+                color:
+                    isDestructive
+                        ? const Color(0xFFEF4444).withOpacity(0.5)
+                        : fg.withOpacity(0.35),
               ),
             ],
           ),
@@ -800,7 +924,6 @@ class _DashboardState extends State<Dashboard>
       child: SafeArea(
         child: Column(
           children: [
-
             // ══════════════════════════════════════════════════════════════
             // HEADER  (avatar · name · role badge · member id · close btn)
             // ══════════════════════════════════════════════════════════════
@@ -813,12 +936,11 @@ class _DashboardState extends State<Dashboard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   // ── DAMA Logo ─────────────────────────────────────────
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: ThemeAwareLogo(height: 10, fit: BoxFit.contain),
+                      child: ThemeAwareLogo(height: 14, fit: BoxFit.contain),
                     ),
                   ),
 
@@ -826,7 +948,6 @@ class _DashboardState extends State<Dashboard>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-
                       // Pulsing indigo→blue glow ring  (animate-pulse in React)
                       GestureDetector(
                         onTap: () {
@@ -835,48 +956,56 @@ class _DashboardState extends State<Dashboard>
                         },
                         child: AnimatedBuilder(
                           animation: _pulseAnim,
-                          builder: (context, child) => Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF6366F1), Color(0xFF3B82F6)],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF6366F1)
-                                      .withOpacity(_pulseAnim.value * 0.5),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
+                          builder:
+                              (context, child) => Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF6366F1),
+                                      Color(0xFF3B82F6),
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF6366F1,
+                                      ).withOpacity(_pulseAnim.value * 0.5),
+                                      blurRadius: 10,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.all(2.5),
-                            child: child,
-                          ),
+                                padding: const EdgeInsets.all(2.5),
+                                child: child,
+                              ),
                           child: CircleAvatar(
                             radius: 22,
-                            backgroundImage: imageUrl.isNotEmpty
-                                ? NetworkImage(imageUrl)
-                                : null,
-                            backgroundColor: isDark
-                                ? const Color(0xFF1E1E1E)
-                                : const Color(0xFFEEF2FF),
-                            child: imageUrl.isEmpty
-                                ? SizedBox.expand(
-                                    child: FittedBox(
-                                      fit: BoxFit.contain,
-                                      child: Text(
-                                        _initials,
-                                        style: const TextStyle(
-                                          color: Color(0xFF6366F1),
-                                          fontWeight: FontWeight.bold,
+                            backgroundImage:
+                                imageUrl.isNotEmpty
+                                    ? NetworkImage(imageUrl)
+                                    : null,
+                            backgroundColor:
+                                isDark
+                                    ? const Color(0xFF1E1E1E)
+                                    : const Color(0xFFEEF2FF),
+                            child:
+                                imageUrl.isEmpty
+                                    ? SizedBox.expand(
+                                      child: FittedBox(
+                                        fit: BoxFit.contain,
+                                        child: Text(
+                                          _initials,
+                                          style: const TextStyle(
+                                            color: Color(0xFF6366F1),
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  )
-                                : null,
+                                    )
+                                    : null,
                           ),
                         ),
                       ),
@@ -896,7 +1025,8 @@ class _DashboardState extends State<Dashboard>
                                         ? '$firstName $lastName'.trim()
                                         : 'User',
                                     style: TextStyle(
-                                      color: isDark ? Colors.white : Colors.black,
+                                      color:
+                                          isDark ? Colors.white : Colors.black,
                                       fontSize: kTitleTextSize,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -915,9 +1045,10 @@ class _DashboardState extends State<Dashboard>
                               Text(
                                 title,
                                 style: TextStyle(
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[500],
+                                  color:
+                                      isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[500],
                                   fontSize: kSmallTextSize,
                                 ),
                                 maxLines: 1,
@@ -931,14 +1062,14 @@ class _DashboardState extends State<Dashboard>
                                   Text(
                                     'Member No: $shortId',
                                     style: TextStyle(
-                                      color: isDark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[500],
+                                      color:
+                                          isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[500],
                                       fontSize: 11.5,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-
                                 ],
                               ),
                             ],
@@ -974,31 +1105,34 @@ class _DashboardState extends State<Dashboard>
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         gradient: _cardGradient(isDark),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: _cardBorderColor(isDark), width: 1),
+                          color: _cardBorderColor(isDark),
+                          width: 1,
+                        ),
                       ),
                       child: Row(
                         children: [
-
                           // Crown / workspace_premium icon box
                           Container(
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: hasMembership
-                                  ? _planIconBg()
-                                  : Colors.grey.shade400,
+                              color:
+                                  hasMembership
+                                      ? _planIconBg()
+                                      : Colors.grey.shade400,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               Icons.workspace_premium, // Crown in React
                               size: 20,
-                              color:
-                                  _isCorporate ? Colors.black : Colors.white,
+                              color: _isCorporate ? Colors.black : Colors.white,
                             ),
                           ),
 
@@ -1030,25 +1164,32 @@ class _DashboardState extends State<Dashboard>
                                       const SizedBox(width: 6),
                                       // Check if expired using FutureBuilder
                                       FutureBuilder<bool>(
-                                        future: _plansController.isMembershipExpired(),
+                                        future:
+                                            _plansController
+                                                .isMembershipExpired(),
                                         builder: (context, expiredSnapshot) {
-                                          final isExpired = expiredSnapshot.data ?? false;
+                                          final isExpired =
+                                              expiredSnapshot.data ?? false;
                                           return Container(
                                             padding: const EdgeInsets.symmetric(
-                                                horizontal: 6, vertical: 2),
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: isExpired
-                                                  ? kOrange.withOpacity(0.2)
-                                                  : _badgeBg(),
+                                              color:
+                                                  isExpired
+                                                      ? kOrange.withOpacity(0.2)
+                                                      : _badgeBg(),
                                               borderRadius:
                                                   BorderRadius.circular(4),
                                             ),
                                             child: Text(
                                               isExpired ? 'Expired' : 'Active',
                                               style: TextStyle(
-                                                color: isExpired
-                                                    ? kOrange
-                                                    : _badgeTextColor(),
+                                                color:
+                                                    isExpired
+                                                        ? kOrange
+                                                        : _badgeTextColor(),
                                                 fontSize: 9,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -1064,7 +1205,8 @@ class _DashboardState extends State<Dashboard>
                                 if (hasMembership &&
                                     membershipExiryDate.isNotEmpty)
                                   FutureBuilder<bool>(
-                                    future: _plansController.isMembershipExpired(),
+                                    future:
+                                        _plansController.isMembershipExpired(),
                                     builder: (context, snapshot) {
                                       final isExpired = snapshot.data ?? false;
                                       if (isExpired) {
@@ -1090,9 +1232,10 @@ class _DashboardState extends State<Dashboard>
                                       return Text(
                                         'Valid until ${_formatExpiry(membershipExiryDate)}',
                                         style: TextStyle(
-                                          color: isDark
-                                              ? Colors.grey[400]
-                                              : Colors.grey[700],
+                                          color:
+                                              isDark
+                                                  ? Colors.grey[400]
+                                                  : Colors.grey[700],
                                           fontSize: 10,
                                         ),
                                       );
@@ -1102,9 +1245,10 @@ class _DashboardState extends State<Dashboard>
                                   Text(
                                     'Upgrade for premium features',
                                     style: TextStyle(
-                                      color: isDark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
+                                      color:
+                                          isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600],
                                       fontSize: 10,
                                     ),
                                   ),
@@ -1130,10 +1274,10 @@ class _DashboardState extends State<Dashboard>
                   // ══════════════════════════════════════════════════════
                   FutureBuilder<dynamic>(
                     future: StorageService.getData(
-                        'membershipCertificateDownload'),
+                      'membershipCertificateDownload',
+                    ),
                     builder: (context, snapshot) {
-                      final certUrl =
-                          snapshot.data?.toString().trim() ?? '';
+                      final certUrl = snapshot.data?.toString().trim() ?? '';
                       if (certUrl.isEmpty) return const SizedBox.shrink();
                       return Padding(
                         padding: const EdgeInsets.only(top: 8),
@@ -1141,23 +1285,31 @@ class _DashboardState extends State<Dashboard>
                           onTap: () {
                             final url = certUrl;
                             Navigator.of(context).pop();
-                            Get.to(() => PDFViewerPage(
-                              pdfUrl: url,
-                              title: 'Membership Certificate',
-                            ));
+                            Get.to(
+                              () => PDFViewerPage(
+                                pdfUrl: url,
+                                title: 'Membership Certificate',
+                              ),
+                            );
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 9),
+                              horizontal: 12,
+                              vertical: 9,
+                            ),
                             decoration: BoxDecoration(
                               // Subtle amber-tinted background (React: bg-amber-50 dark:bg-amber-950)
-                              color: isDark
-                                  ? const Color(0xFFF59E0B).withOpacity(0.08)
-                                  : const Color(0xFFFFFBEB),
+                              color:
+                                  isDark
+                                      ? const Color(
+                                        0xFFF59E0B,
+                                      ).withOpacity(0.08)
+                                      : const Color(0xFFFFFBEB),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: const Color(0xFFF59E0B)
-                                    .withOpacity(isDark ? 0.25 : 0.35),
+                                color: const Color(
+                                  0xFFF59E0B,
+                                ).withOpacity(isDark ? 0.25 : 0.35),
                               ),
                             ),
                             child: Row(
@@ -1189,19 +1341,28 @@ class _DashboardState extends State<Dashboard>
                                   style: TextStyle(
                                     fontSize: kSmallTextSize,
                                     fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? const Color(0xFFFBBF24) // amber-400
-                                        : const Color(0xFF92400E), // amber-800
+                                    color:
+                                        isDark
+                                            ? const Color(
+                                              0xFFFBBF24,
+                                            ) // amber-400
+                                            : const Color(
+                                              0xFF92400E,
+                                            ), // amber-800
                                   ),
                                 ),
                                 const Spacer(),
                                 Icon(
                                   Icons.chevron_right,
                                   size: 15,
-                                  color: isDark
-                                      ? const Color(0xFFFBBF24).withOpacity(0.6)
-                                      : const Color(0xFF92400E)
-                                          .withOpacity(0.5),
+                                  color:
+                                      isDark
+                                          ? const Color(
+                                            0xFFFBBF24,
+                                          ).withOpacity(0.6)
+                                          : const Color(
+                                            0xFF92400E,
+                                          ).withOpacity(0.5),
                                 ),
                               ],
                             ),
@@ -1210,29 +1371,28 @@ class _DashboardState extends State<Dashboard>
                       );
                     },
                   ),
-
                 ],
               ),
             ), // end HEADER container
-
             // ══════════════════════════════════════════════════════════════
             // MENU ITEMS  (scrollable)
             // Order mirrors React baseMenuItems + role-specific splice
             // ══════════════════════════════════════════════════════════════
             Expanded(
               child: ListView(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
                 children: [
-
                   // Role-specific items first (React splice at index 1)
                   if (isBlogger || isAdmin) ...[
                     _buildDrawerNavItem(
                       title: 'Blog Editor',
                       icon: Icons.edit_square, // PenSquare in lucide
                       isDarkMode: isDark,
-                      badge: _menuBadge('Blogger',
-                          Colors.purple.withOpacity(0.15), Colors.purple),
+                      badge: _menuBadge(
+                        'Blogger',
+                        Colors.purple.withOpacity(0.15),
+                        Colors.purple,
+                      ),
                       onTap: () {
                         Navigator.pop(context);
                         // Navigator.pushNamed(context, AppRoutes.blogger);
@@ -1253,8 +1413,11 @@ class _DashboardState extends State<Dashboard>
                       title: 'News Editor',
                       icon: Icons.newspaper, // Newspaper in lucide
                       isDarkMode: isDark,
-                      badge: _menuBadge('Editor',
-                          Colors.blue.withOpacity(0.15), Colors.blue),
+                      badge: _menuBadge(
+                        'Editor',
+                        Colors.blue.withOpacity(0.15),
+                        Colors.blue,
+                      ),
                       onTap: () {
                         Navigator.pop(context);
                         // Navigator.pushNamed(context, AppRoutes.newsEditor);
@@ -1271,7 +1434,12 @@ class _DashboardState extends State<Dashboard>
                     ),
                   ],
                   if (isBlogger || isEditor || isAdmin)
-                    Divider(color: divider, height: 16, indent: 12, endIndent: 12),
+                    Divider(
+                      color: divider,
+                      height: 16,
+                      indent: 12,
+                      endIndent: 12,
+                    ),
 
                   // ── Base menu items — same order as React baseMenuItems ─
                   _buildDrawerNavItem(
@@ -1287,12 +1455,12 @@ class _DashboardState extends State<Dashboard>
                     isDarkMode: isDark,
                     badge: _menuBadge(
                       'Premium',
-                      isDark 
-                        ? Color(0xFF1D2839)  // Dark mode background
-                        : Color(0xFFF5F5F5), // Light mode: RGB(245, 245, 245)
-                      isDark 
-                        ? Color(0xFFFFFFFF)  // White text in dark mode
-                        : Color(0xFF000000), // Black text in light mode
+                      isDark
+                          ? Color(0xFF1D2839) // Dark mode background
+                          : Color(0xFFF5F5F5), // Light mode: RGB(245, 245, 245)
+                      isDark
+                          ? Color(0xFFFFFFFF) // White text in dark mode
+                          : Color(0xFF000000), // Black text in light mode
                     ),
                     isSelected: _currentRoute == AppRoutes.plans,
                     onTap: () => _onMenuItemTap(AppRoutes.plans, 'Membership'),
@@ -1302,48 +1470,69 @@ class _DashboardState extends State<Dashboard>
                     icon: Icons.school_outlined, // GraduationCap in lucide
                     isDarkMode: isDark,
                     isSelected: _currentRoute == AppRoutes.trainings,
-                    onTap: () =>
-                        _onMenuItemTap(AppRoutes.trainings, 'Trainings'),
+                    onTap:
+                        () => _onMenuItemTap(AppRoutes.trainings, 'Trainings'),
                   ),
                   _buildDrawerNavItem(
                     title: 'Training Certificate',
                     icon: Icons.military_tech_outlined, // Award in lucide
                     isDarkMode: isDark,
                     isSelected: _currentRoute == AppRoutes.myTrainings,
-                    onTap: () =>
-                        _onMenuItemTap(AppRoutes.myTrainings, 'Training Certificate'),
+                    onTap:
+                        () => _onMenuItemTap(
+                          AppRoutes.myTrainings,
+                          'Training Certificate',
+                        ),
                   ),
                   _buildDrawerNavItem(
                     title: 'Notifications',
                     icon: Icons.notifications_outlined, // Bell in lucide
                     isDarkMode: isDark,
                     isSelected: _currentRoute == AppRoutes.notifications,
-                    onTap: () => _onMenuItemTap(
-                        AppRoutes.notifications, 'Notifications'),
+                    onTap:
+                        () => _onMenuItemTap(
+                          AppRoutes.notifications,
+                          'Notifications',
+                        ),
                   ),
                   _buildDrawerNavItem(
                     title: 'Transaction History',
                     icon: Icons.history, // History in lucide
                     isDarkMode: isDark,
                     isSelected: _currentRoute == AppRoutes.transcation,
-                    onTap: () => _onMenuItemTap(
-                        AppRoutes.transcation, 'Transaction History'),
+                    onTap:
+                        () => _onMenuItemTap(
+                          AppRoutes.transcation,
+                          'Transaction History',
+                        ),
                   ),
                   _buildDrawerNavItem(
                     title: 'About DAMA',
                     icon: Icons.info_outline, // Info in lucide
                     isDarkMode: isDark,
                     isSelected: _currentRoute == AppRoutes.aboutDama,
-                    onTap: () =>
-                        _onMenuItemTap(AppRoutes.aboutDama, 'About DAMA'),
+                    onTap:
+                        () => _onMenuItemTap(AppRoutes.aboutDama, 'About DAMA'),
+                  ),
+                  _buildDrawerNavItem(
+                    title: 'Support & Feedback',
+                    icon: Icons.support_agent,
+                    isDarkMode: isDark,
+                    isSelected: _currentRoute == AppRoutes.support,
+                    onTap:
+                        () => _onMenuItemTap(
+                          AppRoutes.support,
+                          'Support & Feedback',
+                        ),
                   ),
                   _buildDrawerNavItem(
                     title: 'Settings',
                     icon: Icons.settings_outlined, // Settings in lucide
                     isDarkMode: isDark,
                     isSelected: _currentRoute == AppRoutes.settingsPage,
-                    onTap: () => _onMenuItemTap(
-                        AppRoutes.settingsPage, 'Settings'),
+                    onTap:
+                        () =>
+                            _onMenuItemTap(AppRoutes.settingsPage, 'Settings'),
                   ),
 
                   // QR scanner — only for event_verify role (not in React web)
@@ -1365,8 +1554,9 @@ class _DashboardState extends State<Dashboard>
             // LOGOUT  (destructive red row at bottom)
             // ══════════════════════════════════════════════════════════════
             Container(
-              decoration:
-                  BoxDecoration(border: Border(top: BorderSide(color: divider))),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: divider)),
+              ),
               child: _buildDrawerNavItem(
                 title: 'Logout',
                 icon: Icons.logout, // LogOut in lucide
@@ -1378,14 +1568,11 @@ class _DashboardState extends State<Dashboard>
                 },
               ),
             ),
-
           ],
         ),
       ),
     );
   }
-
-
 
   Widget _buildWebLayout() {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -1407,42 +1594,12 @@ class _DashboardState extends State<Dashboard>
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: ThemeAwareLogo(height: 10, fit: BoxFit.contain),
-                        ),
-                        if (!isCompact) SizedBox(width: 20),
-                        Expanded(
-                          flex: isCompact ? 1 : 2,
-                          child: SizedBox(
-                            height: 40,
-                            child: TextField(
-                              onSubmitted: (query) {
-                                Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation, secondaryAnimation) =>
-                                        SearchResultsScreen(query: query),
-                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                      return FadeTransition(opacity: animation, child: child);
-                                    },
-                                    transitionDuration: const Duration(milliseconds: 200),
-                                  ),
-                                );
-                              },
-                              decoration: InputDecoration(
-                                hintText: 'Search',
-                                hintStyle: TextStyle(color: kGrey, fontSize: 14),
-                                prefixIcon: Icon(Icons.search, color: kGrey, size: 20),
-                                filled: true,
-                                fillColor: isDarkMode ? kDarkThemeBg : const Color(0xFFF0F0F0),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                            ),
+                          child: ThemeAwareLogo(
+                            height: 10,
+                            fit: BoxFit.contain,
                           ),
                         ),
+                        if (!isCompact) SizedBox(width: 20),
                         if (!isCompact) ...[
                           SizedBox(width: 20),
                           Expanded(
@@ -1451,11 +1608,36 @@ class _DashboardState extends State<Dashboard>
                               scrollDirection: Axis.horizontal,
                               child: Row(
                                 children: [
-                                  _buildWebNavItem('Home', Icons.home, 0, isDarkMode),
-                                  _buildWebNavItem('Blogs', Icons.library_books, 1, isDarkMode),
-                                  _buildWebNavItem('News', Icons.newspaper, 2, isDarkMode),
-                                  _buildWebNavItem('Resources', Icons.folder_copy, 3, isDarkMode),
-                                  _buildWebNavItem('Events', Icons.calendar_month, 4, isDarkMode),
+                                  _buildWebNavItem(
+                                    'Home',
+                                    Icons.home,
+                                    0,
+                                    isDarkMode,
+                                  ),
+                                  _buildWebNavItem(
+                                    'Blogs',
+                                    Icons.library_books,
+                                    1,
+                                    isDarkMode,
+                                  ),
+                                  _buildWebNavItem(
+                                    'News',
+                                    Icons.newspaper,
+                                    2,
+                                    isDarkMode,
+                                  ),
+                                  _buildWebNavItem(
+                                    'Resources',
+                                    Icons.folder_copy,
+                                    3,
+                                    isDarkMode,
+                                  ),
+                                  _buildWebNavItem(
+                                    'Events',
+                                    Icons.calendar_month,
+                                    4,
+                                    isDarkMode,
+                                  ),
                                 ],
                               ),
                             ),
@@ -1470,38 +1652,140 @@ class _DashboardState extends State<Dashboard>
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      _isProfileDropdownOpen = !_isProfileDropdownOpen;
+                                      _isProfileDropdownOpen =
+                                          !_isProfileDropdownOpen;
                                     });
                                   },
                                   child: ProfileAvatar(
                                     radius: 18,
-                                    backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                                    child: imageUrl.isEmpty
-                                        ? Icon(Icons.person, size: 20, color: kWhite)
-                                        : null,
+                                    backgroundImage:
+                                        imageUrl.isNotEmpty
+                                            ? NetworkImage(imageUrl)
+                                            : null,
+                                    child:
+                                        imageUrl.isEmpty
+                                            ? Icon(
+                                              Icons.person,
+                                              size: 20,
+                                              color: kWhite,
+                                            )
+                                            : null,
                                   ),
                                 ),
                                 if (_isProfileDropdownOpen)
                                   PopupMenuButton<int>(
                                     color: kWhite,
                                     onSelected: (value) {
-                                      if (value == 0) Navigator.pushNamed(context, AppRoutes.profile);
-                                      else if (value == 1) Navigator.pushNamed(context, AppRoutes.transcation);
-                                      else if (value == 2) Navigator.pushNamed(context, AppRoutes.trainings);
-                                      else if (value == 3) Navigator.pushNamed(context, AppRoutes.aboutDama);
-                                      else if (value == 4) _authController.logout(context);
+                                      if (value == 0)
+                                        Navigator.pushNamed(
+                                          context,
+                                          AppRoutes.profile,
+                                        );
+                                      else if (value == 1)
+                                        Navigator.pushNamed(
+                                          context,
+                                          AppRoutes.transcation,
+                                        );
+                                      else if (value == 2)
+                                        Navigator.pushNamed(
+                                          context,
+                                          AppRoutes.trainings,
+                                        );
+                                      else if (value == 3)
+                                        Navigator.pushNamed(
+                                          context,
+                                          AppRoutes.aboutDama,
+                                        );
+                                      else if (value == 4)
+                                        _authController.logout(context);
                                     },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(value: 0, child: Row(children: [Icon(Icons.person, color: kGrey), SizedBox(width: 8), Text("Profile")])),
-                                      PopupMenuItem(value: 1, child: Row(children: [Icon(Icons.history, color: kGrey), SizedBox(width: 8), Text("Transaction History")])),
-                                      PopupMenuItem(value: 2, child: Row(children: [Icon(Icons.school, color: kGrey), SizedBox(width: 8), Text("Training")])),
-                                      PopupMenuItem(value: 3, child: Row(children: [Icon(Icons.history, color: kGrey), SizedBox(width: 8), Text("About Dama")])),
-                                      PopupMenuItem(value: 4, child: Row(children: [Icon(Icons.logout, color: Colors.red), SizedBox(width: 8), Text("Logout", style: TextStyle(color: Colors.red))])),
-                                    ],
+                                    itemBuilder:
+                                        (context) => [
+                                          PopupMenuItem(
+                                            value: 0,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.person,
+                                                  color: kGrey,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text("Profile"),
+                                              ],
+                                            ),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 1,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.history,
+                                                  color: kGrey,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text("Transaction History"),
+                                              ],
+                                            ),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 2,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.school,
+                                                  color: kGrey,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text("Training"),
+                                              ],
+                                            ),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 3,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.history,
+                                                  color: kGrey,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text("About Dama"),
+                                              ],
+                                            ),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 4,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.logout,
+                                                  color: Colors.red,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  "Logout",
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                     child: ProfileAvatar(
                                       radius: 18,
-                                      backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                                      child: imageUrl.isEmpty ? Icon(Icons.person, size: 20, color: Colors.white) : null,
+                                      backgroundImage:
+                                          imageUrl.isNotEmpty
+                                              ? NetworkImage(imageUrl)
+                                              : null,
+                                      child:
+                                          imageUrl.isEmpty
+                                              ? Icon(
+                                                Icons.person,
+                                                size: 20,
+                                                color: Colors.white,
+                                              )
+                                              : null,
                                     ),
                                   ),
                               ],
@@ -1576,12 +1860,18 @@ class _DashboardState extends State<Dashboard>
                         children: [
                           TextButton(
                             onPressed: () {},
-                            child: Text('Privacy policy', style: TextStyle(color: kGrey, fontSize: 12)),
+                            child: Text(
+                              'Privacy policy',
+                              style: TextStyle(color: kGrey, fontSize: 12),
+                            ),
                           ),
                           SizedBox(width: 20),
                           TextButton(
                             onPressed: () {},
-                            child: Text('Terms & Conditions', style: TextStyle(color: kGrey, fontSize: 12)),
+                            child: Text(
+                              'Terms & Conditions',
+                              style: TextStyle(color: kGrey, fontSize: 12),
+                            ),
                           ),
                         ],
                       ),
@@ -1596,19 +1886,36 @@ class _DashboardState extends State<Dashboard>
     );
   }
 
-  Widget _buildWebNavItem(String title, IconData icon, int index, bool isDarkMode) {
+  Widget _buildWebNavItem(
+    String title,
+    IconData icon,
+    int index,
+    bool isDarkMode,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(top: 20, left: 5, right: 20),
       child: GestureDetector(
         onTap: () => _onNavItemTap(index),
         child: Column(
           children: [
-            Icon(icon, color: _selectedIndex == index ? kBlue : (isDarkMode ? kWhite : kGrey)),
+            Icon(
+              icon,
+              color:
+                  _selectedIndex == index
+                      ? kBlue
+                      : (isDarkMode ? kWhite : kGrey),
+            ),
             Text(
               title,
               style: TextStyle(
-                color: _selectedIndex == index ? kBlue : (isDarkMode ? kWhite : kGrey),
-                fontWeight: _selectedIndex == index ? FontWeight.bold : FontWeight.normal,
+                color:
+                    _selectedIndex == index
+                        ? kBlue
+                        : (isDarkMode ? kWhite : kGrey),
+                fontWeight:
+                    _selectedIndex == index
+                        ? FontWeight.bold
+                        : FontWeight.normal,
               ),
             ),
           ],
@@ -1626,74 +1933,103 @@ class _DashboardState extends State<Dashboard>
     required Widget Function(T) screenBuilder,
   }) {
     return Column(
-      children: items.take(6).map((item) {
-        return InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => screenBuilder(item),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-                transitionDuration: const Duration(milliseconds: 500),
+      children:
+          items.take(6).map((item) {
+            return InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder:
+                        (context, animation, secondaryAnimation) =>
+                            screenBuilder(item),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    transitionDuration: const Duration(milliseconds: 500),
+                  ),
+                );
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: isDarkMode ? kDarkCard : kBGColor,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.grey[100],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child:
+                            imageGetter(item) != null &&
+                                    imageGetter(item)!.isNotEmpty
+                                ? Image.network(
+                                  imageGetter(item)!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) => Center(
+                                        child: Icon(
+                                          Icons.broken_image,
+                                          size: 50,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                )
+                                : Center(
+                                  child: Icon(
+                                    fallbackIcon,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                      ),
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            titleGetter(item),
+                            style: TextStyle(
+                              color: isDarkMode ? kWhite : kBlack,
+                              fontSize: kNormalTextSize,
+                              fontWeight: FontWeight.w500,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Icon(
+                      Icons.more_vert,
+                      size: 16,
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ],
+                ),
               ),
             );
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: isDarkMode ? kDarkCard : kBGColor, width: 2),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey[100],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: imageGetter(item) != null && imageGetter(item)!.isNotEmpty
-                        ? Image.network(
-                            imageGetter(item)!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
-                          )
-                        : Center(child: Icon(fallbackIcon, size: 50, color: Colors.grey)),
-                  ),
-                ),
-                SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        titleGetter(item),
-                        style: TextStyle(
-                          color: isDarkMode ? kWhite : kBlack,
-                          fontSize: kNormalTextSize,
-                          fontWeight: FontWeight.w500,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 10),
-                Icon(Icons.more_vert, size: 16, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
+          }).toList(),
     );
   }
 
@@ -1712,7 +2048,8 @@ class _DashboardState extends State<Dashboard>
           imageGetter: (event) => event.eventImageUrl,
           fallbackIcon: Icons.image_not_supported,
           screenBuilder: (event) {
-            final paidEventIds = _userEventsController.eventsList.map((e) => e.id).toSet();
+            final paidEventIds =
+                _userEventsController.eventsList.map((e) => e.id).toSet();
             final isPaid = paidEventIds.contains(event.id);
             return SelectedEventScreen(
               title: event.eventTitle,
@@ -1736,17 +2073,18 @@ class _DashboardState extends State<Dashboard>
           titleGetter: (blog) => blog.title,
           imageGetter: (blog) => blog.imageUrl,
           fallbackIcon: Icons.article,
-          screenBuilder: (blog) => SelectedBlogScreen(
-            authorId: blog.author!.id,
-            title: blog.title,
-            imageUrl: blog.imageUrl,
-            createdAt: blog.createdAt,
-            description: blog.description,
-            blogId: blog.id,
-            comments: blog.comments,
-            roles: [],
-            sources: blog.sources,
-          ),
+          screenBuilder:
+              (blog) => SelectedBlogScreen(
+                authorId: blog.author!.id,
+                title: blog.title,
+                imageUrl: blog.imageUrl,
+                createdAt: blog.createdAt,
+                description: blog.description,
+                blogId: blog.id,
+                comments: blog.comments,
+                roles: [],
+                sources: blog.sources,
+              ),
         );
         break;
       case 2:
@@ -1757,19 +2095,20 @@ class _DashboardState extends State<Dashboard>
           titleGetter: (news) => news.title,
           imageGetter: (news) => news.imageUrl,
           fallbackIcon: Icons.newspaper,
-          screenBuilder: (news) => SelectedNewsScreen(
-            title: news.title,
-            imageUrl: news.imageUrl,
-            author: news.author.firstName,
-            createdAt: "${news.createdAt}",
-            description: news.description,
-            profileImageUrl: news.author.profilePicture,
-            authorID: news.author.id,
-            newsId: news.id,
-            comments: news.comments,
-            roles: [],
-            sources: news.sources,
-          ),
+          screenBuilder:
+              (news) => SelectedNewsScreen(
+                title: news.title,
+                imageUrl: news.imageUrl,
+                author: news.author.firstName,
+                createdAt: "${news.createdAt}",
+                description: news.description,
+                profileImageUrl: news.author.profilePicture,
+                authorID: news.author.id,
+                newsId: news.id,
+                comments: news.comments,
+                roles: [],
+                sources: news.sources,
+              ),
         );
         break;
       case 3:
@@ -1856,7 +2195,7 @@ class _DashboardState extends State<Dashboard>
               backgroundColor: isDarkMode ? kDarkThemeBg : kWhite,
               automaticallyImplyLeading: false,
               titleSpacing: 0,
-              title: Obx(() => CustomAppbar(
+              title: CustomAppbar(
                 onMenuTap: _toggleDrawer,
                 imageUrl: imageUrl,
                 onChatTap: () {
@@ -1866,9 +2205,15 @@ class _DashboardState extends State<Dashboard>
                   Navigator.push(
                     context,
                     PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          SearchResultsScreen(query: query),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      pageBuilder:
+                          (context, animation, secondaryAnimation) =>
+                              SearchResultsScreen(query: query),
+                      transitionsBuilder: (
+                        context,
+                        animation,
+                        secondaryAnimation,
+                        child,
+                      ) {
                         return FadeTransition(opacity: animation, child: child);
                       },
                       transitionDuration: const Duration(milliseconds: 200),
@@ -1878,10 +2223,11 @@ class _DashboardState extends State<Dashboard>
                 onNotificationTap: () {
                   Navigator.pushNamed(context, AppRoutes.notifications);
                 },
-                unreadNotificationCount: _notificationController.notificationList
-                    .where((n) => !n.read)
-                    .length,
-              )),
+                unreadNotificationCount:
+                    _notificationController.notificationList
+                        .where((n) => !n.read)
+                        .length,
+              ),
             ),
           ),
           body: SafeArea(
@@ -1911,7 +2257,12 @@ class _DashboardState extends State<Dashboard>
             ],
             tabSize: 50,
             tabBarHeight: 60,
-            textStyle: TextStyle(fontSize: 12, color: kGrey, fontWeight: FontWeight.w500, height: 1.8),
+            textStyle: TextStyle(
+              fontSize: 12,
+              color: kGrey,
+              fontWeight: FontWeight.w500,
+              height: 1.8,
+            ),
             tabIconColor: kGrey,
             tabSelectedColor: kBlue,
             tabIconSize: 24.0,

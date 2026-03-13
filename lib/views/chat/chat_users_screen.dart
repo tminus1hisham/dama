@@ -116,7 +116,10 @@ class _ChatUsersScreenState extends State<ChatUsersScreen> {
           Container(
             color: isDarkMode ? kBlack : kWhite,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15),
+              padding: const EdgeInsets.symmetric(
+                vertical: 10.0,
+                horizontal: 15,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -212,9 +215,7 @@ class _ChatUsersScreenState extends State<ChatUsersScreen> {
                             icon: Icon(Icons.chat, size: 20),
                             label: Text(
                               'Start a conversation',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: kBlue,

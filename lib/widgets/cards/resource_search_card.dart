@@ -26,7 +26,7 @@ class ResourceSearchCard extends StatelessWidget {
     final imageUrl = resource?['resource_image_url'];
     final createdAtStr = resource?['created_at'];
     final createdAt =
-    createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
+        createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
     final resourceId = resource?['_id'] ?? '';
     final price = resource?['price'] ?? 0;
     final link = resource?['resource_link'] ?? '';
@@ -44,46 +44,48 @@ class ResourceSearchCard extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (context) => SelectedResourceScreen(
-                resourceID: resourceId,
-                isPaid: price > 0,
-                title: title,
-                imageUrl: imageUrl ?? '',
-                description: description,
-                price: price is int ? price : int.tryParse(price.toString()) ?? 0,
-                viewUrl: link,
-                date: createdAt,
-                rating: rating,
-              ),
+                    resourceID: resourceId,
+                    isPaid: price > 0,
+                    title: title,
+                    imageUrl: imageUrl ?? '',
+                    description: description,
+                    price:
+                        price is int
+                            ? price
+                            : int.tryParse(price.toString()) ?? 0,
+                    viewUrl: link,
+                    date: createdAt,
+                    rating: rating,
+                  ),
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Invalid blog data')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Invalid blog data')));
         }
       },
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDarkMode ? kBlack : kWhite,
-        ),
+        decoration: BoxDecoration(color: isDarkMode ? kBlack : kWhite),
         child: Row(
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: imageUrl != null && imageUrl.toString().isNotEmpty
-                  ? Image.network(
-                imageUrl,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
-              )
-                  : Container(
-                width: 70,
-                height: 70,
-                color: Colors.grey.shade300,
-                child: const Icon(Icons.image, color: Colors.white70),
-              ),
+              child:
+                  imageUrl != null && imageUrl.toString().isNotEmpty
+                      ? Image.network(
+                        imageUrl,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                      )
+                      : Container(
+                        width: 70,
+                        height: 70,
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.image, color: Colors.white70),
+                      ),
             ),
             const SizedBox(width: 16),
             Expanded(

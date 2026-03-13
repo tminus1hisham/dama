@@ -21,8 +21,12 @@ class ChangePasswordController extends GetxController {
         newPassword: newPassword.value,
       );
 
-      print('Attempting to change password with old: "${oldPassword.value}", new: "${newPassword.value}"');
-      print('Old password length: ${oldPassword.value.length}, new password length: ${newPassword.value.length}');
+      print(
+        'Attempting to change password with old: "${oldPassword.value}", new: "${newPassword.value}"',
+      );
+      print(
+        'Old password length: ${oldPassword.value.length}, new password length: ${newPassword.value.length}',
+      );
 
       final result = await _authService.changePassword(changePasswordrModel);
 

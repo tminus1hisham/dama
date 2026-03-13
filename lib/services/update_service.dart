@@ -13,7 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
 
 /// Production-ready in-app update service for Android and iOS
-/// 
+///
 /// Features:
 /// - Android: Flexible and Immediate update modes via Play Store
 /// - iOS: iTunes API version check with App Store redirect
@@ -24,20 +24,21 @@ class UpdateService extends GetxService {
   static const String _remindLaterKey = 'update_remind_later_timestamp';
   static const String _skippedVersionKey = 'update_skipped_version';
   static const String _lastCheckKey = 'update_last_check_timestamp';
-  
+
   /// Delay before showing update again after "remind me later" (in hours)
   static const int remindLaterDelayHours = 24;
-  
+
   /// Minimum interval between update checks (in hours)
   static const int minCheckIntervalHours = 6;
-  
+
   /// Your App Store ID (replace with your actual App Store ID)
   /// Find it in App Store Connect > App Information > Apple ID
-  static const String appStoreId = 'YOUR_APP_STORE_ID'; // TODO: Replace with actual ID
-  
+  static const String appStoreId =
+      'YOUR_APP_STORE_ID'; // TODO: Replace with actual ID
+
   /// Bundle ID for iOS (must match your app's bundle identifier)
   static const String bundleId = 'com.dama.mobile';
-  
+
   // Observable states
   final isChecking = false.obs;
   final updateAvailable = false.obs;
@@ -45,7 +46,7 @@ class UpdateService extends GetxService {
   final latestVersion = ''.obs;
   final currentVersion = ''.obs;
   final updateNotes = ''.obs;
-  
+
   late SharedPreferences _prefs;
   PackageInfo? _packageInfo;
 
@@ -57,7 +58,9 @@ class UpdateService extends GetxService {
       _packageInfo = await PackageInfo.fromPlatform();
       currentVersion.value = _packageInfo?.version ?? '';
       debugPrint('📲 [UpdateService] Current version: ${currentVersion.value}');
-      debugPrint('📲 [UpdateService] Build number: ${_packageInfo?.buildNumber}');
+      debugPrint(
+        '📲 [UpdateService] Build number: ${_packageInfo?.buildNumber}',
+      );
     } catch (e, stack) {
       debugPrint('📲 [UpdateService] Initialization error: $e');
       debugPrint('📲 [UpdateService] Stack trace: $stack');
@@ -66,7 +69,7 @@ class UpdateService extends GetxService {
   }
 
   /// Check for updates on the appropriate platform
-  /// 
+  ///
   /// [showDialogIfAvailable] - Show update dialog immediately if update found
   /// [forceCheck] - Bypass the minimum check interval
   Future<bool> checkForUpdate({
@@ -89,35 +92,39 @@ class UpdateService extends GetxService {
 
     try {
       bool hasUpdate = false;
-      
+
       if (Platform.isAndroid) {
         hasUpdate = await _checkAndroidUpdate();
       } else if (Platform.isIOS) {
         hasUpdate = await _checkiOSUpdate();
       }
-      
+
       updateAvailable.value = hasUpdate;
-      
+
       // Save check timestamp
       await _prefs.setInt(_lastCheckKey, DateTime.now().millisecondsSinceEpoch);
-      
+
       if (hasUpdate && showDialogIfAvailable) {
         // Check if user chose "remind me later" recently
         if (!_shouldShowReminder()) {
-          debugPrint('📲 [UpdateService] Update available but user chose remind later');
+          debugPrint(
+            '📲 [UpdateService] Update available but user chose remind later',
+          );
           return true;
         }
-        
+
         // Check if user skipped this version
         final skippedVersion = _prefs.getString(_skippedVersionKey);
         if (skippedVersion == latestVersion.value) {
-          debugPrint('📲 [UpdateService] User skipped this version: $skippedVersion');
+          debugPrint(
+            '📲 [UpdateService] User skipped this version: $skippedVersion',
+          );
           return true;
         }
-        
+
         _showUpdateDialog();
       }
-      
+
       return hasUpdate;
     } catch (e, stack) {
       debugPrint('📲 [UpdateService] Error checking for updates: $e');
@@ -131,28 +138,37 @@ class UpdateService extends GetxService {
   /// Check for Android updates using Play Store in-app update API
   Future<bool> _checkAndroidUpdate() async {
     debugPrint('📲 [UpdateService] Checking Android update via Play Store...');
-    
+
     try {
       final info = await InAppUpdate.checkForUpdate();
       updateInfo.value = info;
-      
-      debugPrint('📲 [UpdateService] Update availability: ${info.updateAvailability}');
-      debugPrint('📲 [UpdateService] Available version code: ${info.availableVersionCode}');
+
+      debugPrint(
+        '📲 [UpdateService] Update availability: ${info.updateAvailability}',
+      );
+      debugPrint(
+        '📲 [UpdateService] Available version code: ${info.availableVersionCode}',
+      );
       debugPrint('📲 [UpdateService] Update priority: ${info.updatePriority}');
-      debugPrint('📲 [UpdateService] Immediate update allowed: ${info.immediateUpdateAllowed}');
-      debugPrint('📲 [UpdateService] Flexible update allowed: ${info.flexibleUpdateAllowed}');
-      
+      debugPrint(
+        '📲 [UpdateService] Immediate update allowed: ${info.immediateUpdateAllowed}',
+      );
+      debugPrint(
+        '📲 [UpdateService] Flexible update allowed: ${info.flexibleUpdateAllowed}',
+      );
+
       if (info.updateAvailability == UpdateAvailability.updateAvailable) {
         latestVersion.value = 'New version available';
         return true;
       }
-      
+
       // Handle case where update is already downloaded and pending install
-      if (info.updateAvailability == UpdateAvailability.developerTriggeredUpdateInProgress) {
+      if (info.updateAvailability ==
+          UpdateAvailability.developerTriggeredUpdateInProgress) {
         debugPrint('📲 [UpdateService] Update already in progress');
         return true;
       }
-      
+
       return false;
     } on Exception catch (e) {
       debugPrint('📲 [UpdateService] Android update check failed: $e');
@@ -164,37 +180,45 @@ class UpdateService extends GetxService {
   /// Check for iOS updates using iTunes Search API
   Future<bool> _checkiOSUpdate() async {
     debugPrint('📲 [UpdateService] Checking iOS update via iTunes API...');
-    
+
     try {
-      final response = await http.get(
-        Uri.parse('https://itunes.apple.com/lookup?bundleId=$bundleId&country=KE'),
-      ).timeout(const Duration(seconds: 10));
-      
+      final response = await http
+          .get(
+            Uri.parse(
+              'https://itunes.apple.com/lookup?bundleId=$bundleId&country=KE',
+            ),
+          )
+          .timeout(const Duration(seconds: 10));
+
       if (response.statusCode != 200) {
-        debugPrint('📲 [UpdateService] iTunes API returned ${response.statusCode}');
+        debugPrint(
+          '📲 [UpdateService] iTunes API returned ${response.statusCode}',
+        );
         return false;
       }
-      
+
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final results = data['results'] as List<dynamic>?;
-      
+
       if (results == null || results.isEmpty) {
-        debugPrint('📲 [UpdateService] App not found in iTunes (may not be published yet)');
+        debugPrint(
+          '📲 [UpdateService] App not found in iTunes (may not be published yet)',
+        );
         return false;
       }
-      
+
       final appData = results.first as Map<String, dynamic>;
       final storeVersion = appData['version'] as String?;
       final releaseNotes = appData['releaseNotes'] as String?;
-      
+
       debugPrint('📲 [UpdateService] iTunes version: $storeVersion');
       debugPrint('📲 [UpdateService] Current version: ${currentVersion.value}');
-      
+
       if (storeVersion == null) return false;
-      
+
       latestVersion.value = storeVersion;
       updateNotes.value = releaseNotes ?? '';
-      
+
       return _isNewerVersion(storeVersion, currentVersion.value);
     } on Exception catch (e) {
       debugPrint('📲 [UpdateService] iOS update check failed: $e');
@@ -207,14 +231,16 @@ class UpdateService extends GetxService {
     try {
       final storeParts = storeVersion.split('.').map(int.parse).toList();
       final currentParts = currentVersion.split('.').map(int.parse).toList();
-      
+
       // Normalize lengths
       while (storeParts.length < 3) storeParts.add(0);
       while (currentParts.length < 3) currentParts.add(0);
-      
+
       for (int i = 0; i < 3; i++) {
         if (storeParts[i] > currentParts[i]) {
-          debugPrint('📲 [UpdateService] Newer version available: $storeVersion > $currentVersion');
+          debugPrint(
+            '📲 [UpdateService] Newer version available: $storeVersion > $currentVersion',
+          );
           return true;
         }
         if (storeParts[i] < currentParts[i]) {
@@ -233,7 +259,7 @@ class UpdateService extends GetxService {
     final lastCheck = _prefs.getInt(_lastCheckKey) ?? 0;
     final lastCheckTime = DateTime.fromMillisecondsSinceEpoch(lastCheck);
     final hoursSinceCheck = DateTime.now().difference(lastCheckTime).inHours;
-    
+
     debugPrint('📲 [UpdateService] Hours since last check: $hoursSinceCheck');
     return hoursSinceCheck >= minCheckIntervalHours;
   }
@@ -242,11 +268,13 @@ class UpdateService extends GetxService {
   bool _shouldShowReminder() {
     final remindLater = _prefs.getInt(_remindLaterKey) ?? 0;
     if (remindLater == 0) return true;
-    
+
     final remindTime = DateTime.fromMillisecondsSinceEpoch(remindLater);
     final hoursSinceRemind = DateTime.now().difference(remindTime).inHours;
-    
-    debugPrint('📲 [UpdateService] Hours since remind later: $hoursSinceRemind');
+
+    debugPrint(
+      '📲 [UpdateService] Hours since remind later: $hoursSinceRemind',
+    );
     return hoursSinceRemind >= remindLaterDelayHours;
   }
 
@@ -258,20 +286,20 @@ class UpdateService extends GetxService {
       return;
     }
 
-    debugPrint('📲 [UpdateService] Showing update dialog (force: $isForceUpdate)');
+    debugPrint(
+      '📲 [UpdateService] Showing update dialog (force: $isForceUpdate)',
+    );
 
     Get.dialog(
       PopScope(
         canPop: !isForceUpdate,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
-              Icon(
-                Icons.system_update,
-                color: kBlue,
-                size: 28,
-              ),
+              Icon(Icons.system_update, color: kBlue, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -310,10 +338,7 @@ class UpdateService extends GetxService {
                           children: [
                             Text(
                               'Current: ${currentVersion.value}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: kGrey,
-                              ),
+                              style: TextStyle(fontSize: 13, color: kGrey),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -354,17 +379,11 @@ class UpdateService extends GetxService {
             if (!isForceUpdate) ...[
               TextButton(
                 onPressed: () => _handleSkipVersion(),
-                child: Text(
-                  'Skip',
-                  style: TextStyle(color: kGrey),
-                ),
+                child: Text('Skip', style: TextStyle(color: kGrey)),
               ),
               TextButton(
                 onPressed: () => _handleRemindLater(),
-                child: Text(
-                  'Later',
-                  style: TextStyle(color: kGrey),
-                ),
+                child: Text('Later', style: TextStyle(color: kGrey)),
               ),
             ],
             ElevatedButton(
@@ -375,10 +394,7 @@ class UpdateService extends GetxService {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                'Update Now',
-                style: TextStyle(color: kWhite),
-              ),
+              child: Text('Update Now', style: TextStyle(color: kWhite)),
             ),
           ],
         ),
@@ -389,7 +405,9 @@ class UpdateService extends GetxService {
 
   /// Handle "Skip this version" action
   Future<void> _handleSkipVersion() async {
-    debugPrint('📲 [UpdateService] User skipped version: ${latestVersion.value}');
+    debugPrint(
+      '📲 [UpdateService] User skipped version: ${latestVersion.value}',
+    );
     await _prefs.setString(_skippedVersionKey, latestVersion.value);
     Get.back();
   }
@@ -404,7 +422,7 @@ class UpdateService extends GetxService {
   /// Perform the update
   Future<void> _performUpdate() async {
     debugPrint('📲 [UpdateService] Performing update...');
-    
+
     try {
       if (Platform.isAndroid) {
         await _performAndroidUpdate();
@@ -429,9 +447,10 @@ class UpdateService extends GetxService {
 
     try {
       // Use immediate update for high priority (4-5) or if flexible not allowed
-      final useImmediate = info.updatePriority >= 4 || 
-                          !info.flexibleUpdateAllowed || 
-                          info.immediateUpdateAllowed;
+      final useImmediate =
+          info.updatePriority >= 4 ||
+          !info.flexibleUpdateAllowed ||
+          info.immediateUpdateAllowed;
 
       if (useImmediate && info.immediateUpdateAllowed) {
         debugPrint('📲 [UpdateService] Starting IMMEDIATE update...');
@@ -439,7 +458,7 @@ class UpdateService extends GetxService {
       } else if (info.flexibleUpdateAllowed) {
         debugPrint('📲 [UpdateService] Starting FLEXIBLE update...');
         await InAppUpdate.startFlexibleUpdate();
-        
+
         // Show snackbar when download completes
         _showFlexibleUpdateDownloading();
       } else {
@@ -493,10 +512,10 @@ class UpdateService extends GetxService {
   /// Perform iOS update by redirecting to App Store
   Future<void> _performiOSUpdate() async {
     Get.back(); // Close dialog
-    
+
     final appStoreUrl = 'https://apps.apple.com/app/id$appStoreId';
     debugPrint('📲 [UpdateService] Opening App Store: $appStoreUrl');
-    
+
     try {
       final uri = Uri.parse(appStoreUrl);
       if (await canLaunchUrl(uri)) {
@@ -512,9 +531,10 @@ class UpdateService extends GetxService {
 
   /// Open Play Store directly
   Future<void> _openPlayStore() async {
-    const playStoreUrl = 'https://play.google.com/store/apps/details?id=$bundleId';
+    const playStoreUrl =
+        'https://play.google.com/store/apps/details?id=$bundleId';
     debugPrint('📲 [UpdateService] Opening Play Store: $playStoreUrl');
-    
+
     try {
       final uri = Uri.parse(playStoreUrl);
       if (await canLaunchUrl(uri)) {
@@ -541,13 +561,16 @@ class UpdateService extends GetxService {
   /// Call this when your backend indicates a mandatory update
   Future<void> forceUpdate() async {
     debugPrint('📲 [UpdateService] Force update requested');
-    
+
     // Clear any "remind later" or "skip" preferences
     await _prefs.remove(_remindLaterKey);
     await _prefs.remove(_skippedVersionKey);
-    
-    final hasUpdate = await checkForUpdate(showDialogIfAvailable: false, forceCheck: true);
-    
+
+    final hasUpdate = await checkForUpdate(
+      showDialogIfAvailable: false,
+      forceCheck: true,
+    );
+
     if (hasUpdate) {
       _showUpdateDialog(isForceUpdate: true);
     } else {

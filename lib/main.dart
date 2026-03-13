@@ -8,10 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
+import 'controller/alert_controller.dart';
 import 'controller/auth_controller.dart';
 import 'controller/global_search_controller.dart';
 import 'controller/plans_controller.dart';
+import 'controller/rating_controller.dart';
+import 'controller/referral_controller.dart';
 import 'controller/register_controller.dart';
+import 'controller/support_controller.dart';
 import 'controller/training_controller.dart';
 import 'controller/user_training_controller.dart';
 import 'controller/user_progress_controller.dart';
@@ -26,8 +30,11 @@ import 'services/api_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Get.put(GlobalSearchController());
-  Get.put(RegisterController());  // Make RegisterController available throughout the app
-  Get.put(PlansController());     // Make PlansController available globally
+  Get.put(
+    RegisterController(),
+  ); // Make RegisterController available throughout the app
+  Get.put(PlansController()); // Make PlansController available globally
+  Get.put(AlertController()); // Make AlertController available for alerts
 
   if (!kIsWeb) {
     try {
@@ -37,17 +44,20 @@ void main() async {
       print('Firebase initialization failed: $e');
       // Continue without Firebase - login will work without push notifications
     }
-    
+
     // Initialize services
     Get.put(DeepLinkService());
     Get.put(ApiService());
     Get.put(LinkedInController());
-    
+
     // Initialize payment services (Apple Pay on iOS)
     await UnifiedPaymentService.initialize();
   }
 
   Get.put(AuthController());
+  Get.put(RatingController());
+  Get.put(ReferralController());
+  Get.put(SupportController());
   Get.put(TrainingController());
   Get.put(UserTrainingController());
   Get.put(UserProgressController());

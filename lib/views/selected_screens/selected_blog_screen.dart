@@ -70,7 +70,9 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
 
   final CommentController _commentController = Get.put(CommentController());
   final LikeController _likeController = Get.put(LikeController());
-  final FetchBlogByIdController _blogByIdController = Get.put(FetchBlogByIdController());
+  final FetchBlogByIdController _blogByIdController = Get.put(
+    FetchBlogByIdController(),
+  );
   String comment = '';
   bool _isScrollingBlocked = false;
   String imageUrl = '';
@@ -93,7 +95,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
     if (!_likeController.likedStatus.containsKey(widget.blogId)) {
       _likeController.initializeLikeStatus(widget.blogId, widget.likes);
     }
-    
+
     // Initialize with widget sources, then fetch full blog for sources
     _sources = widget.sources.toList();
     _fetchBlogSources();
@@ -363,7 +365,8 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                       backgroundImage:
                                                           kDamaLogo,
                                                       child: null,
-                                                      borderColor: Colors.transparent,
+                                                      borderColor:
+                                                          Colors.transparent,
                                                       borderWidth: 0,
                                                     ),
                                                     SizedBox(width: 10),
@@ -379,7 +382,8 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                                 isDarkMode
                                                                     ? kWhite
                                                                     : kBlack,
-                                                            fontSize: kTitleTextSize,
+                                                            fontSize:
+                                                                kTitleTextSize,
                                                             fontWeight:
                                                                 FontWeight.w600,
                                                           ),
@@ -568,9 +572,10 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                 "blockquote": Style(
                                                   fontSize: FontSize(14.0),
                                                   fontStyle: FontStyle.italic,
-                                                  color: isDarkMode
-                                                      ? Colors.grey[400]
-                                                      : Colors.grey[700],
+                                                  color:
+                                                      isDarkMode
+                                                          ? Colors.grey[400]
+                                                          : Colors.grey[700],
                                                   margin: Margins.only(
                                                     top: 16,
                                                     bottom: 16,
@@ -581,9 +586,12 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                   ),
                                                   border: Border(
                                                     left: BorderSide(
-                                                      color: isDarkMode
-                                                          ? Colors.grey[700]!
-                                                          : Colors.grey[300]!,
+                                                      color:
+                                                          isDarkMode
+                                                              ? Colors
+                                                                  .grey[700]!
+                                                              : Colors
+                                                                  .grey[300]!,
                                                       width: 3,
                                                     ),
                                                   ),
@@ -604,7 +612,9 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                   display: Display.inline,
                                                 ),
                                                 "div": Style(
-                                                  margin: Margins.only(bottom: 12),
+                                                  margin: Margins.only(
+                                                    bottom: 12,
+                                                  ),
                                                 ),
                                               },
                                             ),
@@ -620,7 +630,7 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                 isDarkMode: isDarkMode,
                                               ),
                                             ),
-                                          
+
                                           // Interaction Section (Like, Comment, Share)
                                           Padding(
                                             padding: EdgeInsets.symmetric(
@@ -628,37 +638,79 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                               vertical: 16,
                                             ),
                                             child: Container(
-                                              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 12,
+                                                horizontal: 16,
+                                              ),
                                               decoration: BoxDecoration(
-                                                color: isDarkMode ? kDarkCard : kLightGrey,
-                                                borderRadius: BorderRadius.circular(12),
+                                                color:
+                                                    isDarkMode
+                                                        ? kDarkCard
+                                                        : kLightGrey,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                               ),
                                               child: Obx(() {
-                                                final isLiked = _likeController.likedStatus[widget.blogId] ?? false;
-                                                final likeCount = _likeController.likeCount[widget.blogId] ?? widget.likes.length;
-                                                final commentCount = _commentController.comments[widget.blogId]?.length ?? widget.comments.length;
-                                                
+                                                final isLiked =
+                                                    _likeController
+                                                        .likedStatus[widget
+                                                        .blogId] ??
+                                                    false;
+                                                final likeCount =
+                                                    _likeController
+                                                        .likeCount[widget
+                                                        .blogId] ??
+                                                    widget.likes.length;
+                                                final commentCount =
+                                                    _commentController
+                                                        .comments[widget.blogId]
+                                                        ?.length ??
+                                                    widget.comments.length;
+
                                                 return Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceAround,
                                                   children: [
                                                     // Like Button
                                                     _buildInteractionButton(
-                                                      icon: isLiked ? FontAwesomeIcons.solidThumbsUp : FontAwesomeIcons.thumbsUp,
+                                                      icon:
+                                                          isLiked
+                                                              ? FontAwesomeIcons
+                                                                  .solidThumbsUp
+                                                              : FontAwesomeIcons
+                                                                  .thumbsUp,
                                                       label: '$likeCount',
-                                                      color: isLiked ? kBlue : (isDarkMode ? kWhite : kGrey),
-                                                      onTap: () => _likeController.toggleLike(widget.blogId),
+                                                      color:
+                                                          isLiked
+                                                              ? kBlue
+                                                              : (isDarkMode
+                                                                  ? kWhite
+                                                                  : kGrey),
+                                                      onTap:
+                                                          () => _likeController
+                                                              .toggleLike(
+                                                                widget.blogId,
+                                                              ),
                                                     ),
                                                     // Comment Button
                                                     _buildInteractionButton(
-                                                      icon: FontAwesomeIcons.comment,
+                                                      icon:
+                                                          FontAwesomeIcons
+                                                              .comment,
                                                       label: '$commentCount',
-                                                      color: isDarkMode ? kWhite : kGrey,
+                                                      color:
+                                                          isDarkMode
+                                                              ? kWhite
+                                                              : kGrey,
                                                       onTap: () {
                                                         _showCommentsBottomSheet(
                                                           context,
-                                                          isDarkTheme: isDarkMode,
+                                                          isDarkTheme:
+                                                              isDarkMode,
                                                           blogID: widget.blogId,
-                                                          initialComments: widget.comments,
+                                                          initialComments:
+                                                              widget.comments,
                                                         );
                                                       },
                                                     ),
@@ -666,17 +718,36 @@ class _SelectedBlogScreenState extends State<SelectedBlogScreen> {
                                                     _buildInteractionButton(
                                                       icon: Icons.share,
                                                       label: 'Share',
-                                                      color: isDarkMode ? kWhite : kGrey,
+                                                      color:
+                                                          isDarkMode
+                                                              ? kWhite
+                                                              : kGrey,
                                                       onTap: () {
-                                                        final link = 'https://mydama.damakenya.org/blog/${widget.blogId}';
-                                                        Clipboard.setData(ClipboardData(text: link));
+                                                        final link =
+                                                            'https://mydama.damakenya.org/blog/${widget.blogId}';
+                                                        Clipboard.setData(
+                                                          ClipboardData(
+                                                            text: link,
+                                                          ),
+                                                        );
                                                         Get.snackbar(
                                                           'Link Copied',
                                                           'Blog link copied to clipboard',
-                                                          snackPosition: SnackPosition.BOTTOM,
-                                                          margin: EdgeInsets.all(15),
-                                                          backgroundColor: isDarkMode ? kDarkCard : kWhite,
-                                                          colorText: isDarkMode ? kWhite : kBlack,
+                                                          snackPosition:
+                                                              SnackPosition
+                                                                  .BOTTOM,
+                                                          margin:
+                                                              EdgeInsets.all(
+                                                                15,
+                                                              ),
+                                                          backgroundColor:
+                                                              isDarkMode
+                                                                  ? kDarkCard
+                                                                  : kWhite,
+                                                          colorText:
+                                                              isDarkMode
+                                                                  ? kWhite
+                                                                  : kBlack,
                                                         );
                                                       },
                                                     ),

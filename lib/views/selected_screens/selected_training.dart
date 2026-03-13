@@ -12,9 +12,7 @@ class DamaTrainingScreen extends StatelessWidget {
     bool isDarkMode = themeProvider.isDark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('DAMA Training Course'),
-      ),
+      appBar: AppBar(title: const Text('DAMA Training Course')),
       body: Column(
         children: [
           const Spacer(),
@@ -24,7 +22,7 @@ class DamaTrainingScreen extends StatelessWidget {
             schedule: 'Monday to Friday from 7:00 AM to 8:00 PM (10 Days)',
             price: 'KES 30,000',
             image: 'assets/virtual_class.jpg',
-              isDarkMode: isDarkMode,
+            isDarkMode: isDarkMode,
           ),
           const SizedBox(height: 20),
           _buildClassCard(
@@ -42,13 +40,13 @@ class DamaTrainingScreen extends StatelessWidget {
   }
 
   Widget _buildClassCard(
-      BuildContext context, {
-        required String title,
-        required String schedule,
-        required String price,
-        required String image,
-        required bool isDarkMode,
-      }) {
+    BuildContext context, {
+    required String title,
+    required String schedule,
+    required String price,
+    required String image,
+    required bool isDarkMode,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Card(
@@ -60,7 +58,9 @@ class DamaTrainingScreen extends StatelessWidget {
           children: [
             // Course image
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
               child: Image.asset(
                 image,
                 height: 150,
@@ -75,17 +75,28 @@ class DamaTrainingScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: TextStyle(color: isDarkMode ? kWhite : kBlack)),
+                  Text(
+                    title,
+                    style: TextStyle(color: isDarkMode ? kWhite : kBlack),
+                  ),
                   const SizedBox(height: 8),
-                  Text(schedule,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700])),
+                  Text(
+                    schedule,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(price,
-                          style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontWeight: FontWeight.bold)),
+                      Text(
+                        price,
+                        style: TextStyle(
+                          color: isDarkMode ? kWhite : kBlack,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       ElevatedButton(
                         onPressed: () {
                           // Handle enroll button tap
@@ -93,7 +104,7 @@ class DamaTrainingScreen extends StatelessWidget {
                         child: const Text('Enroll Now'),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),

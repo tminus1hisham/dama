@@ -46,7 +46,8 @@ class TrainingDetailModal extends StatelessWidget {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+                          color:
+                              isDarkMode ? Colors.grey[700] : Colors.grey[300],
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -64,7 +65,10 @@ class TrainingDetailModal extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.close, color: isDarkMode ? kWhite : kBlack),
+                          icon: Icon(
+                            Icons.close,
+                            color: isDarkMode ? kWhite : kBlack,
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
@@ -110,7 +114,10 @@ class TrainingDetailModal extends StatelessWidget {
                           color: isDarkMode ? kDarkThemeBg : Colors.grey[50],
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+                            color:
+                                isDarkMode
+                                    ? Colors.grey[800]!
+                                    : Colors.grey[200]!,
                           ),
                         ),
                         child: Column(
@@ -120,7 +127,8 @@ class TrainingDetailModal extends StatelessWidget {
                               _buildInfoRow(
                                 Icons.person_outline,
                                 'Instructor',
-                                '${training.trainer!.firstName} ${training.trainer!.lastName}'.trim(),
+                                '${training.trainer!.firstName} ${training.trainer!.lastName}'
+                                    .trim(),
                               ),
                               const Divider(height: 24),
                             ],
@@ -179,33 +187,39 @@ class TrainingDetailModal extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        ...training.learningOutcomes.map((outcome) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: kBlue.withValues(alpha: 0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.check, color: kBlue, size: 14),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  outcome,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDarkMode ? kWhite : kBlack,
-                                    height: 1.4,
+                        ...training.learningOutcomes.map(
+                          (outcome) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: kBlue.withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.check,
+                                    color: kBlue,
+                                    size: 14,
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    outcome,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDarkMode ? kWhite : kBlack,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        )),
+                        ),
                         const SizedBox(height: 24),
                       ],
 
@@ -223,20 +237,28 @@ class TrainingDetailModal extends StatelessWidget {
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: training.targetAudience.map((audience) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: kBlue.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              audience,
-                              style: TextStyle(
-                                color: kBlue,
-                                fontSize: 13,
-                              ),
-                            ),
-                          )).toList(),
+                          children:
+                              training.targetAudience
+                                  .map(
+                                    (audience) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: kBlue.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        audience,
+                                        style: TextStyle(
+                                          color: kBlue,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -276,7 +298,8 @@ class TrainingDetailModal extends StatelessWidget {
                         elevation: 0,
                       ),
                       child: Text(
-                        training.learningTracks.isNotEmpty && training.learningTracks.first.price > 0
+                        training.learningTracks.isNotEmpty &&
+                                training.learningTracks.first.price > 0
                             ? 'Enroll Now - KES ${training.learningTracks.first.price.toStringAsFixed(0)}'
                             : 'Enroll Now - Free',
                         style: const TextStyle(
@@ -295,7 +318,12 @@ class TrainingDetailModal extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {Color? valueColor}) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     return Row(
       children: [
         Container(
@@ -311,13 +339,7 @@ class TrainingDetailModal extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: kGrey,
-                ),
-              ),
+              Text(label, style: TextStyle(fontSize: 12, color: kGrey)),
               Text(
                 value,
                 style: TextStyle(
@@ -335,13 +357,28 @@ class TrainingDetailModal extends StatelessWidget {
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'TBD';
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   void _enrollInTraining(BuildContext context) {
-    final isFree = training.learningTracks.isEmpty || training.learningTracks.first.price <= 0;
-    
+    final isFree =
+        training.learningTracks.isEmpty ||
+        training.learningTracks.first.price <= 0;
+
     if (isFree) {
       _showFreeEnrollmentDialog(context);
     } else {
@@ -352,38 +389,43 @@ class TrainingDetailModal extends StatelessWidget {
   void _showFreeEnrollmentDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.school, color: kBlue),
-            const SizedBox(width: 8),
-            const Text('Enroll in Training'),
-          ],
-        ),
-        content: Text('Are you sure you want to enroll in "${training.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.school, color: kBlue),
+                const SizedBox(width: 8),
+                const Text('Enroll in Training'),
+              ],
+            ),
+            content: Text(
+              'Are you sure you want to enroll in "${training.title}"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await _processFreeEnrollment(context);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: kBlue),
+                child: const Text('Enroll'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await _processFreeEnrollment(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: kBlue),
-            child: const Text('Enroll'),
-          ),
-        ],
-      ),
     );
   }
 
   Future<void> _processFreeEnrollment(BuildContext context) async {
     final apiService = ApiService();
     final userTrainingController = Get.find<UserTrainingController>();
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -396,17 +438,19 @@ class TrainingDetailModal extends StatelessWidget {
 
       if (result['success'] == true) {
         await userTrainingController.fetchUserTrainings();
-        
+
         if (onRefreshPressed != null) {
           onRefreshPressed!();
         }
-        
+
         // Show success dialog with navigation guidance
         _showSuccessDialog(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'Failed to enroll. Please try again.'),
+            content: Text(
+              result['message'] ?? 'Failed to enroll. Please try again.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -414,10 +458,7 @@ class TrainingDetailModal extends StatelessWidget {
     } catch (e) {
       Navigator.pop(context); // Close loading
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -426,101 +467,103 @@ class TrainingDetailModal extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        contentPadding: const EdgeInsets.all(24),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_circle, color: Colors.green, size: 48),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Enrollment Successful!',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'You have successfully enrolled in "${training.title}". Go to My Trainings to start learning!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
+            contentPadding: const EdgeInsets.all(24),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      Navigator.pop(context); // Close training detail modal
-                    },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text('Stay Here'),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 48,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      Navigator.pop(context); // Close training detail modal
-                      // Navigate to My Trainings
-                      Get.toNamed('/my-trainings');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                const SizedBox(height: 20),
+                const Text(
+                  'Enrollment Successful!',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'You have successfully enrolled in "${training.title}". Go to My Trainings to start learning!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.pop(context); // Close training detail modal
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Stay Here'),
                       ),
                     ),
-                    child: const Text('Go to My Trainings'),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.pop(context); // Close training detail modal
+                          // Navigate to My Trainings
+                          Get.toNamed('/my-trainings');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kBlue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Go to My Trainings'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
   void _showPaymentModal(BuildContext context) {
     final price = training.learningTracks.first.price;
     final trainingId = training.id;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _PaymentBottomSheet(
-        trainingName: training.title,
-        amount: price,
-        trainingId: trainingId,
-        isDarkMode: isDarkMode,
-        onPaymentComplete: () {
-          Navigator.pop(ctx); // Close payment modal
-          _showPaymentSuccessDialog(context);
-        },
-      ),
+      builder:
+          (ctx) => _PaymentBottomSheet(
+            trainingName: training.title,
+            amount: price,
+            trainingId: trainingId,
+            isDarkMode: isDarkMode,
+            onPaymentComplete: () {
+              Navigator.pop(ctx); // Close payment modal
+              _showPaymentSuccessDialog(context);
+            },
+          ),
     );
   }
 
@@ -528,85 +571,86 @@ class TrainingDetailModal extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        contentPadding: const EdgeInsets.all(24),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_circle, color: Colors.green, size: 48),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Payment Successful!',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Your payment has been processed. You can now access "${training.title}" in My Trainings.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
+            contentPadding: const EdgeInsets.all(24),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      Navigator.pop(context); // Close training detail modal
-                      if (onRefreshPressed != null) {
-                        onRefreshPressed!();
-                      }
-                    },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text('Stay Here'),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 48,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      Navigator.pop(context); // Close training detail modal
-                      if (onRefreshPressed != null) {
-                        onRefreshPressed!();
-                      }
-                      Get.toNamed('/my-trainings');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                const SizedBox(height: 20),
+                const Text(
+                  'Payment Successful!',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Your payment has been processed. You can now access "${training.title}" in My Trainings.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.pop(context); // Close training detail modal
+                          if (onRefreshPressed != null) {
+                            onRefreshPressed!();
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Stay Here'),
                       ),
                     ),
-                    child: const Text('Go to My Trainings'),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.pop(context); // Close training detail modal
+                          if (onRefreshPressed != null) {
+                            onRefreshPressed!();
+                          }
+                          Get.toNamed('/my-trainings');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kBlue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Go to My Trainings'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }
@@ -638,7 +682,8 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
 
   Future<void> _processPayment() async {
     // Phone validation only required for M-Pesa (Android)
-    if (!isIOS && (completePhoneNumber == null || completePhoneNumber!.isEmpty)) {
+    if (!isIOS &&
+        (completePhoneNumber == null || completePhoneNumber!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a phone number'),
@@ -708,7 +753,10 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.close, color: widget.isDarkMode ? kWhite : kBlack),
+                  icon: Icon(
+                    Icons.close,
+                    color: widget.isDarkMode ? kWhite : kBlack,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -745,30 +793,38 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
 
                   // Payment method logo
                   Center(
-                    child: isIOS
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.apple, color: Colors.white, size: 24),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  'Pay',
-                                  style: TextStyle(
+                    child:
+                        isIOS
+                            ? Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.apple,
                                     color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
+                                    size: 24,
                                   ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Image.asset("images/mpesa.png", height: 50),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    'Pay',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                            : Image.asset("images/mpesa.png", height: 50),
                   ),
                   const SizedBox(height: 20),
 
@@ -787,7 +843,10 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                       decoration: InputDecoration(
                         hintText: "7*******",
                         hintStyle: TextStyle(
-                          color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                          color:
+                              widget.isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[700],
                         ),
                         counterText: '',
                         border: OutlineInputBorder(
@@ -796,7 +855,10 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
-                          borderSide: const BorderSide(color: kBlue, width: 1.0),
+                          borderSide: const BorderSide(
+                            color: kBlue,
+                            width: 1.0,
+                          ),
                         ),
                       ),
                       disableLengthCheck: true,
@@ -855,7 +917,10 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                       color: widget.isDarkMode ? kDarkThemeBg : Colors.grey[50],
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: widget.isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+                        color:
+                            widget.isDarkMode
+                                ? Colors.grey[800]!
+                                : Colors.grey[200]!,
                       ),
                     ),
                     child: Column(
@@ -876,7 +941,10 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                             Text(
                               'Training Fee',
                               style: TextStyle(
-                                color: widget.isDarkMode ? kGrey : Colors.grey[700],
+                                color:
+                                    widget.isDarkMode
+                                        ? kGrey
+                                        : Colors.grey[700],
                               ),
                             ),
                             Text(
@@ -950,38 +1018,39 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                     ),
                     disabledBackgroundColor: Colors.grey,
                   ),
-                  child: _isPaymentProcessing
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (isIOS) ...[
-                            const Icon(Icons.apple, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Pay KES ${widget.amount}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                  child:
+                      _isPaymentProcessing
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
                             ),
-                          ] else
-                            Text(
-                              'Pay KES ${widget.amount}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                        ],
-                      ),
+                          )
+                          : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (isIOS) ...[
+                                const Icon(Icons.apple, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Pay KES ${widget.amount}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ] else
+                                Text(
+                                  'Pay KES ${widget.amount}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                            ],
+                          ),
                 ),
               ),
             ),

@@ -23,8 +23,7 @@ class StorageService {
           await prefs.setString(entry.key, jsonEncode(entry.value));
         }
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   static Future<dynamic> getData(String key) async {
@@ -67,15 +66,17 @@ class StorageService {
   static Future<void> storeUserRoles(dynamic roles) async {
     try {
       List<String> rolesList = [];
-      
+
       if (roles is List) {
         // Roles is a List (e.g., ["admin", "manager"])
-        rolesList = List<String>.from(roles.map((r) => r.toString().toLowerCase()));
+        rolesList = List<String>.from(
+          roles.map((r) => r.toString().toLowerCase()),
+        );
       } else if (roles is Map) {
         // Roles is a Map (e.g., {"ADMIN": "admin"}) - extract keys
         rolesList = roles.keys.map((k) => k.toString().toLowerCase()).toList();
       }
-      
+
       debugPrint('🔐 Storing user roles: $rolesList');
       final rolesJson = jsonEncode(rolesList);
       await storeData({'roles_json': rolesJson});
@@ -95,16 +96,14 @@ class StorageService {
       if (prefs.containsKey(key)) {
         await prefs.remove(key);
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   static Future<void> clearData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   static Future<void> setThemeMode(String mode) async {

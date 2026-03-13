@@ -101,8 +101,10 @@ class FirebaseApi {
       debugPrint('Data received: $data');
 
       // Extract type and referenceId with multiple fallback options
-      final type = (data['type'] ?? data['data'] ?? '').toString().toLowerCase();
-      final referenceId = data['referenceId'] ??
+      final type =
+          (data['type'] ?? data['data'] ?? '').toString().toLowerCase();
+      final referenceId =
+          data['referenceId'] ??
           data['reference_id'] ??
           data['id'] ??
           data['blogId'] ??
@@ -153,8 +155,7 @@ class FirebaseApi {
               title: news.title,
               description: news.description,
               imageUrl: news.imageUrl,
-              author:
-                  '${news.author.firstName} ${news.author.lastName}'.trim(),
+              author: '${news.author.firstName} ${news.author.lastName}'.trim(),
               authorID: news.author.id,
               profileImageUrl: news.author.profilePicture,
               createdAt: news.createdAt.toIso8601String(),

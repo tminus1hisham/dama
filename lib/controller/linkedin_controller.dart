@@ -181,7 +181,9 @@ class LinkedInController extends GetxController {
       debugPrint('🔵 [LinkedIn] Query parameters: ${uri.queryParameters}');
 
       final params = _deepLinkService.extractLinkedInParams(uri);
-      debugPrint('🔵 [LinkedIn] Extracted params keys: ${params.keys.join(", ")}');
+      debugPrint(
+        '🔵 [LinkedIn] Extracted params keys: ${params.keys.join(", ")}',
+      );
 
       if (params.containsKey('token') && params.containsKey('user')) {
         debugPrint('🔵 [LinkedIn] Token flow detected');
@@ -191,19 +193,25 @@ class LinkedInController extends GetxController {
         debugPrint('🔵 [LinkedIn] Code flow detected');
         // OAuth code flow
         await _processCodeFlow(params['code']!, params['state']!);
-      } else if (params.containsKey('code') && params.containsKey('user') && !params.containsKey('state')) {
+      } else if (params.containsKey('code') &&
+          params.containsKey('user') &&
+          !params.containsKey('state')) {
         debugPrint('🔵 [LinkedIn] Direct token flow (code as token)');
         // Direct token flow where backend sends token as 'code' parameter
         await _processTokenResponse(params['code']!, params['user']!);
       } else {
         debugPrint('❌ [LinkedIn] Invalid callback parameters');
-        throw Exception('Invalid callback parameters: ${params.keys.join(", ")}');
+        throw Exception(
+          'Invalid callback parameters: ${params.keys.join(", ")}',
+        );
       }
     } catch (e, s) {
       debugPrint('❌ [LinkedIn] === ERROR ===');
       debugPrint('❌ [LinkedIn] Error type: ${e.runtimeType}');
       debugPrint('❌ [LinkedIn] Error message: $e');
-      debugPrint('❌ [LinkedIn] Stack trace: ${s.toString().split('\\n').take(5).join('\\n')}');
+      debugPrint(
+        '❌ [LinkedIn] Stack trace: ${s.toString().split('\\n').take(5).join('\\n')}',
+      );
 
       errorMessage.value = e.toString();
       _showSnackbar(
@@ -257,7 +265,7 @@ class LinkedInController extends GetxController {
       // Try 'userId' first, fallback to '_id' for compatibility
       String? userId = decodedUser['userId'] ?? decodedUser['_id'];
       print('[LinkedInController] Extracted userId: $userId');
-      
+
       if (userId == null || userId.isEmpty) {
         throw Exception('User ID not found in LinkedIn callback response');
       }
@@ -265,7 +273,7 @@ class LinkedInController extends GetxController {
       // Extract registration status
       final bool passwordSet = decodedUser['password_set'] == true;
       final bool phoneVerified = decodedUser['phone_number_verified'] == true;
-      
+
       print('=== REGISTRATION STATUS ===');
       print('password_set: $passwordSet');
       print('phone_number_verified: $phoneVerified');
@@ -298,16 +306,18 @@ class LinkedInController extends GetxController {
       // Save authentication data with userId and token
       print('[LinkedInController] Saving auth data...');
       await _saveAuthData(token, decodedUser, userId: userId);
-      
+
       // Update API service headers with the new token
       _apiService.updateHeaders({'Authorization': 'Bearer $token'});
       print('[LinkedInController] Updated API service headers');
-      
+
       // Save LinkedIn data for registration form pre-population
-      print('[LinkedInController] Saving LinkedIn user data to StorageService...');
+      print(
+        '[LinkedInController] Saving LinkedIn user data to StorageService...',
+      );
       await StorageService.storeData(linkedInUserData);
       print('[LinkedInController] LinkedIn data saved successfully');
-      
+
       // Mark this as a LinkedIn registration flow
       await StorageService.storeData({'authType': 'linkedin'});
       await StorageService.storeData({'registration_source': 'linkedin'});
@@ -322,7 +332,9 @@ class LinkedInController extends GetxController {
           isError: false,
         );
       } else {
-        print('📝⚠️ User needs to complete registration - navigating to PERSONAL DETAILS');
+        print(
+          '📝⚠️ User needs to complete registration - navigating to PERSONAL DETAILS',
+        );
         Get.offAllNamed(AppRoutes.personal_details);
         _showSnackbar(
           'Welcome',
@@ -339,7 +351,9 @@ class LinkedInController extends GetxController {
   Future<void> _processCodeFlow(String code, String state) async {
     try {
       debugPrint('🔵 [LinkedIn] === PROCESSING CODE FLOW ===');
-      debugPrint('🔵 [LinkedIn] Code: ${code.substring(0, min(20, code.length))}...');
+      debugPrint(
+        '🔵 [LinkedIn] Code: ${code.substring(0, min(20, code.length))}...',
+      );
       debugPrint('🔵 [LinkedIn] State received: $state');
       debugPrint('🔵 [LinkedIn] Expected state: $_oauthState');
 
@@ -357,7 +371,9 @@ class LinkedInController extends GetxController {
         GetPlatform.isIOS ? 'ios' : 'android',
       );
 
-      debugPrint('🔵 [LinkedIn] Exchange response received: ${response.keys.join(", ")}');
+      debugPrint(
+        '🔵 [LinkedIn] Exchange response received: ${response.keys.join(", ")}',
+      );
 
       if (response.containsKey('token') && response.containsKey('user')) {
         debugPrint('✅ [LinkedIn] Token and user received, processing...');
@@ -372,25 +388,29 @@ class LinkedInController extends GetxController {
     }
   }
 
-  Future<void> _saveAuthData(String token, dynamic userData, {String? userId}) async {
+  Future<void> _saveAuthData(
+    String token,
+    dynamic userData, {
+    String? userId,
+  }) async {
     print('=== _saveAuthData STARTED ===');
     print('Token length: ${token.length}');
     print('UserId: $userId');
     print('UserData: $userData');
-    
+
     await _storage.write(key: 'auth_token', value: token);
     print('[LinkedInController] Saved auth_token to secure storage');
-    
+
     await _storage.write(key: 'user_data', value: json.encode(userData));
     print('[LinkedInController] Saved user_data to secure storage');
-    
+
     await _storage.write(key: 'login_method', value: 'linkedin');
     print('[LinkedInController] Saved login_method to secure storage');
-    
+
     // Store access_token to local storage for API calls
     await StorageService.storeData({'access_token': token});
     print('[LinkedInController] Saved access_token to StorageService');
-    
+
     // Store userId to local storage
     if (userId != null && userId.isNotEmpty) {
       await StorageService.storeData({'userId': userId});

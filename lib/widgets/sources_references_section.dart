@@ -130,11 +130,7 @@ class SourcesReferencesSection extends StatelessWidget {
                       ),
                     ),
                     // External link icon
-                    Icon(
-                      Icons.open_in_new,
-                      color: kGrey,
-                      size: 16,
-                    ),
+                    Icon(Icons.open_in_new, color: kGrey, size: 16),
                   ],
                 ),
               ),

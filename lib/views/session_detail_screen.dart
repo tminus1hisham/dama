@@ -46,7 +46,8 @@ class SessionDetailScreen extends StatelessWidget {
                       color: isDarkMode ? kDarkCard : kWhite,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+                        color:
+                            isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
                       ),
                     ),
                     child: Column(
@@ -55,7 +56,10 @@ class SessionDetailScreen extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: kBlue.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
@@ -74,7 +78,10 @@ class SessionDetailScreen extends StatelessWidget {
                               outline.time,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                color:
+                                    isDarkMode
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
                               ),
                             ),
                           ],
@@ -103,7 +110,10 @@ class SessionDetailScreen extends StatelessWidget {
                         if (isAlreadyCompleted) ...[
                           const SizedBox(height: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(20),
@@ -111,7 +121,11 @@ class SessionDetailScreen extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: const [
-                                Icon(Icons.check_circle, color: Colors.green, size: 18),
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                  size: 18,
+                                ),
                                 SizedBox(width: 6),
                                 Text(
                                   "Completed",
@@ -148,7 +162,8 @@ class SessionDetailScreen extends StatelessWidget {
                       color: isDarkMode ? kDarkCard : kWhite,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+                        color:
+                            isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
                       ),
                     ),
                     child: Column(
@@ -167,7 +182,10 @@ class SessionDetailScreen extends StatelessWidget {
                           "Content for this session will be available here. This may include video lectures, presentation slides, reading materials, and interactive exercises.",
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                            color:
+                                isDarkMode
+                                    ? Colors.grey[300]
+                                    : Colors.grey[600],
                             height: 1.4,
                           ),
                         ),
@@ -230,9 +248,14 @@ class SessionDetailScreen extends StatelessWidget {
               backgroundColor: kBlue,
               foregroundColor: kWhite,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: const Text("Join Live Session", style: TextStyle(fontSize: 16)),
+            child: const Text(
+              "Join Live Session",
+              style: TextStyle(fontSize: 16),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -249,7 +272,9 @@ class SessionDetailScreen extends StatelessWidget {
               side: const BorderSide(color: kBlue),
               foregroundColor: kBlue,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text("Mark Complete", style: TextStyle(fontSize: 16)),
           ),
@@ -264,27 +289,23 @@ class SessionDetailScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.check_circle_rounded,
-            size: 72,
-            color: Colors.green[700],
-          ),
+          Icon(Icons.check_circle_rounded, size: 72, color: Colors.green[700]),
           const SizedBox(height: 20),
           Text(
             "Session $sessionNumber – Completed",
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.green[800],
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.green[800],
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
             "Well done! You have successfully finished this session.",
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey[700],
-                  height: 1.4,
-                ),
+              color: Colors.grey[700],
+              height: 1.4,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -314,9 +335,9 @@ class SessionDetailScreen extends StatelessWidget {
   ) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Opening $title')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Opening $title')));
       },
       child: Container(
         padding: const EdgeInsets.all(10),

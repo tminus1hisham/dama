@@ -50,7 +50,7 @@ class UpdateUserProfileController extends GetxController {
       print('[UpdateProfile] Sending to API: ${userModel.toJson()}');
 
       final result = await _authService.updateUserProfile(userModel);
-      
+
       print('[UpdateProfile] API result: $result');
 
       if (result) {

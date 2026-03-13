@@ -31,6 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _storage = FlutterSecureStorage();
   String isEmailSaved = '';
 
+  // Add this variable for terms acceptance
+
   Future<bool> fetchEmail() async {
     String? email = await _storage.read(key: 'email');
     setState(() {
@@ -59,7 +61,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       String? token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
-        debugPrint('📱 [Login Screen] FCM token obtained: ${token.substring(0, 20)}...');
+        debugPrint(
+          '📱 [Login Screen] FCM token obtained: ${token.substring(0, 20)}...',
+        );
         setState(() {
           fcmToken = token;
         });
@@ -91,8 +95,10 @@ class _LoginScreenState extends State<LoginScreen> {
     debugPrint('📱 [Login Screen] ================================');
     debugPrint('📱 [Login Screen] Login button pressed');
     debugPrint('📱 [Login Screen] Email: ${_emailController.text}');
-    debugPrint('📱 [Login Screen] FCM Token status: ${fcmToken.isNotEmpty ? "present (${fcmToken.substring(0, 20)}...)" : "EMPTY!"}');
-    
+    debugPrint(
+      '📱 [Login Screen] FCM Token status: ${fcmToken.isNotEmpty ? "present (${fcmToken.substring(0, 20)}...)" : "EMPTY!"}',
+    );
+
     authController.email.value = _emailController.text;
     authController.password.value = _passwordController.text;
     authController.fcmToken.value = fcmToken;
@@ -232,6 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             )
                                             : SizedBox.shrink(),
                                   ),
+
                                   Padding(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: 10,
@@ -241,6 +248,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                       callBackFunction: _login,
                                       label: "Login",
                                       backgroundColor: kBlue,
+                                    ),
+                                  ),
+                                  // Auto-accept message for LinkedIn
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 15,
+                                      vertical: 8,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'By logging in with LinkedIn you automatically accept our terms and conditions.',
+                                        style: TextStyle(
+                                          color:
+                                              isDarkMode ? kGrey : Colors.grey,
+                                          fontSize: kSmallTextSize,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
                                     ),
                                   ),
                                   // LinkedIn Button

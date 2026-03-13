@@ -162,8 +162,8 @@ class _SuccessBottomSheetContentState extends State<SuccessBottomSheetContent> {
               widget.date == 'Training enrollment'
                   ? 'View My Trainings'
                   : widget.date == 'Resource purchased'
-                      ? 'View My Resources'
-                      : 'View My Reservations',
+                  ? 'View My Resources'
+                  : 'View My Reservations',
               style: TextStyle(color: kWhite, fontSize: 16),
             ),
           ),

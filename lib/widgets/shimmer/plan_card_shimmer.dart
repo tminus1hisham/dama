@@ -17,8 +17,10 @@ class PlanCardSkeleton extends StatelessWidget {
       child: Skeletonizer(
         enabled: true,
         effect: ShimmerEffect(
-          baseColor: isDarkMode ? const Color(0xFF222531) : const Color(0xFFF4F6FF),
-          highlightColor: isDarkMode ? const Color(0xFF2C2F3E) : const Color(0xFFE4E0E1),
+          baseColor:
+              isDarkMode ? const Color(0xFF222531) : const Color(0xFFF4F6FF),
+          highlightColor:
+              isDarkMode ? const Color(0xFF2C2F3E) : const Color(0xFFE4E0E1),
           duration: const Duration(seconds: 1),
         ),
         child: Container(

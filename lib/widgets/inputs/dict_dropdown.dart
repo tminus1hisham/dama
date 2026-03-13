@@ -30,18 +30,11 @@ class DictDropdown extends StatelessWidget {
         value: value,
         dropdownColor: isDarkMode ? kBlack : kWhite,
         iconEnabledColor: isDarkMode ? kWhite : kBlack,
-        style: TextStyle(
-          color: isDarkMode ? kWhite : kBlack,
-          fontSize: 16,
-        ),
+        style: TextStyle(color: isDarkMode ? kWhite : kBlack, fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(
-            color: isDarkMode ? kWhite : kGrey,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          labelStyle: TextStyle(color: isDarkMode ? kWhite : kGrey),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
@@ -50,26 +43,24 @@ class DictDropdown extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: kBlue,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: kBlue, width: 2),
           ),
           filled: true,
           fillColor: isDarkMode ? kDarkThemeBg : kBGColor,
           contentPadding: const EdgeInsets.all(16),
         ),
-        items: items.entries.map((entry) {
-          return DropdownMenuItem<String>(
-            value: entry.value,
-            child: Text(
-              entry.key,
-              style: TextStyle(
-                color: isDarkMode ? kWhite : kBlack, // ✅ Fix here
-              ),
-            ),
-          );
-        }).toList(),
+        items:
+            items.entries.map((entry) {
+              return DropdownMenuItem<String>(
+                value: entry.value,
+                child: Text(
+                  entry.key,
+                  style: TextStyle(
+                    color: isDarkMode ? kWhite : kBlack, // ✅ Fix here
+                  ),
+                ),
+              );
+            }).toList(),
         onChanged: onChanged,
       ),
     );

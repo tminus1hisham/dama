@@ -40,8 +40,8 @@ class SelectedEventCard extends StatelessWidget {
   final VoidCallback? onViewTicket;
 
   Uri _mapsUrl(String location) => Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}',
-      );
+    'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}',
+  );
 
   Future<void> _openMaps(BuildContext context, String location) async {
     final uri = _mapsUrl(location);
@@ -84,26 +84,27 @@ class SelectedEventCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: 250,
-              child: imageUrl.isNotEmpty
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Center(
+              child:
+                  imageUrl.isNotEmpty
+                      ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (context, error, stackTrace) => const Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            ),
+                      )
+                      : const Center(
                         child: Icon(
-                          Icons.broken_image,
+                          Icons.image_not_supported,
                           size: 50,
                           color: Colors.grey,
                         ),
                       ),
-                    )
-                  : const Center(
-                      child: Icon(
-                        Icons.image_not_supported,
-                        size: 50,
-                        color: Colors.grey,
-                      ),
-                    ),
             ),
             const SizedBox(height: 10),
 
@@ -211,7 +212,10 @@ class SelectedEventCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: kBigTextSize,
                             fontWeight: FontWeight.bold,
-                            color: int.parse(price) == 0 ? kGreen : (isDarkMode ? kWhite : kBlue),
+                            color:
+                                int.parse(price) == 0
+                                    ? kGreen
+                                    : (isDarkMode ? kWhite : kBlue),
                           ),
                         ),
                       ],
@@ -222,37 +226,40 @@ class SelectedEventCard extends StatelessWidget {
                       // Free event: Register/Unregister button
                       Expanded(
                         child: CustomButton(
-                          callBackFunction: isPast
-                              ? null
-                              : (isRegistered ? onUnregister : onRegister),
-                          label: isPast
-                              ? "EVENT PAST"
-                              : (isRegistered ? "UNREGISTER" : "RSVP"),
-                          backgroundColor: isPast
-                              ? Colors.grey
-                              : (isRegistered ? kRed : kBlue),
+                          callBackFunction:
+                              isPast
+                                  ? null
+                                  : (isRegistered ? onUnregister : onRegister),
+                          label:
+                              isPast
+                                  ? "EVENT PAST"
+                                  : (isRegistered ? "UNREGISTER" : "RSVP"),
+                          backgroundColor:
+                              isPast
+                                  ? Colors.grey
+                                  : (isRegistered ? kRed : kBlue),
                         ),
                       )
                     else
-                      // Paid event: Show RSVP button if not registered, ATTENDING if registered
-                      if (isPaid)
-                        // Paid and attending
-                        Expanded(
-                          child: CustomButton(
-                            callBackFunction: isPast ? null : onUnregister,
-                            label: isPast ? "EVENT PAST" : "UNREGISTER",
-                            backgroundColor: isPast ? Colors.grey : kRed,
-                          ),
-                        )
-                      else
-                        // Paid but not yet purchased
-                        Expanded(
-                          child: CustomButton(
-                            callBackFunction: isPast ? null : onPay,
-                            label: isPast ? "EVENT PAST" : "RSVP",
-                            backgroundColor: isPast ? Colors.grey : kBlue,
-                          ),
+                    // Paid event: Show RSVP button if not registered, ATTENDING if registered
+                    if (isPaid)
+                      // Paid and attending
+                      Expanded(
+                        child: CustomButton(
+                          callBackFunction: isPast ? null : onUnregister,
+                          label: isPast ? "EVENT PAST" : "UNREGISTER",
+                          backgroundColor: isPast ? Colors.grey : kRed,
                         ),
+                      )
+                    else
+                      // Paid but not yet purchased
+                      Expanded(
+                        child: CustomButton(
+                          callBackFunction: isPast ? null : onPay,
+                          label: isPast ? "EVENT PAST" : "RSVP",
+                          backgroundColor: isPast ? Colors.grey : kBlue,
+                        ),
+                      ),
                   ],
                 ],
               ),
@@ -276,71 +283,77 @@ class SelectedEventCard extends StatelessWidget {
             if (!isPast)
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: kSidePadding),
-                child: isRegistered
-                    ? GestureDetector(
-                        onTap: onViewTicket,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF3778E0),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                Icons.confirmation_number,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'View Ticket',
-                                style: TextStyle(
+                child:
+                    isRegistered
+                        ? GestureDetector(
+                          onTap: onViewTicket,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3778E0),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(
+                                  Icons.confirmation_number,
                                   color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                                  size: 18,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 8),
+                                Text(
+                                  'View Ticket',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        : GestureDetector(
+                          onTap:
+                              isPaid
+                                  ? null
+                                  : (int.tryParse(price) ?? 0) > 0
+                                  ? onPay
+                                  : onRegister,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: kBlue,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(
+                                  Icons.local_offer_outlined,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'RSVP now',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      )
-                    : GestureDetector(
-                        onTap: isPaid ? null : (int.tryParse(price) ?? 0) > 0 ? onPay : onRegister,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: kBlue,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                Icons.local_offer_outlined,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'RSVP now',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
               ),
 
             const SizedBox(height: 20),

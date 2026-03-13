@@ -74,8 +74,6 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     super.dispose();
   }
 
-
-
   bool _isLoading = false;
   String imageUrl = '';
   String firstName = '';
@@ -132,8 +130,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
     // Only show loading dialog for types that need an API call
     // Use contains() to match variations like 'new_blog', 'event_registration', etc.
-    final needsApiCall = type != null &&
-        (type.contains('blog') || type.contains('news') || type.contains('event')) &&
+    final needsApiCall =
+        type != null &&
+        (type.contains('blog') ||
+            type.contains('news') ||
+            type.contains('event')) &&
         referenceId != null &&
         referenceId.isNotEmpty;
 
@@ -149,7 +150,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
     try {
       // Use contains() to match variations like 'new_blog', 'blog_comment', etc.
-      if (type != null && type.contains('blog') && referenceId != null && referenceId.isNotEmpty) {
+      if (type != null &&
+          type.contains('blog') &&
+          referenceId != null &&
+          referenceId.isNotEmpty) {
         debugPrint('  - Branch: Blog notification (type: $type)');
         debugPrint('  - Fetching blog with ID: $referenceId');
 
@@ -163,7 +167,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           debugPrint('  - Blog object details:');
           debugPrint('    - id: "${blog.id}" (length: ${blog.id.length})');
           debugPrint('    - title: "${blog.title}"');
-          debugPrint('    - author: "${blog.author?.firstName ?? ''} ${blog.author?.lastName ?? ''}"');
+          debugPrint(
+            '    - author: "${blog.author?.firstName ?? ''} ${blog.author?.lastName ?? ''}"',
+          );
           debugPrint(
             '  - Navigating to SelectedBlogScreen with blog ID: ${blog.id}',
           );
@@ -190,7 +196,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           debugPrint('  - ERROR: Blog value is null after fetch');
           _showBlogNotFoundDialog();
         }
-      } else if (type != null && type.contains('news') &&
+      } else if (type != null &&
+          type.contains('news') &&
           referenceId != null &&
           referenceId.isNotEmpty) {
         debugPrint('  - Branch: News notification (type: $type)');
@@ -206,7 +213,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           debugPrint('  - News object details:');
           debugPrint('    - id: "${news.id}" (length: ${news.id.length})');
           debugPrint('    - title: "${news.title}"');
-          debugPrint('    - author: "${news.author?.firstName ?? 'Unknown'} ${news.author?.lastName ?? ''}".trim()');
+          debugPrint(
+            '    - author: "${news.author?.firstName ?? 'Unknown'} ${news.author?.lastName ?? ''}".trim()',
+          );
           debugPrint(
             '  - Navigating to SelectedNewsScreen with news ID: ${news.id}',
           );
@@ -218,9 +227,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               title: news.title,
               description: news.description,
               imageUrl: news.imageUrl,
-              author: news.author != null
-                  ? '${news.author!.firstName} ${news.author!.lastName}'.trim()
-                  : 'DAMA KENYA',
+              author:
+                  news.author != null
+                      ? '${news.author!.firstName} ${news.author!.lastName}'
+                          .trim()
+                      : 'DAMA KENYA',
               authorID: news.author?.id ?? '',
               profileImageUrl: news.author?.profilePicture ?? '',
               createdAt: news.createdAt.toIso8601String(),
@@ -234,7 +245,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           debugPrint('  - ERROR: News value is null after fetch');
           _showNewsNotFoundDialog();
         }
-      } else if (type != null && type.contains('event') &&
+      } else if (type != null &&
+          type.contains('event') &&
           referenceId != null &&
           referenceId.isNotEmpty) {
         debugPrint('  - Branch: Event notification (type: $type)');
@@ -275,7 +287,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           debugPrint('  - ERROR: Event value is null after fetch');
           _showEventNotFoundDialog();
         }
-      } else if (type != null && type.contains('training') &&
+      } else if (type != null &&
+          type.contains('training') &&
           referenceId != null &&
           referenceId.isNotEmpty) {
         debugPrint('  - Branch: Training notification (type: $type)');
@@ -324,7 +337,32 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             } else {
               debugPrint('  - Training still not found after fetch');
               // Navigate to TrainingDetailScreen with empty training (shows error state)
-              Get.off(() => TrainingDetailScreen(
+              Get.off(
+                () => TrainingDetailScreen(
+                  training: TrainingModel(
+                    id: '',
+                    title: '',
+                    description: '',
+                    learningTracks: [],
+                    targetAudience: [],
+                    learningOutcomes: [],
+                    courseOutline: [],
+                    sessions: [],
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                    category: '',
+                    status: '',
+                    trainer: null,
+                  ),
+                ),
+              );
+            }
+          } catch (e) {
+            Get.back(); // Dismiss loading dialog
+            debugPrint('  - Error fetching trainings: $e');
+            // Navigate to TrainingDetailScreen with empty training (shows error state)
+            Get.off(
+              () => TrainingDetailScreen(
                 training: TrainingModel(
                   id: '',
                   title: '',
@@ -340,32 +378,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   status: '',
                   trainer: null,
                 ),
-              ));
-            }
-          } catch (e) {
-            Get.back(); // Dismiss loading dialog
-            debugPrint('  - Error fetching trainings: $e');
-            // Navigate to TrainingDetailScreen with empty training (shows error state)
-            Get.off(() => TrainingDetailScreen(
-              training: TrainingModel(
-                id: '',
-                title: '',
-                description: '',
-                learningTracks: [],
-                targetAudience: [],
-                learningOutcomes: [],
-                courseOutline: [],
-                sessions: [],
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-                category: '',
-                status: '',
-                trainer: null,
               ),
-            ));
+            );
           }
         }
-      } else if (type != null && type.contains('virtual') &&
+      } else if (type != null &&
+          type.contains('virtual') &&
           referenceId != null &&
           referenceId.isNotEmpty) {
         debugPrint('  - Branch: Virtual session notification (type: $type)');
@@ -414,7 +432,32 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             } else {
               debugPrint('  - Training still not found after fetch');
               // Navigate to TrainingDetailScreen with empty training (shows error state)
-              Get.off(() => TrainingDetailScreen(
+              Get.off(
+                () => TrainingDetailScreen(
+                  training: TrainingModel(
+                    id: '',
+                    title: '',
+                    description: '',
+                    learningTracks: [],
+                    targetAudience: [],
+                    learningOutcomes: [],
+                    courseOutline: [],
+                    sessions: [],
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                    category: '',
+                    status: '',
+                    trainer: null,
+                  ),
+                ),
+              );
+            }
+          } catch (e) {
+            Get.back(); // Dismiss loading dialog
+            debugPrint('  - Error fetching trainings: $e');
+            // Navigate to TrainingDetailScreen with empty training (shows error state)
+            Get.off(
+              () => TrainingDetailScreen(
                 training: TrainingModel(
                   id: '',
                   title: '',
@@ -430,29 +473,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   status: '',
                   trainer: null,
                 ),
-              ));
-            }
-          } catch (e) {
-            Get.back(); // Dismiss loading dialog
-            debugPrint('  - Error fetching trainings: $e');
-            // Navigate to TrainingDetailScreen with empty training (shows error state)
-            Get.off(() => TrainingDetailScreen(
-              training: TrainingModel(
-                id: '',
-                title: '',
-                description: '',
-                learningTracks: [],
-                targetAudience: [],
-                learningOutcomes: [],
-                courseOutline: [],
-                sessions: [],
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-                category: '',
-                status: '',
-                trainer: null,
               ),
-            ));
+            );
           }
         }
       } else {
@@ -468,7 +490,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             debugPrint('  - Could not dismiss dialog: $e');
           }
         }
-        debugPrint('  - Notification type not specifically handled, ignoring gracefully');
+        debugPrint(
+          '  - Notification type not specifically handled, ignoring gracefully',
+        );
       }
     } catch (e, stackTrace) {
       debugPrint('  - EXCEPTION: $e');
@@ -498,7 +522,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   void _showEventNotFoundDialog() {
-    final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDark;
+    final isDarkMode =
+        Provider.of<ThemeProvider>(context, listen: false).isDark;
     Get.dialog(
       AlertDialog(
         backgroundColor: isDarkMode ? kDarkCard : kWhite,
@@ -506,11 +531,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.event_busy,
-              size: 64,
-              color: kGrey,
-            ),
+            Icon(Icons.event_busy, size: 64, color: kGrey),
             const SizedBox(height: 16),
             Text(
               'Event Not Found',
@@ -524,10 +545,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             Text(
               'This event may have been removed or is no longer available.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: kNormalTextSize,
-                color: kGrey,
-              ),
+              style: TextStyle(fontSize: kNormalTextSize, color: kGrey),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -554,10 +572,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 ),
                 child: const Text(
                   'Browse Events',
-                  style: TextStyle(
-                    color: kWhite,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(color: kWhite, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -569,7 +584,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   void _showBlogNotFoundDialog() {
-    final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDark;
+    final isDarkMode =
+        Provider.of<ThemeProvider>(context, listen: false).isDark;
     Get.dialog(
       AlertDialog(
         backgroundColor: isDarkMode ? kDarkCard : kWhite,
@@ -577,11 +593,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.article_outlined,
-              size: 64,
-              color: kGrey,
-            ),
+            Icon(Icons.article_outlined, size: 64, color: kGrey),
             const SizedBox(height: 16),
             Text(
               'Blog Not Found',
@@ -595,10 +607,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             Text(
               'This blog post may have been removed or is no longer available.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: kGrey,
-              ),
+              style: TextStyle(fontSize: 14, color: kGrey),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -606,7 +615,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               child: ElevatedButton(
                 onPressed: () {
                   Get.back(); // Close dialog
-                  Get.offAll(() => const Dashboard(initialTab: 1, initialSubTab: 0));
+                  Get.offAll(
+                    () => const Dashboard(initialTab: 1, initialSubTab: 0),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kBlue,
@@ -617,10 +628,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 ),
                 child: const Text(
                   'Browse Blogs',
-                  style: TextStyle(
-                    color: kWhite,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(color: kWhite, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -632,7 +640,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   void _showNewsNotFoundDialog() {
-    final isDarkMode = Provider.of<ThemeProvider>(context, listen: false).isDark;
+    final isDarkMode =
+        Provider.of<ThemeProvider>(context, listen: false).isDark;
     Get.dialog(
       AlertDialog(
         backgroundColor: isDarkMode ? kDarkCard : kWhite,
@@ -640,11 +649,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.newspaper_outlined,
-              size: 64,
-              color: kGrey,
-            ),
+            Icon(Icons.newspaper_outlined, size: 64, color: kGrey),
             const SizedBox(height: 16),
             Text(
               'News Not Found',
@@ -658,10 +663,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             Text(
               'This news article may have been removed or is no longer available.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: kGrey,
-              ),
+              style: TextStyle(fontSize: 14, color: kGrey),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -669,7 +671,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               child: ElevatedButton(
                 onPressed: () {
                   Get.back(); // Close dialog
-                  Get.offAll(() => const Dashboard(initialTab: 2, initialSubTab: 0));
+                  Get.offAll(
+                    () => const Dashboard(initialTab: 2, initialSubTab: 0),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kBlue,
@@ -680,10 +684,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 ),
                 child: const Text(
                   'Browse News',
-                  style: TextStyle(
-                    color: kWhite,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(color: kWhite, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -700,7 +701,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       Get.dialog(
         AlertDialog(
           title: const Text('Training Not Found'),
-          content: const Text('The training you\'re looking for doesn\'t exist.'),
+          content: const Text(
+            'The training you\'re looking for doesn\'t exist.',
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -767,10 +770,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 unselectedLabelColor: isDarkMode ? kGrey : Colors.grey[600],
                 indicatorColor: kBlue,
                 indicatorWeight: 3,
-                tabs: const [
-                  Tab(text: 'All'),
-                  Tab(text: 'Unread'),
-                ],
+                tabs: const [Tab(text: 'All'), Tab(text: 'Unread')],
               ),
             ),
             Expanded(
@@ -814,13 +814,14 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                                   }
 
                                   // ✅ Filter notifications based on selected tab
-                                  final filteredNotifications = _selectedTabIndex == 0
-                                      ? _notificationController
-                                          .notificationList
-                                      : _notificationController
-                                          .notificationList
-                                          .where((n) => !n.read)
-                                          .toList();
+                                  final filteredNotifications =
+                                      _selectedTabIndex == 0
+                                          ? _notificationController
+                                              .notificationList
+                                          : _notificationController
+                                              .notificationList
+                                              .where((n) => !n.read)
+                                              .toList();
 
                                   if (filteredNotifications.isEmpty) {
                                     return ListView(
@@ -863,7 +864,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                                     padding: EdgeInsets.zero,
                                     itemCount: filteredNotifications.length,
                                     itemBuilder: (context, index) {
-                                      final notification = filteredNotifications[index];
+                                      final notification =
+                                          filteredNotifications[index];
                                       return Padding(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 10,
@@ -877,7 +879,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                                                         n.id == notification.id,
                                                     orElse: () => notification,
                                                   );
-                                          return NotoficationCard(
+                                          return NotificationCard(
                                             title: updatedNotification.title,
                                             body: updatedNotification.body,
                                             date:

@@ -3,14 +3,14 @@ import 'package:panara_dialogs/panara_dialogs.dart';
 
 class HandleUnauthorizedService {
   static final GlobalKey<NavigatorState> navigatorKey =
-  GlobalKey<NavigatorState>();
+      GlobalKey<NavigatorState>();
 
   static BuildContext? get context => navigatorKey.currentContext;
 
   static void navigateToLoginAndClearStack() {
     navigatorKey.currentState?.pushNamedAndRemoveUntil(
       '/login',
-          (route) => false,
+      (route) => false,
     );
   }
 

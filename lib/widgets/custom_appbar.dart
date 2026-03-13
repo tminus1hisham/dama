@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
-class CustomAppbar extends StatelessWidget {
+class CustomAppbar extends StatefulWidget {
   const CustomAppbar({
     super.key,
     required this.onMenuTap,
@@ -24,9 +24,27 @@ class CustomAppbar extends StatelessWidget {
   final int unreadNotificationCount;
 
   @override
+  State<CustomAppbar> createState() => _CustomAppbarState();
+}
+
+class _CustomAppbarState extends State<CustomAppbar> {
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final TextEditingController searchController = TextEditingController();
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDarkMode = themeProvider.isDark;
 
     return Container(
@@ -36,20 +54,20 @@ class CustomAppbar extends StatelessWidget {
         child: Row(
           children: [
             GestureDetector(
-              onTap: onMenuTap,
+              onTap: widget.onMenuTap,
               child: ProfileAvatar(
                 radius: 22,
                 backgroundColor: kLightGrey,
                 backgroundImage:
-                    (imageUrl != null && imageUrl!.isNotEmpty)
-                        ? NetworkImage(imageUrl!)
+                    (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
+                        ? NetworkImage(widget.imageUrl!)
                         : null,
                 borderColor: kBlue,
                 borderWidth: 3,
                 animateBorder: true,
                 glowColor: kBlue,
                 child:
-                    (imageUrl == null || imageUrl!.isEmpty)
+                    (widget.imageUrl == null || widget.imageUrl!.isEmpty)
                         ? Icon(Icons.person, size: 30, color: kGrey)
                         : null,
               ),
@@ -60,51 +78,79 @@ class CustomAppbar extends StatelessWidget {
                 height: 45,
                 padding: EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? kDarkThemeBg : kLightGrey,
+                  color:
+                      isDarkMode
+                          ? const Color(0xFF1a2537)
+                          : const Color(0xFFEBEBEB),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: TextField(
-                  style: TextStyle(
-                    color: isDarkMode ? kWhite : kBlack,
-                  ),
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search...',
-                    hintStyle: TextStyle(
-                      color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.only(left: 12, right: 0, top: 12, bottom: 12),
-                    suffixIconConstraints: BoxConstraints(minWidth: 40, maxHeight: 24),
-                    suffixIcon: Align(
-                      alignment: Alignment.centerRight,
-                      child: IconButton(
-                        color: kGrey,
-                        iconSize: 20,
-                        padding: EdgeInsets.only(right: 8),
-                        onPressed: () {
-                          if (searchController.text.isNotEmpty &&
-                              onSearchSubmitted != null) {
-                            onSearchSubmitted!(searchController.text);
-                            searchController.clear();
-                          }
-                        },
-                        icon: const Icon(Icons.search),
+                child: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _searchController,
+                  builder: (context, value, _) {
+                    return TextField(
+                      style: TextStyle(
+                        color: isDarkMode ? kWhite : kBlack,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ),
-                  ),
-                  onSubmitted: (query) {
-                    if (onSearchSubmitted != null) {
-                      onSearchSubmitted!(query);
-                    }
-                    searchController.clear();
+                      controller: _searchController,
+                      cursorColor: kBlue,
+                      cursorWidth: 2,
+                      decoration: InputDecoration(
+                        hintText: 'Search...',
+                        hintStyle: TextStyle(
+                          color:
+                              isDarkMode ? Colors.grey[500] : Colors.grey[500],
+                          fontSize: 15,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        filled: false,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        prefixIcon: null,
+                        suffixIcon: null,
+                        prefixIconConstraints: BoxConstraints(),
+                        suffixIconConstraints: BoxConstraints(),
+                      ),
+                      onSubmitted: (query) {
+                        if (widget.onSearchSubmitted != null) {
+                          widget.onSearchSubmitted!(query);
+                        }
+                        _searchController.clear();
+                      },
+                    );
                   },
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () {
+                if (_searchController.text.isNotEmpty &&
+                    widget.onSearchSubmitted != null) {
+                  widget.onSearchSubmitted!(_searchController.text);
+                  _searchController.clear();
+                }
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Icon(
+                  Icons.search,
+                  size: 20,
+                  color: isDarkMode ? Colors.grey[500] : Colors.grey[700],
                 ),
               ),
             ),
             const SizedBox(width: 5),
             IconButton(
-              onPressed: onChatTap,
+              onPressed: widget.onChatTap,
               icon: Icon(FontAwesomeIcons.comment, size: 18),
               color: kGrey,
               padding: EdgeInsets.zero,
@@ -113,11 +159,11 @@ class CustomAppbar extends StatelessWidget {
             Stack(
               children: [
                 IconButton(
-                  onPressed: onNotificationTap,
+                  onPressed: widget.onNotificationTap,
                   icon: Icon(Icons.notifications_outlined),
                   color: kGrey,
                 ),
-                if (unreadNotificationCount > 0)
+                if (widget.unreadNotificationCount > 0)
                   Positioned(
                     right: 2,
                     top: 4,
@@ -127,13 +173,12 @@ class CustomAppbar extends StatelessWidget {
                         color: Colors.red,
                         shape: BoxShape.circle,
                       ),
-                      constraints: BoxConstraints(
-                        minWidth: 18,
-                        minHeight: 18,
-                      ),
+                      constraints: BoxConstraints(minWidth: 18, minHeight: 18),
                       child: Center(
                         child: Text(
-                          unreadNotificationCount > 99 ? '99+' : unreadNotificationCount.toString(),
+                          widget.unreadNotificationCount > 99
+                              ? '99+'
+                              : widget.unreadNotificationCount.toString(),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 10,

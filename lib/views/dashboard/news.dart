@@ -370,9 +370,10 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                                 Text(
                                   _formatCategoryName(category),
                                   style: TextStyle(
-                                    color: isSelected
-                                        ? kWhite
-                                        : (isDarkMode ? kWhite : kBlack),
+                                    color:
+                                        isSelected
+                                            ? kWhite
+                                            : (isDarkMode ? kWhite : kBlack),
                                     fontWeight:
                                         isSelected
                                             ? FontWeight.w600

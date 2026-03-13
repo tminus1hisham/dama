@@ -46,7 +46,8 @@ class TrainingSession {
   factory TrainingSession.fromJson(Map<String, dynamic> json) {
     try {
       final dateStr = json['date'] is String ? json['date'] : '';
-      final startTimeStr = json['startTime'] is String ? json['startTime'] : '00:00';
+      final startTimeStr =
+          json['startTime'] is String ? json['startTime'] : '00:00';
       final endTimeStr = json['endTime'] is String ? json['endTime'] : '00:00';
 
       // Parse full UTC datetime string and convert to local time
@@ -57,13 +58,22 @@ class TrainingSession {
       final endTime = _combineDateTime(date, endTimeStr);
 
       final resourcesJson = json['resources'] as List? ?? [];
-      final resources = resourcesJson.map((e) => SessionResource.fromJson(e as Map<String, dynamic>)).toList();
+      final resources =
+          resourcesJson
+              .map((e) => SessionResource.fromJson(e as Map<String, dynamic>))
+              .toList();
 
       final materialsJson = json['materials'] as List? ?? [];
-      final materials = materialsJson.map((e) => SessionResource.fromJson(e as Map<String, dynamic>)).toList();
+      final materials =
+          materialsJson
+              .map((e) => SessionResource.fromJson(e as Map<String, dynamic>))
+              .toList();
 
       final attendanceJson = json['attendance'] as List? ?? [];
-      final attendance = attendanceJson.map((e) => SessionAttendance.fromJson(e as Map<String, dynamic>)).toList();
+      final attendance =
+          attendanceJson
+              .map((e) => SessionAttendance.fromJson(e as Map<String, dynamic>))
+              .toList();
 
       return TrainingSession(
         id: json['_id']?.toString() ?? json['sessionNumber']?.toString() ?? '',
@@ -74,7 +84,8 @@ class TrainingSession {
         endTime: endTime,
         status: json['status'] is String ? json['status'] : 'scheduled',
         meetingLink: json['meetingLink'] is String ? json['meetingLink'] : null,
-        meetingPlatform: json['meetingPlatform'] is String ? json['meetingPlatform'] : null,
+        meetingPlatform:
+            json['meetingPlatform'] is String ? json['meetingPlatform'] : null,
         meetingUrl: json['meetingUrl'] is String ? json['meetingUrl'] : null,
         notes: json['notes'] is String ? json['notes'] : null,
         resources: resources,
@@ -85,7 +96,8 @@ class TrainingSession {
         isJoined: json['isJoined'] as bool?,
         type: json['type'] as String?,
         duration: json['duration']?.toString(),
-        recordingUrl: json['recordingUrl'] is String ? json['recordingUrl'] : null,
+        recordingUrl:
+            json['recordingUrl'] is String ? json['recordingUrl'] : null,
       );
     } catch (e) {
       return TrainingSession(
@@ -212,8 +224,11 @@ class SessionResource {
       title: json['title']?.toString() ?? '',
       url: json['url']?.toString() ?? '',
       type: json['type']?.toString() ?? '',
-      uploadedBy: json['uploadedBy'] is Map<String, dynamic> ? json['uploadedBy'] : {},
-      uploadedAt: DateTime.tryParse(json['uploadedAt']?.toString() ?? '') ?? DateTime.now(),
+      uploadedBy:
+          json['uploadedBy'] is Map<String, dynamic> ? json['uploadedBy'] : {},
+      uploadedAt:
+          DateTime.tryParse(json['uploadedAt']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -253,12 +268,18 @@ class SessionAttendance {
       sessionId: json['session_id']?.toString() ?? '',
       userId: json['user_id']?.toString() ?? '',
       present: json['present'] == true,
-      checkInTime: json['check_in_time'] != null
-          ? DateTime.tryParse(json['check_in_time']?.toString() ?? '')?.toLocal()
-          : null,
-      checkOutTime: json['check_out_time'] != null
-          ? DateTime.tryParse(json['check_out_time']?.toString() ?? '')?.toLocal()
-          : null,
+      checkInTime:
+          json['check_in_time'] != null
+              ? DateTime.tryParse(
+                json['check_in_time']?.toString() ?? '',
+              )?.toLocal()
+              : null,
+      checkOutTime:
+          json['check_out_time'] != null
+              ? DateTime.tryParse(
+                json['check_out_time']?.toString() ?? '',
+              )?.toLocal()
+              : null,
       duration: json['duration'] is int ? json['duration'] as int : null,
       notes: json['notes']?.toString(),
     );

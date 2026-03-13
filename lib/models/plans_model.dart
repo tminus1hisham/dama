@@ -26,9 +26,8 @@ class PlanModel {
       type: json['type'],
       price: json['price'],
       included: List<String>.from(json['included']),
-      benefits: json['benefits'] != null 
-          ? List<String>.from(json['benefits']) 
-          : [],
+      benefits:
+          json['benefits'] != null ? List<String>.from(json['benefits']) : [],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
     );

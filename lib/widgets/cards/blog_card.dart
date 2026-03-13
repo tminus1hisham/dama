@@ -62,7 +62,7 @@ class blogCard extends StatelessWidget {
 
   _CategoryColors _getCategoryColors(String category) {
     final cat = category.toLowerCase();
-    
+
     if (cat.contains('science')) {
       return _CategoryColors(
         backgroundColor: const Color(0xFFECFDF5), // emerald-50
@@ -94,7 +94,7 @@ class blogCard extends StatelessWidget {
         borderColor: const Color(0xFFFCD34D), // amber-200
       );
     }
-    
+
     // Default blue colors
     return _CategoryColors(
       backgroundColor: const Color(0xFFEFF6FF), // blue-50
@@ -108,20 +108,26 @@ class blogCard extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     bool isDarkMode = themeProvider.isDark;
 
-// Check if author has admin or manager role - only these show as "DAMA KENYA"
-// All other roles (blogger, news_editor, etc.) show their actual name and profile picture
-bool isAdminOrManager = roles.isNotEmpty && roles.any(
-  (role) {
-    final roleStr = role.toString().toLowerCase();
-    return roleStr == 'admin' || roleStr == 'manager';
-  },
-);
+    // Check if author has admin or manager role - only these show as "DAMA KENYA"
+    // All other roles (blogger, news_editor, etc.) show their actual name and profile picture
+    bool isAdminOrManager =
+        roles.isNotEmpty &&
+        roles.any((role) {
+          final roleStr = role.toString().toLowerCase();
+          return roleStr == 'admin' || roleStr == 'manager';
+        });
 
-// Determine display name and image
-final String displayName = isAdminOrManager ? 'DAMA KENYA' : (fullName.isNotEmpty ? fullName : 'DAMA KENYA');
-final ImageProvider displayImage = isAdminOrManager 
-    ? kDamaLogo 
-    : (profileImageUrl?.isNotEmpty == true ? NetworkImage(profileImageUrl!) : kDamaLogo);
+    // Determine display name and image
+    final String displayName =
+        isAdminOrManager
+            ? 'DAMA KENYA'
+            : (fullName.isNotEmpty ? fullName : 'DAMA KENYA');
+    final ImageProvider displayImage =
+        isAdminOrManager
+            ? kDamaLogo
+            : (profileImageUrl?.isNotEmpty == true
+                ? NetworkImage(profileImageUrl!)
+                : kDamaLogo);
     // Get category-specific colors
     final categoryColors = _getCategoryColors(category);
 
@@ -130,9 +136,10 @@ final ImageProvider displayImage = isAdminOrManager
       decoration: BoxDecoration(
         color: isDarkMode ? kBlack : kWhite,
         borderRadius: BorderRadius.circular(16),
-        border: isDarkMode 
-            ? Border.all(color: const Color(0xFF1D2839), width: 1)
-            : null,
+        border:
+            isDarkMode
+                ? Border.all(color: const Color(0xFF1D2839), width: 1)
+                : null,
         boxShadow: [
           BoxShadow(
             color:
@@ -187,7 +194,10 @@ final ImageProvider displayImage = isAdminOrManager
                                 SizedBox(height: 2),
                                 Text(
                                   time,
-                                  style: TextStyle(color: kGrey, fontSize: kBadgeTextSize),
+                                  style: TextStyle(
+                                    color: kGrey,
+                                    fontSize: kBadgeTextSize,
+                                  ),
                                 ),
                               ],
                             ),
@@ -200,7 +210,10 @@ final ImageProvider displayImage = isAdminOrManager
                     decoration: BoxDecoration(
                       color: categoryColors.backgroundColor,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: categoryColors.borderColor, width: 1.5),
+                      border: Border.all(
+                        color: categoryColors.borderColor,
+                        width: 1.5,
+                      ),
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Text(
@@ -251,7 +264,9 @@ final ImageProvider displayImage = isAdminOrManager
                         style: TextStyle(
                           fontSize: kNormalTextSize,
                           color:
-                              isDarkMode ? Color(0xFFa0a8b8) : Color(0xFF6b7280),
+                              isDarkMode
+                                  ? Color(0xFFa0a8b8)
+                                  : Color(0xFF6b7280),
                           height: 1.4,
                         ),
                       ),

@@ -29,7 +29,7 @@ class BlogController extends GetxController {
   // Additional fields for compatibility
   bool _hasFetchedAllCategories = false;
   final _categoryBlogs = <BlogPostModel>[].obs;
-  
+
   // Store all fetched blogs for trending computation
   final _allBlogs = <BlogPostModel>[].obs;
 
@@ -108,7 +108,7 @@ class BlogController extends GetxController {
 
       // Update filtered blogs for backward compatibility
       filteredBlogs.addAll(blogs);
-      
+
       // Store all blogs for trending computation
       if (pageKey == 1) {
         _allBlogs.clear();
@@ -131,19 +131,20 @@ class BlogController extends GetxController {
   /// Compute trending blogs filtered by selected category
   void _computeTrendingBlogs(List<BlogPostModel> blogs) {
     final selected = selectedCategory.value.trim().toUpperCase();
-    
+
     // Filter by category if not "All Blogs"
-    final filtered = selected == 'ALL BLOGS'
-        ? blogs
-        : blogs.where((b) {
-            final blogCat = (b.category ?? '').trim().toUpperCase();
-            return blogCat == selected;
-          }).toList();
-    
+    final filtered =
+        selected == 'ALL BLOGS'
+            ? blogs
+            : blogs.where((b) {
+              final blogCat = (b.category ?? '').trim().toUpperCase();
+              return blogCat == selected;
+            }).toList();
+
     // Sort by date (newest first)
     final sortedByDate = List<BlogPostModel>.from(filtered);
     sortedByDate.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    
+
     // Sort by engagement (likes + comments) for trending
     final sorted = List<BlogPostModel>.from(sortedByDate);
     sorted.sort((a, b) {
@@ -153,7 +154,7 @@ class BlogController extends GetxController {
     });
     trendingBlogs.assignAll(sorted.take(10).toList());
   }
-  
+
   /// Recompute trending from all stored blogs
   void _recomputeTrendingFromCache() {
     if (_allBlogs.isNotEmpty) {
@@ -164,10 +165,10 @@ class BlogController extends GetxController {
   void selectCategory(String category) {
     if (selectedCategory.value == category) return;
     selectedCategory.value = category;
-    
+
     // Recompute trending for the new category
     _recomputeTrendingFromCache();
-    
+
     _applyFilter();
   }
 

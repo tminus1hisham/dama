@@ -38,4 +38,4 @@ const DEFAULT_IMAGE_URL = "https://thispersondoesnotexist.com/";
 const BASE_URL = "https://api.damakenya.org/v1";
 const CHAT_BASE_URL = "http://167.71.68.0:5000/v1";
 
-const AssetImage kDamaLogo = AssetImage('images/blue_logo.png');
+const AssetImage kDamaLogo = AssetImage('images/DAMA IC.png');

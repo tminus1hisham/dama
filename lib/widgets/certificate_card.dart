@@ -248,15 +248,7 @@ class CertificateCard extends StatelessWidget {
                         ),
                       ),
 
-                      // Download (icon only, outlined)
-                      if (onDownload != null) ...[
-                        const SizedBox(width: 8),
-                        _iconBtn(
-                          icon: Icons.download_rounded,
-                          onPressed: onDownload,
-                          isDarkMode: isDarkMode,
-                        ),
-                      ],
+                      // Download button removed
 
                       // Share (icon only, outlined)
                       if (onShare != null) ...[

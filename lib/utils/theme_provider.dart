@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
-  bool _isDark = false;
+  bool _isDark = true;
   bool _useSystemTheme = true;
 
   bool get isDark {
     if (kIsWeb) {
-      return false;
+      return true;
     }
 
     return _useSystemTheme
@@ -47,10 +47,10 @@ class ThemeProvider extends ChangeNotifier {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     if (kIsWeb) {
-      _isDark = false;
+      _isDark = true;
       _useSystemTheme = false;
     } else {
-      _isDark = prefs.getBool('isDark') ?? false;
+      _isDark = prefs.getBool('isDark') ?? true;
       _useSystemTheme = prefs.getBool('useSystemTheme') ?? true;
     }
 

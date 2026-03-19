@@ -336,6 +336,7 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                               horizontal: 8,
                               vertical: 4,
                             ),
+                            clipBehavior: Clip.antiAlias,
                             decoration: BoxDecoration(
                               color:
                                   isSelected
@@ -353,16 +354,6 @@ class _NewsState extends State<News> with AutomaticKeepAliveClientMixin {
                                             : kLightGrey),
                                 width: 1,
                               ),
-                              boxShadow:
-                                  isSelected
-                                      ? [
-                                        BoxShadow(
-                                          color: kBlue.withOpacity(0.3),
-                                          blurRadius: 8,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ]
-                                      : null,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,

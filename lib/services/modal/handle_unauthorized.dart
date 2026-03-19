@@ -15,20 +15,7 @@ class HandleUnauthorizedService {
   }
 
   static void showUnauthorizedDialog() {
-    if (context == null) return;
-
-    PanaraInfoDialog.show(
-      context!,
-      title: "Session Expired",
-      message: "Your session has expired. Please log in again.",
-      panaraDialogType: PanaraDialogType.error,
-      imagePath: "images/logo.png",
-      barrierDismissible: false,
-      buttonText: "Okay",
-      onTapDismiss: () {
-        Navigator.of(context!).pop();
-        navigateToLoginAndClearStack();
-      },
-    );
+    // DISABLED: Session Expired Alert
+    // Dialog has been disabled as per requirement
   }
 }

@@ -200,7 +200,7 @@ class NewsCard extends StatelessWidget {
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Text(
-                      category.isNotEmpty ? category : "News",
+                      (category.isEmpty || category == "[]") ? "General" : category,
                       style: TextStyle(
                         color: categoryColors['text'] as Color,
                         fontWeight: FontWeight.bold,

@@ -217,7 +217,7 @@ class blogCard extends StatelessWidget {
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Text(
-                      category.isNotEmpty ? category : "Blogs",
+                      (category.isEmpty || category == "[]") ? "General" : category,
                       style: TextStyle(
                         color: categoryColors.textColor,
                         fontWeight: FontWeight.bold,

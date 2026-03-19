@@ -300,13 +300,13 @@ class plansCard extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: 15),
+            SizedBox(height: 8),
 
             // Divider
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: kSidePadding,
-                vertical: 15,
+                vertical: 8,
               ),
               child: Container(height: 1, color: textColor.withOpacity(0.2)),
             ),
@@ -343,7 +343,7 @@ class plansCard extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: 15),
+            SizedBox(height: 12),
 
             // Primary Action button
             Padding(

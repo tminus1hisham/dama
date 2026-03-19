@@ -99,21 +99,21 @@ class _ProfileAvatarState extends State<ProfileAvatar>
                             alpha: _opacityAnimation.value,
                           ),
                           blurRadius: 15 * _scaleAnimation.value,
-                          spreadRadius: 2 * _scaleAnimation.value,
+                          spreadRadius: 0,
                         ),
                         BoxShadow(
                           color: glowColor.withValues(
                             alpha: _opacityAnimation.value * 0.5,
                           ),
                           blurRadius: 25 * _scaleAnimation.value,
-                          spreadRadius: 4 * _scaleAnimation.value,
+                          spreadRadius: 0,
                         ),
                       ]
                       : [
                         BoxShadow(
                           color: borderColor.withValues(alpha: 0.2),
                           blurRadius: 8,
-                          spreadRadius: 1,
+                          spreadRadius: 0,
                         ),
                       ],
             ),

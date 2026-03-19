@@ -199,8 +199,8 @@ class ProfileCard extends StatelessWidget {
                                   style: TextStyle(
                                     color:
                                         isDarkMode ? kWhite : Colors.grey[800],
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],

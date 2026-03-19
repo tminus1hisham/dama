@@ -706,7 +706,9 @@ class _MyTrainingsScreenState extends State<MyTrainingsScreen>
       Get.back();
 
       if (certNumber != null && certNumber.isNotEmpty) {
-        final url = '$BASE_URL/certificates/download/$certNumber';
+        final url = training.certificate?.downloadUrl?.isNotEmpty == true
+            ? training.certificate!.downloadUrl!
+            : '$BASE_URL/certificates/download/$certNumber';
         await _launchUrl(url);
       } else {
         Get.snackbar(

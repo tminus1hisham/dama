@@ -940,7 +940,7 @@ class _DashboardState extends State<Dashboard>
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: ThemeAwareLogo(height: 14, fit: BoxFit.contain),
+                      child: ThemeAwareLogo(height: 24, fit: BoxFit.contain),
                     ),
                   ),
 
@@ -1339,16 +1339,9 @@ class _DashboardState extends State<Dashboard>
                                 Text(
                                   'Membership Certificate',
                                   style: TextStyle(
-                                    fontSize: kSmallTextSize,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        isDark
-                                            ? const Color(
-                                              0xFFFBBF24,
-                                            ) // amber-400
-                                            : const Color(
-                                              0xFF92400E,
-                                            ), // amber-800
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
                                   ),
                                 ),
                                 const Spacer(),
@@ -1450,6 +1443,17 @@ class _DashboardState extends State<Dashboard>
                     onTap: () => _onMenuItemTap(AppRoutes.profile, 'Profile'),
                   ),
                   _buildDrawerNavItem(
+                    title: 'Referrals',
+                    icon: Icons.people_alt_outlined,
+                    isDarkMode: isDark,
+                    isSelected: _currentRoute == AppRoutes.myReferrals,
+                    onTap:
+                        () => _onMenuItemTap(
+                          AppRoutes.myReferrals,
+                          'Referrals',
+                        ),
+                  ),
+                  _buildDrawerNavItem(
                     title: 'Membership',
                     icon: Icons.workspace_premium, // Crown in lucide
                     isDarkMode: isDark,
@@ -1515,14 +1519,14 @@ class _DashboardState extends State<Dashboard>
                         () => _onMenuItemTap(AppRoutes.aboutDama, 'About DAMA'),
                   ),
                   _buildDrawerNavItem(
-                    title: 'Support & Feedback',
+                    title: 'Support',
                     icon: Icons.support_agent,
                     isDarkMode: isDark,
                     isSelected: _currentRoute == AppRoutes.support,
                     onTap:
                         () => _onMenuItemTap(
                           AppRoutes.support,
-                          'Support & Feedback',
+                          'Support',
                         ),
                   ),
                   _buildDrawerNavItem(

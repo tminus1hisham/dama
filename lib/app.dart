@@ -64,6 +64,53 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         }
       });
     });
+
+    // Set up continuous deep link stream listener for incoming links
+    _setupDeepLinkStreamListener();
+  }
+
+  void _setupDeepLinkStreamListener() {
+    try {
+      final deepLinkService = Get.find<DeepLinkService>();
+      deepLinkService.deepLinkStream.listen(
+        (uri) {
+          debugPrint('🔵 [App] Deep link stream received: $uri');
+
+          if (deepLinkService.isLinkedInCallback(uri)) {
+            debugPrint('✅ [App] LinkedIn callback detected from stream');
+            
+            // Try to find LinkedInController with retries
+            _handleLinkedInDeepLink(uri, retries: 3);
+          }
+        },
+        onError: (err) {
+          debugPrint('❌ [App] Deep link stream error: $err');
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ [App] Error setting up deep link listener: $e');
+    }
+  }
+
+  Future<void> _handleLinkedInDeepLink(Uri uri, {int retries = 3}) async {
+    try {
+      final linkedInController = Get.find<LinkedInController>();
+      debugPrint('✅ [App] LinkedInController found, handling deep link');
+      await linkedInController.handleDeepLink(uri);
+    } catch (e) {
+      if (retries > 0) {
+        debugPrint(
+          '⚠️ [App] LinkedInController not found, retrying... ($retries retries left)',
+        );
+        // Wait a bit and retry
+        await Future.delayed(const Duration(milliseconds: 500));
+        await _handleLinkedInDeepLink(uri, retries: retries - 1);
+      } else {
+        debugPrint(
+          '❌ [App] Failed to handle LinkedIn deep link after retries: $e',
+        );
+      }
+    }
   }
 
   Future<void> _determineInitialRoute() async {
@@ -177,6 +224,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             child: Stack(
               children: [
                 GetMaterialApp(
+                  title: 'DAMA',
                   debugShowCheckedModeBanner: false,
                   navigatorKey: HandleUnauthorizedService.navigatorKey,
                   initialRoute: _initialRoute,

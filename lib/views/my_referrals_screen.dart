@@ -14,10 +14,12 @@ class MyReferralsScreen extends StatefulWidget {
 
 class _MyReferralsScreenState extends State<MyReferralsScreen> {
   late ReferralController _referralController;
+  late TextEditingController _referralEmailController;
 
   @override
   void initState() {
     super.initState();
+    _referralEmailController = TextEditingController();
     debugPrint('🔵🔵🔵 [MyReferralsScreen] initState() CALLED 🔵🔵🔵');
     try {
       _referralController = Get.find<ReferralController>();
@@ -26,6 +28,40 @@ class _MyReferralsScreenState extends State<MyReferralsScreen> {
       debugPrint('🔵 fetchMyReferrals() called from initState');
     } catch (e) {
       debugPrint('❌ Error initializing MyReferralsScreen: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _referralEmailController.dispose();
+    super.dispose();
+  }
+
+  void _sendReferralInvite() async {
+    final emailOrPhone = _referralEmailController.text.trim();
+
+    if (emailOrPhone.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Please enter an email address or phone number',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    final success = await _referralController.sendInvite(emailOrPhone);
+    if (success) {
+      Get.snackbar(
+        'Success',
+        'Invitation sent successfully!',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      _referralEmailController.clear();
+      _referralController.fetchMyReferrals();
     }
   }
 
@@ -93,27 +129,11 @@ class _MyReferralsScreenState extends State<MyReferralsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with back button
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Row(
-                    children: [
-                      Icon(Icons.arrow_back_ios, color: kBlue, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Back to Profile',
-                        style: TextStyle(
-                          color: kBlue,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
+                // Refer a Friend Invite Section (at top)
+                _buildReferralInviteSection(isDarkMode),
+                const SizedBox(height: 32),
 
-                // Title Section
+                // Referral History Heading
                 Row(
                   children: [
                     Container(
@@ -132,7 +152,7 @@ class _MyReferralsScreenState extends State<MyReferralsScreen> {
                           Text(
                             'Referral History',
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: isDarkMode ? kWhite : kBlack,
                             ),
@@ -141,7 +161,7 @@ class _MyReferralsScreenState extends State<MyReferralsScreen> {
                           Text(
                             'Track the colleagues and friends you\'ve invited to DAMA Kenya.',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               color: isDarkMode ? kGrey : Colors.grey[600],
                               height: 1.5,
                             ),
@@ -151,7 +171,7 @@ class _MyReferralsScreenState extends State<MyReferralsScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 20),
 
                 // Stats Overview
                 _buildStatsGrid(isDarkMode),
@@ -163,6 +183,160 @@ class _MyReferralsScreenState extends State<MyReferralsScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildReferralInviteSection(bool isDarkMode) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? kDarkCard : kWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color:
+              isDarkMode
+                  ? Colors.grey[800] ?? Colors.grey
+                  : Colors.grey[200] ?? Colors.grey,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with icon
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: kBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.person_add,
+                  color: kBlue,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Refer a Friend',
+                      style: TextStyle(
+                        color: isDarkMode ? kWhite : kBlack,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Invite your friends or colleagues to join DAMA Kenya. Stand a chance to receive a free membership or free training!',
+                      style: TextStyle(
+                        color: isDarkMode ? kGrey : Colors.grey[600],
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Email/Phone input
+          TextField(
+            controller: _referralEmailController,
+            decoration: InputDecoration(
+              hintText: 'Email or phone number',
+              helperText: 'Phone: 254XXXXXXXXX or 0XXXXXXXXX',
+              helperStyle: TextStyle(
+                color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                fontSize: 12,
+              ),
+              hintStyle: TextStyle(
+                color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                fontSize: 14,
+              ),
+              filled: true,
+              fillColor: isDarkMode ? kDarkThemeBg : Colors.grey[50],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+            style: TextStyle(
+              color: isDarkMode ? kWhite : kBlack,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Send Invite button
+          Obx(
+            () => SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed:
+                    _referralController.isSendingInvite.value
+                        ? null
+                        : _sendReferralInvite,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kBlue,
+                  disabledBackgroundColor: kBlue.withOpacity(0.5),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child:
+                    _referralController.isSendingInvite.value
+                        ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(kWhite),
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.send,
+                              color: kWhite,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Send Invite',
+                              style: TextStyle(
+                                color: kWhite,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

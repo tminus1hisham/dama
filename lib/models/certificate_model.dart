@@ -12,6 +12,7 @@ class CertificateModel {
   final String instructorName;
   final String qrCode;
   final String status;
+  final String? downloadUrl;
 
   CertificateModel({
     required this.id,
@@ -27,6 +28,7 @@ class CertificateModel {
     required this.instructorName,
     required this.qrCode,
     required this.status,
+    this.downloadUrl,
   });
 
   factory CertificateModel.fromJson(Map<String, dynamic> json) {
@@ -89,6 +91,7 @@ class CertificateModel {
       instructorName: metadata['trainerName'] ?? json['instructorName'] ?? '',
       qrCode: json['qrCode'] ?? json['qrCodeData'] ?? '',
       status: json['status'] ?? 'active',
+      downloadUrl: json['downloadUrl'] ?? json['download_url'],
     );
   }
 
@@ -107,6 +110,7 @@ class CertificateModel {
       'instructorName': instructorName,
       'qrCode': qrCode,
       'status': status,
+      'downloadUrl': downloadUrl,
     };
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:dama/controller/referral_controller.dart';
 import 'package:dama/controller/request_delete_account.dart';
 import 'package:dama/controller/role_request_controller.dart';
 import 'package:dama/controller/update_user_profile_controller.dart';
@@ -67,8 +66,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     RoleRequestController(),
   );
 
-  final ReferralController _referralController = Get.put(ReferralController());
-
   final Map<String, String> roleOptions = {
     "Please select": "",
     "News Editor": "news_editor",
@@ -84,8 +81,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _referralEmailController =
-      TextEditingController();
 
   final Utils utils = Utils();
 
@@ -1131,40 +1126,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     await roleRequestController.requestRole(selectedRole!);
   }
 
-  void _sendReferralInvite() async {
-    final emailOrPhone = _referralEmailController.text.trim();
-
-    if (emailOrPhone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an email or phone number')),
-      );
-      return;
-    }
-
-    final success = await _referralController.sendInvite(emailOrPhone);
-
-    if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invitation sent successfully!'),
-            backgroundColor: kGreen,
-            duration: Duration(seconds: 2),
-          ),
-        );
-        _referralEmailController.clear();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to send invitation. Please try again.'),
-            backgroundColor: kRed,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  }
-
   @override
   void dispose() {
     _pulseController.dispose();
@@ -1174,7 +1135,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     _bioController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _referralEmailController.dispose();
     _companyController.dispose();
     super.dispose();
   }
@@ -1706,221 +1666,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
 
                           SizedBox(height: 30),
-
-                          // Refer a Friend Section
-                          Container(
-                            color: kWhite,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Container(
-                                  color: isDarkMode ? kBlack : kWhite,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(kSidePadding),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // Header with icon
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: EdgeInsets.all(8),
-                                              decoration: BoxDecoration(
-                                                color: kBlue.withOpacity(0.1),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Icon(
-                                                Icons.person_add,
-                                                color: kBlue,
-                                                size: 20,
-                                              ),
-                                            ),
-                                            SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    'Refer a Friend',
-                                                    style: TextStyle(
-                                                      color:
-                                                          isDarkMode
-                                                              ? kWhite
-                                                              : kBlack,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 16,
-                                                    ),
-                                                  ),
-                                                  SizedBox(height: 4),
-                                                  Text(
-                                                    'Invite your friends or colleagues to join DAMA Kenya. Stand a chance to receive a free membership or free training!',
-                                                    style: TextStyle(
-                                                      color:
-                                                          isDarkMode
-                                                              ? kGrey
-                                                              : Colors
-                                                                  .grey[600],
-                                                      fontSize: 13,
-                                                      height: 1.4,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 20),
-
-                                        // View Referrals Button
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: OutlinedButton(
-                                            onPressed:
-                                                () => Get.toNamed(
-                                                  AppRoutes.myReferrals,
-                                                ),
-                                            style: OutlinedButton.styleFrom(
-                                              foregroundColor: kBlue,
-                                              side: BorderSide(
-                                                color: kBlue,
-                                                width: 1.5,
-                                              ),
-                                              padding: EdgeInsets.symmetric(
-                                                vertical: 12,
-                                              ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                            child: FittedBox(
-                                              child: Text(
-                                                'View Referrals',
-                                                style: TextStyle(
-                                                  color: kBlue,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(height: 16),
-
-                                        // Email input
-                                        TextField(
-                                          controller: _referralEmailController,
-                                          decoration: InputDecoration(
-                                            hintText:
-                                                'Email address or phone number',
-                                            hintStyle: TextStyle(
-                                              color:
-                                                  isDarkMode
-                                                      ? Colors.grey[600]
-                                                      : Colors.grey[400],
-                                              fontSize: 14,
-                                            ),
-                                            filled: true,
-                                            fillColor:
-                                                isDarkMode
-                                                    ? kDarkThemeBg
-                                                    : kLightGrey,
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              borderSide: BorderSide.none,
-                                            ),
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                                  horizontal: 16,
-                                                  vertical: 14,
-                                                ),
-                                          ),
-                                          style: TextStyle(
-                                            color: isDarkMode ? kWhite : kBlack,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        SizedBox(height: 12),
-
-                                        // Send Invite button
-                                        Obx(
-                                          () => SizedBox(
-                                            width: double.infinity,
-                                            child: ElevatedButton(
-                                              onPressed:
-                                                  _referralController
-                                                          .isSendingInvite
-                                                          .value
-                                                      ? null
-                                                      : _sendReferralInvite,
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: kBlue,
-                                                disabledBackgroundColor: kBlue
-                                                    .withOpacity(0.5),
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical: 12,
-                                                ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                              child:
-                                                  _referralController
-                                                          .isSendingInvite
-                                                          .value
-                                                      ? SizedBox(
-                                                        height: 20,
-                                                        width: 20,
-                                                        child: CircularProgressIndicator(
-                                                          valueColor:
-                                                              AlwaysStoppedAnimation<
-                                                                Color
-                                                              >(kWhite),
-                                                          strokeWidth: 2,
-                                                        ),
-                                                      )
-                                                      : Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Text(
-                                                            'Send Invite',
-                                                            style: TextStyle(
-                                                              color: kWhite,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                              fontSize: 14,
-                                                            ),
-                                                          ),
-                                                          SizedBox(width: 8),
-                                                          Icon(
-                                                            Icons.send,
-                                                            color: kWhite,
-                                                            size: 16,
-                                                          ),
-                                                        ],
-                                                      ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(height: 30),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: 10),
 
                           // Footer
                           Container(

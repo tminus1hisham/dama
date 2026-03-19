@@ -1,4 +1,5 @@
 import 'package:dama/controller/certificate_controller.dart';
+import 'package:dama/models/certificate_model.dart';
 import 'package:dama/utils/constants.dart';
 import 'package:dama/utils/theme_provider.dart';
 import 'package:dama/widgets/certificate_card.dart';
@@ -8,6 +9,7 @@ import 'package:dama/widgets/top_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MyCertificatesScreen extends StatefulWidget {
   const MyCertificatesScreen({super.key});
@@ -76,10 +78,10 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
                         _certificateController.certificates[index];
                     return CertificateCard(
                       certificate: certificate,
-                      onView: () => _showCertificatePreview(certificate),
+                      onView: () => _viewCertificate(certificate),
                       onDownload:
                           () => _certificateController.downloadCertificate(
-                            certificate.certificateNumber,
+                            certificate,
                           ),
                     );
                   },
@@ -102,13 +104,38 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
             certificate: certificate,
             onDownload:
                 () => _certificateController.downloadCertificate(
-                  certificate.certificateNumber,
+                  certificate,
                 ),
             onShare:
                 () => _certificateController.shareCertificate(
-                  certificate.certificateNumber,
+                  certificate,
                 ),
           ),
     );
+  }
+
+  Future<void> _viewCertificate(CertificateModel certificate) async {
+    // Use downloadUrl from certificate if available, otherwise construct URL
+    final url = certificate.downloadUrl?.isNotEmpty == true
+        ? certificate.downloadUrl!
+        : '$BASE_URL/certificates/download/${certificate.certificateNumber}';
+
+    debugPrint('[Certificate] Opening certificate URL: $url');
+    await _launchUrl(url);
+  }
+
+  Future<void> _launchUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok) throw Exception('Could not open URL');
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Could not open certificate: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 }

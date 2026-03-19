@@ -37,12 +37,14 @@ class Certificate {
   final String? certificateNumber;
   final DateTime? issuedAt;
   final DateTime? expiresAt;
+  final String? downloadUrl;
 
   Certificate({
     this.issued,
     this.certificateNumber,
     this.issuedAt,
     this.expiresAt,
+    this.downloadUrl,
   });
 
   factory Certificate.fromJson(Map<String, dynamic> json) {
@@ -55,6 +57,7 @@ class Certificate {
           json['expiresAt'] != null
               ? DateTime.tryParse(json['expiresAt'])
               : null,
+      downloadUrl: json['downloadUrl'] as String? ?? json['download_url'] as String?,
     );
   }
 }

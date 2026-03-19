@@ -158,14 +158,7 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
           TopNavigationbar(
             title: widget.title,
             onBack: widget.onBack,
-            actions: [
-              if (!isLoading && errorMessage == null)
-                IconButton(
-                  icon: Icon(Icons.open_in_browser, color: Colors.white),
-                  onPressed: _openInBrowser,
-                  tooltip: 'Open in Browser',
-                ),
-            ],
+            actions: [],
           ),
           Expanded(child: _buildContent()),
         ],

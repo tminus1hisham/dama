@@ -43,39 +43,20 @@ class LinkedInController extends GetxController {
     bool isError = false,
     BuildContext? context,
   }) {
-    if (context != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message, style: const TextStyle(color: Colors.white)),
-          backgroundColor: isError ? Colors.red : Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
+    // Always use Get.snackbar() to avoid BuildContext issues with async operations
+    try {
+      Get.snackbar(
+        title,
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: isError ? Colors.red : Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
       );
-    } else {
-      try {
-        Get.snackbar(
-          title,
-          message,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: isError ? Colors.red : Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
-      } catch (e) {
-        // Fallback: show snackbar in next frame
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (Get.overlayContext != null) {
-            Get.snackbar(
-              title,
-              message,
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: isError ? Colors.red : Colors.green,
-              colorText: Colors.white,
-              duration: const Duration(seconds: 3),
-            );
-          }
-        });
-      }
+    } catch (e) {
+      debugPrint('Could not show snackbar: $e');
     }
   }
 
@@ -112,8 +93,8 @@ class LinkedInController extends GetxController {
         final authUrl = response['authUrl'];
         debugPrint('🔵 [LinkedIn] Auth URL received: $authUrl');
 
-        // Launch LinkedIn auth in external browser
-        debugPrint('🔵 [LinkedIn] Launching browser...');
+        // Launch LinkedIn auth in external browser with deep link callback
+        debugPrint('🔵 [LinkedIn] Launching browser with deep link callback...');
         final launched = await _deepLinkService.launchLinkedInAuth(authUrl);
         debugPrint('🔵 [LinkedIn] Browser launch result: $launched');
 
@@ -121,13 +102,13 @@ class LinkedInController extends GetxController {
           errorMessage.value = 'Could not launch LinkedIn';
           _showSnackbar(
             'Error',
-            'Please install LinkedIn app or try again',
+            'Please check your internet connection and try again',
             isError: true,
             context: context,
           );
           debugPrint('❌ [LinkedIn] Failed to launch browser');
         } else {
-          debugPrint('✅ [LinkedIn] Browser launched, waiting for callback...');
+          debugPrint('✅ [LinkedIn] Browser launched, waiting for deep link callback...');
           // Start timeout timer for LinkedIn auth
           _timeoutTimer = Timer(const Duration(minutes: 2), () {
             if (_isProcessing.value) {
@@ -135,7 +116,7 @@ class LinkedInController extends GetxController {
               debugPrint('❌ [LinkedIn] Timeout waiting for callback');
               _showSnackbar(
                 'Timeout',
-                'LinkedIn login timed out. Please try regular login.',
+                'LinkedIn login timed out. Please try again.',
                 isError: true,
                 context: context,
               );
@@ -214,14 +195,20 @@ class LinkedInController extends GetxController {
       );
 
       errorMessage.value = e.toString();
-      _showSnackbar(
-        'Error',
-        'Failed to process LinkedIn login: ${e.toString()}',
-        isError: true,
-      );
+      // Don't show snackbar during deep link handling to avoid BuildContext issues
+      // Just log the error instead
+      debugPrint('❌ [LinkedIn] Login failed: $e');
 
-      // Navigate back to login on error
-      Get.offAllNamed(AppRoutes.login);
+      // Navigate back to login on error after a short delay to ensure widget tree is stable
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Get.offAllNamed(AppRoutes.login);
+        // Show error message after navigation completes
+        _showSnackbar(
+          'Error',
+          'LinkedIn login failed. Please try again.',
+          isError: true,
+        );
+      });
     } finally {
       _isProcessing.value = false;
     }
@@ -322,9 +309,40 @@ class LinkedInController extends GetxController {
       await StorageService.storeData({'authType': 'linkedin'});
       await StorageService.storeData({'registration_source': 'linkedin'});
 
-      // Navigate based on registration status
+      // Fetch complete user profile from server to ensure membership data is up to date
+      // This ensures fields like membershipCertificateDownload are available
+      print('[LinkedInController] Fetching complete user profile from server...');
+      try {
+        final profileData = await _apiService.fetchCurrentUserProfile();
+        if (profileData != null && profileData['user'] != null) {
+          final completeUserData = profileData['user'];
+          print('[LinkedInController] ✅ Complete profile fetched');
+          
+          // Save the complete user data with all fields including membershipCertificateDownload
+          await StorageService.storeData({
+            'firstName': completeUserData['firstName'] ?? linkedInUserData['firstName'] ?? '',
+            'lastName': completeUserData['lastName'] ?? linkedInUserData['lastName'] ?? '',
+            'title': completeUserData['title'] ?? linkedInUserData['title'] ?? '',
+            'brief': completeUserData['brief'] ?? linkedInUserData['brief'] ?? '',
+            'profile_picture': completeUserData['profile_picture'] ?? linkedInUserData['profile_picture'] ?? '',
+            'memberId': completeUserData['memberId'] ?? '',
+            'membershipCertificate': completeUserData['membershipCertificate'] ?? '',
+            'membershipCertificateDownload': completeUserData['membershipCertificateDownload'] ?? '',
+          });
+          print('[LinkedInController] ✅ Membership certificate data saved');
+        } else {
+          print('[LinkedInController] ⚠️ No complete profile data received');
+        }
+      } catch (e) {
+        print('[LinkedInController] ⚠️ Error fetching complete profile: $e');
+        // Continue anyway - user can still auth without full data
+      }
+
+      // Navigate based on registration status - use delayed callback to ensure widget tree is stable
       if (passwordSet && phoneVerified) {
         print('🏠✅ User fully registered - navigating to HOME');
+        // Add a delay to ensure widget tree is stable before navigation
+        await Future.delayed(const Duration(milliseconds: 500));
         Get.offAllNamed(AppRoutes.home);
         _showSnackbar(
           'Welcome Back',
@@ -335,6 +353,8 @@ class LinkedInController extends GetxController {
         print(
           '📝⚠️ User needs to complete registration - navigating to PERSONAL DETAILS',
         );
+        // Add a delay to ensure widget tree is stable before navigation
+        await Future.delayed(const Duration(milliseconds: 500));
         Get.offAllNamed(AppRoutes.personal_details);
         _showSnackbar(
           'Welcome',

@@ -57,19 +57,21 @@ class _PlansScreenState extends State<PlansScreen> {
 
     if (lower.contains('student')) {
       return {
-        'primary': const Color(0xFF703804), // Bronze
+        // More saturated bronze for badge/text
+        'primary': const Color(0xFFFFA726), // Saturated Bronze (orange)
         'accent': const Color(0xFFFF9B17),
         'gradientStart': const Color(0xFFFFB366),
         'gradientEnd': const Color(0xFFE8C04D),
-        'badgeBg': const Color(0xFF703804),
+        'badgeBg': const Color(0xFFFFA726),
       };
     } else if (lower.contains('professional')) {
       return {
-        'primary': const Color(0xFF6B6E6F), // Silver
+        // More saturated silver for badge/text
+        'primary': const Color(0xFFB0BEC5), // Saturated Silver (light blue-gray)
         'accent': const Color(0xFF64748B),
-        'gradientStart': const Color(0xFF9CA3AF),
-        'gradientEnd': const Color(0xFF6B7280),
-        'badgeBg': const Color(0xFF6B6E6F),
+        'gradientStart': const Color(0xFFCDD5E0),
+        'gradientEnd': const Color(0xFFB8C1D0),
+        'badgeBg': const Color(0xFFB0BEC5),
       };
     } else if (lower.contains('corporate')) {
       return {
@@ -111,11 +113,6 @@ class _PlansScreenState extends State<PlansScreen> {
   bool _isButtonDisabled(String planType) {
     final lower = planType.toLowerCase();
     return lower.contains('student');
-  }
-
-  // Get button color
-  Color _getButtonColor(String planType, String buttonText) {
-    return _getTierColors(planType)['primary'] ?? kBlue;
   }
 
   @override
@@ -292,11 +289,11 @@ class _PlansScreenState extends State<PlansScreen> {
         child: GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 350,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 1,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            mainAxisExtent: 520, // Constrains card height to prevent overflow
+            // Removed mainAxisExtent to allow card height to shrink
           ),
           itemCount: _plansController.plansList.length,
           itemBuilder: (context, index) {
@@ -470,7 +467,7 @@ class _PlansScreenState extends State<PlansScreen> {
 
             // Main content
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.max,
@@ -482,7 +479,7 @@ class _PlansScreenState extends State<PlansScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
-                          vertical: 6,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           color: tierColors['primary']!.withValues(alpha: 0.15),
@@ -502,12 +499,19 @@ class _PlansScreenState extends State<PlansScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              plan.membership.toLowerCase(),
+                              plan.membership.toUpperCase(),
                               style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
                                 color: tierColors['primary'],
-                                letterSpacing: 0.5,
+                                letterSpacing: 0.6,
+                                shadows: [
+                                  Shadow(
+                                    color: tierColors['primary']!.withValues(alpha: 0.35),
+                                    offset: const Offset(0, 1),
+                                    blurRadius: 2,
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -588,17 +592,6 @@ class _PlansScreenState extends State<PlansScreen> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-
-                  // Plan Name
-                  Text(
-                    plan.membership,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? kWhite : kBlack,
-                    ),
-                  ),
                   const SizedBox(height: 8),
 
                   // Price - always show actual price
@@ -627,55 +620,50 @@ class _PlansScreenState extends State<PlansScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 2),
 
                   // Divider
                   Divider(color: kGrey.withValues(alpha: 0.2), height: 1),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 2),
 
                   // Features List
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // All features shown
-                          ...plan.included.map((feature) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.check_circle_rounded,
-                                    size: 16,
-                                    color: kGreen,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      feature,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: isDarkMode ? kWhite : kBlack,
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...plan.included.map((feature) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 14,
+                                color: kGreen,
                               ),
-                            );
-                          }).toList(),
-                        ],
-                      ),
-                    ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  feature,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDarkMode ? kWhite : kBlack,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ],
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 0),
 
                   // Divider
                   Divider(color: kGrey.withValues(alpha: 0.2), height: 1),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 0),
 
                   // Action Buttons
                   Column(
@@ -699,7 +687,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                         ? Colors.black
                                         : tierColors['primary'],
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
+                                  vertical: 4,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -758,13 +746,13 @@ class _PlansScreenState extends State<PlansScreen> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 0),
                             // View Certificate button for Professional plan
                             if (plan.membership.toLowerCase().contains(
                               'professional',
                             ))
                               Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.only(bottom: 1),
                                 child: OutlinedButton(
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: tierColors['primary'],
@@ -774,7 +762,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                       ),
                                     ),
                                     padding: const EdgeInsets.symmetric(
-                                      vertical: 8,
+                                      vertical: 3,
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
@@ -791,6 +779,8 @@ class _PlansScreenState extends State<PlansScreen> {
                                     final url =
                                         certUrl?.toString().trim() ?? '';
                                     if (url.isNotEmpty) {
+                                      // Match drawer behavior: open in the in-app PDF viewer
+                                      Navigator.pop(context);
                                       Get.to(
                                         () => PDFViewerPage(
                                           pdfUrl: url,
@@ -836,7 +826,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                 foregroundColor: kBlue,
                                 side: const BorderSide(color: kBlue),
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
+                                  vertical: 4,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -869,7 +859,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                 backgroundColor: tierColors['primary'],
                                 foregroundColor: Colors.black,
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
+                                  vertical: 6,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -896,7 +886,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 4),
                             OutlinedButton(
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: kGrey,
@@ -904,7 +894,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                   color: kGrey.withValues(alpha: 0.3),
                                 ),
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
+                                  vertical: 6,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -937,7 +927,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                 backgroundColor: const Color(0xFF204987),
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
+                                  vertical: 6,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -969,7 +959,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 4),
                             OutlinedButton(
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: kGrey,
@@ -977,7 +967,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                   color: kGrey.withValues(alpha: 0.3),
                                 ),
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
+                                  vertical: 6,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -1036,9 +1026,7 @@ class _PlansScreenState extends State<PlansScreen> {
             color: isDarkMode ? kDarkCard : kWhite,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
-          ),
+          // Removed maxHeight constraint to allow modal to shrink
           child: Column(
             children: [
               // Handle
@@ -1430,365 +1418,357 @@ class _PlansScreenState extends State<PlansScreen> {
 
     debugPrint('About to show modal, context mounted: ${ctx.mounted}');
 
-    try {
-      showModalBottomSheet(
-        context: ctx,
-        isScrollControlled: true,
-        isDismissible: true,
-        enableDrag: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        backgroundColor: isDarkMode ? kDarkThemeBg : kWhite,
-        builder: (modalContext) {
-          debugPrint('Modal builder called');
-          return StatefulBuilder(
-            builder: (context, setModalState) {
-              debugPrint('StatefulBuilder called');
-              return SafeArea(
-                bottom: true,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(height: 20),
-                        Text(
-                          'Upgrade to ${plan.membership}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? kWhite : kBlack,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Amount: KES ${_formatPrice(correctPrice)}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: kBlue,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Payment method icon - platform specific
-                        if (isIOS)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.apple,
-                                  color: Colors.white,
-                                  size: 28,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Pay',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          Image.asset("images/mpesa.png", height: 50),
-                        const SizedBox(height: 20),
-                        // Phone number field - Android only (M-Pesa)
-                        if (!isIOS)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Phone Number *",
-                                  style: TextStyle(
-                                    color: isDarkMode ? kWhite : kBlack,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: kNormalTextSize,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                IntlPhoneField(
-                                  initialValue: initialPhoneNumber,
-                                  enabled: !isProcessing,
-                                  decoration: InputDecoration(
-                                    hintText: "7*******",
-                                    hintStyle: TextStyle(
-                                      color:
-                                          isDarkMode
-                                              ? Colors.grey[400]
-                                              : Colors.grey[700],
-                                    ),
-                                    counterText: '',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: const BorderSide(
-                                        color: kBlue,
-                                        width: 1.0,
-                                      ),
-                                    ),
-                                  ),
-                                  disableLengthCheck: true,
-                                  validator: (PhoneNumber? phone) {
-                                    if (phone == null || phone.number.isEmpty) {
-                                      return 'Please enter a phone number';
-                                    }
-                                    if (phone.number.length != 9) {
-                                      return 'Phone number must be exactly 9 digits';
-                                    }
-                                    if (!RegExp(
-                                      r'^[0-9]+$',
-                                    ).hasMatch(phone.number)) {
-                                      return 'Phone number must contain only digits';
-                                    }
-                                    return null;
-                                  },
-                                  style: TextStyle(
-                                    color: isDarkMode ? kWhite : kBlack,
-                                  ),
-                                  dropdownTextStyle: TextStyle(
-                                    color: isDarkMode ? kWhite : kBlack,
-                                  ),
-                                  dropdownIcon: Icon(
-                                    Icons.arrow_drop_down,
-                                    color: isDarkMode ? kWhite : kBlack,
-                                  ),
-                                  initialCountryCode: 'KE',
-                                  onChanged: (PhoneNumber phone) {
-                                    completePhoneNumber = phone.completeNumber;
-                                  },
-                                  onCountryChanged: (country) {
-                                    countryCode = '+${country.dialCode}';
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        if (!isIOS) const SizedBox(height: 20),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 15),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child:
-                                isProcessing
-                                    ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            isIOS
-                                                ? Colors.black.withValues(
-                                                  alpha: 0.7,
-                                                )
-                                                : kBlue.withValues(alpha: 0.5),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              color: kWhite,
-                                              strokeWidth: 2,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                            isIOS
-                                                ? 'Processing Apple Pay...'
-                                                : 'Processing Payment...',
-                                            style: const TextStyle(
-                                              color: kWhite,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                    : isIOS
-                                    // Apple Pay button for iOS
-                                    ? GestureDetector(
-                                      onTap: () async {
-                                        setModalState(() {
-                                          isProcessing = true;
-                                        });
-
-                                        final result = await _processPayment(
-                                          plan,
-                                        );
-
-                                        setModalState(() {
-                                          isProcessing = false;
-                                        });
-
-                                        if (result['success'] == true) {
-                                          if (modalContext.mounted) {
-                                            Navigator.pop(modalContext);
-                                          }
-                                          if (context.mounted) {
-                                            showSuccessBottomSheet(
-                                              context,
-                                              plan.membership,
-                                              'Payment completed',
-                                              'KES ${_formatPrice(correctPrice)}',
-                                              isDarkMode,
-                                            );
-                                          }
-                                        } else {
-                                          Get.snackbar(
-                                            'Payment Error',
-                                            result['error'] ??
-                                                'Payment failed. Please try again.',
-                                            snackPosition: SnackPosition.TOP,
-                                            backgroundColor: Colors.red,
-                                            colorText: Colors.white,
-                                            duration: const Duration(
-                                              seconds: 4,
-                                            ),
-                                            margin: const EdgeInsets.all(10),
-                                          );
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: const Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.apple,
-                                              color: Colors.white,
-                                              size: 24,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'Pay with Apple Pay',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    )
-                                    // M-Pesa button for Android
-                                    : CustomButton(
-                                      callBackFunction: () async {
-                                        if (completePhoneNumber != null &&
-                                            completePhoneNumber!.length >= 10) {
-                                          phoneNumber = completePhoneNumber!;
-
-                                          setModalState(() {
-                                            isProcessing = true;
-                                          });
-
-                                          final result = await _processPayment(
-                                            plan,
-                                          );
-
-                                          setModalState(() {
-                                            isProcessing = false;
-                                          });
-
-                                          if (result['success'] == true) {
-                                            if (modalContext.mounted) {
-                                              Navigator.pop(modalContext);
-                                            }
-                                            if (context.mounted) {
-                                              showSuccessBottomSheet(
-                                                context,
-                                                plan.membership,
-                                                'Payment initiated',
-                                                'KES ${_formatPrice(correctPrice)}',
-                                                isDarkMode,
-                                              );
-                                            }
-                                          } else {
-                                            // Show error above the modal using GetX
-                                            Get.snackbar(
-                                              'Payment Error',
-                                              result['error'] ??
-                                                  'Payment failed. Please try again.',
-                                              snackPosition: SnackPosition.TOP,
-                                              backgroundColor: Colors.red,
-                                              colorText: Colors.white,
-                                              duration: const Duration(
-                                                seconds: 4,
-                                              ),
-                                              margin: const EdgeInsets.all(10),
-                                            );
-                                          }
-                                        } else {
-                                          Get.snackbar(
-                                            'Invalid Phone',
-                                            'Please enter a valid phone number',
-                                            snackPosition: SnackPosition.TOP,
-                                            backgroundColor: Colors.red,
-                                            colorText: Colors.white,
-                                            duration: const Duration(
-                                              seconds: 3,
-                                            ),
-                                            margin: const EdgeInsets.all(10),
-                                          );
-                                        }
-                                      },
-                                      label: "Confirm Payment",
-                                      backgroundColor: kBlue,
-                                    ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: isDarkMode ? kDarkThemeBg : kWhite,
+      builder: (modalContext) {
+        debugPrint('Modal builder called');
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            debugPrint('StatefulBuilder called');
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 4),
+                    Text(
+                      'Upgrade to ${plan.membership}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? kWhite : kBlack,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Amount: KES ${_formatPrice(correctPrice)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: kBlue,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Payment method icon - platform specific
+                    if (isIOS)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.apple,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Pay',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Image.asset("images/mpesa.png", height: 50),
+                    const SizedBox(height: 20),
+                    // Phone number field - Android only (M-Pesa)
+                    if (!isIOS)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Phone Number *",
+                              style: TextStyle(
+                                color: isDarkMode ? kWhite : kBlack,
+                                fontWeight: FontWeight.bold,
+                                fontSize: kNormalTextSize,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            IntlPhoneField(
+                              initialValue: initialPhoneNumber,
+                              enabled: !isProcessing,
+                              decoration: InputDecoration(
+                                hintText: "7*******",
+                                hintStyle: TextStyle(
+                                  color:
+                                      isDarkMode
+                                          ? Colors.grey[400]
+                                          : Colors.grey[700],
+                                ),
+                                counterText: '',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  borderSide: const BorderSide(
+                                    color: kBlue,
+                                    width: 1.0,
+                                  ),
+                                ),
+                              ),
+                              disableLengthCheck: true,
+                              validator: (PhoneNumber? phone) {
+                                if (phone == null || phone.number.isEmpty) {
+                                  return 'Please enter a phone number';
+                                }
+                                if (phone.number.length != 9) {
+                                  return 'Phone number must be exactly 9 digits';
+                                }
+                                if (!RegExp(
+                                  r'^[0-9]+$',
+                                ).hasMatch(phone.number)) {
+                                  return 'Phone number must contain only digits';
+                                }
+                                return null;
+                              },
+                              style: TextStyle(
+                                color: isDarkMode ? kWhite : kBlack,
+                              ),
+                              dropdownTextStyle: TextStyle(
+                                color: isDarkMode ? kWhite : kBlack,
+                              ),
+                              dropdownIcon: Icon(
+                                Icons.arrow_drop_down,
+                                color: isDarkMode ? kWhite : kBlack,
+                              ),
+                              initialCountryCode: 'KE',
+                              onChanged: (PhoneNumber phone) {
+                                completePhoneNumber = phone.completeNumber;
+                              },
+                              onCountryChanged: (country) {
+                                countryCode = '+${country.dialCode}';
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (!isIOS) const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child:
+                            isProcessing
+                                ? Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isIOS
+                                            ? Colors.black.withValues(
+                                              alpha: 0.7,
+                                            )
+                                            : kBlue.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: kWhite,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        isIOS
+                                            ? 'Processing Apple Pay...'
+                                            : 'Processing Payment...',
+                                        style: const TextStyle(
+                                          color: kWhite,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                : isIOS
+                                // Apple Pay button for iOS
+                                ? GestureDetector(
+                                  onTap: () async {
+                                    setModalState(() {
+                                      isProcessing = true;
+                                    });
+
+                                    final result = await _processPayment(
+                                      plan,
+                                    );
+
+                                    setModalState(() {
+                                      isProcessing = false;
+                                    });
+
+                                    if (result['success'] == true) {
+                                      if (modalContext.mounted) {
+                                        Navigator.pop(modalContext);
+                                      }
+                                      if (context.mounted) {
+                                        showSuccessBottomSheet(
+                                          context,
+                                          plan.membership,
+                                          'Payment completed',
+                                          'KES ${_formatPrice(correctPrice)}',
+                                          isDarkMode,
+                                        );
+                                      }
+                                    } else {
+                                      Get.snackbar(
+                                        'Payment Error',
+                                        result['error'] ??
+                                            'Payment failed. Please try again.',
+                                        snackPosition: SnackPosition.TOP,
+                                        backgroundColor: Colors.red,
+                                        colorText: Colors.white,
+                                        duration: const Duration(
+                                          seconds: 4,
+                                        ),
+                                        margin: const EdgeInsets.all(10),
+                                      );
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      borderRadius: BorderRadius.circular(
+                                        8,
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.apple,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Pay with Apple Pay',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                                // M-Pesa button for Android
+                                : CustomButton(
+                                  callBackFunction: () async {
+                                    if (completePhoneNumber != null &&
+                                        completePhoneNumber!.length >= 10) {
+                                      phoneNumber = completePhoneNumber!;
+
+                                      setModalState(() {
+                                        isProcessing = true;
+                                      });
+
+                                      final result = await _processPayment(
+                                        plan,
+                                      );
+
+                                      setModalState(() {
+                                        isProcessing = false;
+                                      });
+
+                                      if (result['success'] == true) {
+                                        if (modalContext.mounted) {
+                                          Navigator.pop(modalContext);
+                                        }
+                                        if (context.mounted) {
+                                          showSuccessBottomSheet(
+                                            context,
+                                            plan.membership,
+                                            'Payment initiated',
+                                            'KES ${_formatPrice(correctPrice)}',
+                                            isDarkMode,
+                                          );
+                                        }
+                                      } else {
+                                        // Show error above the modal using GetX
+                                        Get.snackbar(
+                                          'Payment Error',
+                                          result['error'] ??
+                                              'Payment failed. Please try again.',
+                                          snackPosition: SnackPosition.TOP,
+                                          backgroundColor: Colors.red,
+                                          colorText: Colors.white,
+                                          duration: const Duration(
+                                            seconds: 4,
+                                          ),
+                                          margin: const EdgeInsets.all(10),
+                                        );
+                                      }
+                                    } else {
+                                      Get.snackbar(
+                                        'Invalid Phone',
+                                        'Please enter a valid phone number',
+                                        snackPosition: SnackPosition.TOP,
+                                        backgroundColor: Colors.red,
+                                        colorText: Colors.white,
+                                        duration: const Duration(
+                                          seconds: 3,
+                                        ),
+                                        margin: const EdgeInsets.all(10),
+                                      );
+                                    }
+                                  },
+                                  label: "Confirm Payment",
+                                  backgroundColor: kBlue,
+                                ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-              );
-            },
-          );
-        },
-      );
-      debugPrint('Modal shown successfully');
-    } catch (e, stackTrace) {
-      debugPrint('Error showing payment modal: $e');
-      debugPrint('Stack trace: $stackTrace');
-    }
+              ),
+            );
+          },
+        );
+      },
+    );
+    debugPrint('Modal shown successfully');
   }
 
   /// Process payment and return result with success status and error message

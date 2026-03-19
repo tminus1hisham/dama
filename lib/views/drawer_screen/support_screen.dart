@@ -504,7 +504,7 @@ class _SupportScreenState extends State<SupportScreen> {
                         ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 40),
           ],
         ),
       );

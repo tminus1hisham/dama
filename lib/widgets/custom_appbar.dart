@@ -53,23 +53,26 @@ class _CustomAppbarState extends State<CustomAppbar> {
       child: SafeArea(
         child: Row(
           children: [
-            GestureDetector(
-              onTap: widget.onMenuTap,
-              child: ProfileAvatar(
-                radius: 22,
-                backgroundColor: kLightGrey,
-                backgroundImage:
-                    (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
-                        ? NetworkImage(widget.imageUrl!)
-                        : null,
-                borderColor: kBlue,
-                borderWidth: 3,
-                animateBorder: true,
-                glowColor: kBlue,
-                child:
-                    (widget.imageUrl == null || widget.imageUrl!.isEmpty)
-                        ? Icon(Icons.person, size: 30, color: kGrey)
-                        : null,
+            Padding(
+              padding: const EdgeInsets.all(4),
+              child: GestureDetector(
+                onTap: widget.onMenuTap,
+                child: ProfileAvatar(
+                  radius: 22,
+                  backgroundColor: kLightGrey,
+                  backgroundImage:
+                      (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
+                          ? NetworkImage(widget.imageUrl!)
+                          : null,
+                  borderColor: kBlue,
+                  borderWidth: 3,
+                  animateBorder: false,
+                  glowColor: kBlue,
+                  child:
+                      (widget.imageUrl == null || widget.imageUrl!.isEmpty)
+                          ? Icon(Icons.person, size: 30, color: kGrey)
+                          : null,
+                ),
               ),
             ),
             const SizedBox(width: 10),

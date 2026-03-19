@@ -27,7 +27,6 @@ class _ReferralInviteModalState extends State<ReferralInviteModal>
     super.initState();
     _referralController = Get.find<ReferralController>();
 
-    // Setup animations
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 700),
       vsync: this,
@@ -65,7 +64,6 @@ class _ReferralInviteModalState extends State<ReferralInviteModal>
       if (success) {
         _showToast('Invitation sent successfully!', isError: false);
         _emailController.clear();
-        // Auto close after success
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
             Navigator.pop(context);
@@ -95,22 +93,23 @@ class _ReferralInviteModalState extends State<ReferralInviteModal>
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDarkMode = themeProvider.isDark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 600;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 16 : 24,
-        vertical: 24,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 16,
       ),
       child: SingleChildScrollView(
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: FadeTransition(
             opacity: _opacityAnimation,
-            child: Obx(() => _buildCard(context, isDarkMode)),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 380),
+              child: Obx(() => _buildCard(context, isDarkMode)),
+            ),
           ),
         ),
       ),
@@ -118,311 +117,208 @@ class _ReferralInviteModalState extends State<ReferralInviteModal>
   }
 
   Widget _buildCard(BuildContext context, bool isDarkMode) {
-    return Container(
-      // Gradient border effect
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: kBlue.withOpacity(0.2),
-            blurRadius: 30,
-            spreadRadius: 0,
-          ),
-        ],
+    return Card(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: kBlue.withOpacity(0.2), width: 1),
       ),
-      child: Card(
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-          side: BorderSide(color: kBlue.withOpacity(0.15), width: 1),
-        ),
-        color: isDarkMode ? const Color(0xFF1e293b) : const Color(0xFFF8FAFC),
-        elevation: 20,
-        shadowColor: kBlue.withOpacity(0.15),
-        child: Stack(
+      color: isDarkMode ? const Color(0xFF0f1419) : kWhite,
+      elevation: 8,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 22),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Decorative gradient circles
-            Positioned(
-              top: -60,
-              right: -80,
-              child: Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    colors: [kBlue.withOpacity(0.15), kBlue.withOpacity(0.05)],
-                  ),
-                  borderRadius: BorderRadius.circular(100),
+            // Close button
+            Align(
+              alignment: Alignment.topRight,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Icon(
+                  Icons.close,
+                  color: isDarkMode ? Colors.white70 : Colors.black54,
+                  size: 24,
                 ),
               ),
             ),
-            Positioned(
-              bottom: -60,
-              left: -60,
-              child: Container(
-                width: 180,
-                height: 180,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.blue.withOpacity(0.1),
-                      Colors.blue.withOpacity(0.03),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(90),
+            const SizedBox(height: 12),
+
+            // Glowing icon
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [kBlue, Colors.blue[800]!],
                 ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.person_add,
+                color: kWhite,
+                size: 32,
               ),
             ),
-            // Main content
-            Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: 20),
+
+            // Title
+            Text(
+              'Invite a Colleague',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: isDarkMode ? kWhite : kBlack,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+
+            // Subtitle
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDarkMode
+                      ? const Color(0xFFa0aec0)
+                      : const Color(0xFF4a5568),
+                  height: 1.5,
+                ),
                 children: [
-                  // Close button
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color:
-                              isDarkMode
-                                  ? const Color(0xFF64748B).withOpacity(0.15)
-                                  : Colors.black.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          color: isDarkMode ? Colors.white70 : Colors.black54,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Glowing icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: kBlue.withOpacity(0.3),
-                          blurRadius: 30,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [kBlue, Colors.blue[900]!],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: kBlue.withOpacity(0.4),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.person_add,
-                        color: kWhite,
-                        size: 40,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Title
-                  Text(
-                    'Invite a Colleague',
+                  const TextSpan(text: 'Grow the '),
+                  TextSpan(
+                    text: 'DAMA Kenya',
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      color: isDarkMode ? kWhite : kBlack,
-                      letterSpacing: -0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Subtitle with emphasis
-                  RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: TextStyle(
-                        fontSize: 15,
-                        color:
-                            isDarkMode
-                                ? const Color(0xFF94A3B8)
-                                : const Color(0xFF475569),
-                        height: 1.6,
-                      ),
-                      children: [
-                        const TextSpan(text: 'Grow the '),
-                        TextSpan(
-                          text: 'DAMA Kenya',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: isDarkMode ? kWhite : kBlack,
-                          ),
-                        ),
-                        const TextSpan(
-                          text:
-                              ' community! Share exclusive resources and expert insights with your peers.',
-                        ),
-                      ],
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Call to action text
-                  Text(
-                    'Refer a friend and stand a chance to receive a free membership or free training!',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: kBlue,
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Input with gradient border effect
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: LinearGradient(
-                        colors: [
-                          kBlue.withOpacity(0.15),
-                          Colors.blue[600]!.withOpacity(0.1),
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: kBlue.withOpacity(0.1),
-                          blurRadius: 12,
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(1),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(13),
-                        color: isDarkMode ? const Color(0xFF020817) : kWhite,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _emailController,
-                              enabled:
-                                  !_referralController.isSendingInvite.value,
-                              decoration: InputDecoration(
-                                hintText: 'Email address or phone number',
-                                hintStyle: TextStyle(
-                                  color:
-                                      isDarkMode
-                                          ? const Color(0xFF64748B)
-                                          : const Color(0xFF94A3B8),
-                                  fontSize: 15,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                              ),
-                              style: TextStyle(
-                                color: isDarkMode ? kWhite : kBlack,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              onSubmitted: (_) => _sendInvite(),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4),
-                            child: SizedBox(
-                              height: 56,
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap:
-                                      _referralController.isSendingInvite.value
-                                          ? null
-                                          : _sendInvite,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [kBlue, Colors.blue[900]!],
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Center(
-                                        child:
-                                            _referralController
-                                                    .isSendingInvite
-                                                    .value
-                                                ? SizedBox(
-                                                  width: 20,
-                                                  height: 20,
-                                                  child: CircularProgressIndicator(
-                                                    valueColor:
-                                                        const AlwaysStoppedAnimation<
-                                                          Color
-                                                        >(kWhite),
-                                                    strokeWidth: 2.5,
-                                                  ),
-                                                )
-                                                : Icon(
-                                                  Icons.send,
-                                                  color: kWhite,
-                                                  size: 20,
-                                                ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Footer text
-                  Text(
-                    'They will receive a personalized invitation link to join.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color:
-                          isDarkMode
-                              ? const Color(0xFF64748B)
-                              : const Color(0xFF64748B),
-                      fontStyle: FontStyle.italic,
-                    ),
-                    textAlign: TextAlign.center,
+                  const TextSpan(
+                    text: ' community! Share exclusive resources and expert insights with your peers.',
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 8),
+
+            // Call to action
+            Text(
+              'Refer a friend and stand a chance to receive a free membership or free training!',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: kBlue,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+
+            // Input + button row wrapped in unified pill container
+            Container(
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? const Color(0xFF1a2332)
+                    : const Color(0xFFF0F4FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: kBlue.withOpacity(0.25),
+                  width: 1,
+                ),
+              ),
+              padding: const EdgeInsets.all(4),
+              child: Row(
+                children: [
+                  // Text field
+                  Expanded(
+                    child: TextField(
+                      controller: _emailController,
+                      enabled: !_referralController.isSendingInvite.value,
+                      decoration: InputDecoration(
+                        hintText: 'Email or phone no.',
+                        hintStyle: TextStyle(
+                          color: isDarkMode
+                              ? const Color(0xFF64748B)
+                              : const Color(0xFF94A3B8),
+                          fontSize: 13,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        isDense: true,
+                      ),
+                      style: TextStyle(
+                        color: isDarkMode ? kWhite : kBlack,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      onSubmitted: (_) => _sendInvite(),
+                    ),
+                  ),
+
+                  // Send Invite pill button
+                  GestureDetector(
+                    onTap: _referralController.isSendingInvite.value
+                        ? null
+                        : _sendInvite,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A6BFF),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: _referralController.isSendingInvite.value
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'Send Invite',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Transform.rotate(
+                                  angle: -0.785398,
+                                  child: const Icon(Icons.send, color: Colors.black, size: 14),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Footer text
+            Text(
+              'They will receive a personalized invitation link to join.',
+              style: TextStyle(
+                fontSize: 12,
+                color: const Color(0xFF64748B),
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

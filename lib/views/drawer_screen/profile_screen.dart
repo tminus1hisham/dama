@@ -12,14 +12,13 @@ import 'package:dama/utils/utils.dart';
 import 'package:dama/widgets/buttons/custom_button.dart';
 import 'package:dama/widgets/custom_spinner.dart';
 import 'package:dama/widgets/inputs/dict_dropdown.dart';
-import 'package:dama/widgets/profile_avatar.dart';
 import 'package:dama/widgets/top_navigation_bar.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -200,20 +199,25 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _pickImage() async {
-    var status = await Permission.photos.request();
-    if (!status.isGranted) return;
+    if (Platform.isIOS) {
+      var status = await Permission.photos.request();
+      if (!status.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please allow photo access to change profile picture')),
+        );
+        return;
+      }
+    }
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-      );
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
-      if (result != null && result.files.single.path != null) {
+      if (image != null) {
         setState(() => _isUploading = true);
 
-        File image = File(result.files.single.path!);
-        String? uploadedUrl = await utils.uploadPicture(image);
+        File imageFile = File(image.path);
+        String? uploadedUrl = await utils.uploadPicture(imageFile);
 
         if (uploadedUrl != null) {
           await StorageService.storeData({'profile_picture': uploadedUrl});

@@ -51,14 +51,15 @@ class StripeService {
     if (!defaultTargetPlatform.isIOS) {
       return false;
     }
-
-    try {
-      // On iOS, isPlatformPaySupported() checks Apple Pay availability
-      return await Stripe.instance.isPlatformPaySupported();
-    } catch (e) {
-      debugPrint('Apple Pay availability check failed: $e');
-      return false;
-    }
+    // MOCK: Always return true for Simulator/UI testing
+    return true;
+    // --- Restore this for production ---
+    // try {
+    //   return await Stripe.instance.isPlatformPaySupported();
+    // } catch (e) {
+    //   debugPrint('Apple Pay availability check failed: $e');
+    //   return false;
+    // }
   }
 
   /// Process Apple Pay payment

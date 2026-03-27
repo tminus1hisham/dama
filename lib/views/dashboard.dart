@@ -1386,18 +1386,12 @@ class _DashboardState extends State<Dashboard>
                         Colors.purple.withOpacity(0.15),
                         Colors.purple,
                       ),
-                      onTap: () {
+                      onTap: () async {
                         Navigator.pop(context);
-                        // Navigator.pushNamed(context, AppRoutes.blogger);
-                      },
-                    ),
-                    _buildDrawerNavItem(
-                      title: 'My Blogs',
-                      icon: Icons.menu_book, // BookOpen in lucide
-                      isDarkMode: isDark,
-                      onTap: () {
-                        Navigator.pop(context);
-                        // Navigator.pushNamed(context, AppRoutes.myBlogs);
+                        final Uri adminUrl = Uri.parse('https://admin.damakenya.org/');
+                        if (await canLaunchUrl(adminUrl)) {
+                          await launchUrl(adminUrl, mode: LaunchMode.externalApplication);
+                        }
                       },
                     ),
                   ],
@@ -1411,18 +1405,12 @@ class _DashboardState extends State<Dashboard>
                         Colors.blue.withOpacity(0.15),
                         Colors.blue,
                       ),
-                      onTap: () {
+                      onTap: () async {
                         Navigator.pop(context);
-                        // Navigator.pushNamed(context, AppRoutes.newsEditor);
-                      },
-                    ),
-                    _buildDrawerNavItem(
-                      title: 'My Articles',
-                      icon: Icons.article, // FileText in lucide
-                      isDarkMode: isDark,
-                      onTap: () {
-                        Navigator.pop(context);
-                        // Navigator.pushNamed(context, AppRoutes.myArticles);
+                        final Uri adminUrl = Uri.parse('https://admin.damakenya.org/');
+                        if (await canLaunchUrl(adminUrl)) {
+                          await launchUrl(adminUrl, mode: LaunchMode.externalApplication);
+                        }
                       },
                     ),
                   ],

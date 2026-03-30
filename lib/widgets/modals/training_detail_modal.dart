@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TrainingDetailModal extends StatelessWidget {
   final TrainingModel training;
@@ -681,9 +682,27 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
   final bool isIOS = UnifiedPaymentService.isIOS;
 
   Future<void> _processPayment() async {
+    // For iOS, redirect to website instead of processing payment
+    if (isIOS) {
+      final Uri url = Uri.parse('https://damakenya.org/');
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
+      } else {
+        Get.snackbar(
+          'Error',
+          'Could not open the website',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(10),
+        );
+      }
+      return;
+    }
+
     // Phone validation only required for M-Pesa (Android)
-    if (!isIOS &&
-        (completePhoneNumber == null || completePhoneNumber!.isEmpty)) {
+    if (completePhoneNumber == null || completePhoneNumber!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a phone number'),
@@ -701,7 +720,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
         model: 'Training',
         amount: widget.amount,
         itemName: widget.trainingName,
-        phoneNumber: isIOS ? null : completePhoneNumber,
+        phoneNumber: completePhoneNumber,
       );
 
       if (result.success && widget.onPaymentComplete != null) {
@@ -1032,11 +1051,11 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               if (isIOS) ...[
-                                const Icon(Icons.apple, size: 20),
+                                const Icon(Icons.visibility, size: 20),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'Pay KES ${widget.amount}',
-                                  style: const TextStyle(
+                                const Text(
+                                  'View',
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),

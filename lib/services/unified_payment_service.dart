@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:dama/services/mpesa_service.dart';
-import 'package:dama/services/stripe_service.dart';
 import 'package:flutter/foundation.dart';
 
 /// Unified payment service that routes to the appropriate
 /// payment method based on platform:
 /// - Android: M-Pesa STK Push
-/// - iOS: Apple Pay via Stripe
+/// - iOS: Web redirect to damakenya.org
 ///
 /// Usage:
 /// ```dart
@@ -27,9 +26,7 @@ import 'package:flutter/foundation.dart';
 class UnifiedPaymentService {
   /// Initialize payment services (call at app startup)
   static Future<void> initialize() async {
-    if (isIOS) {
-      await StripeService.initialize();
-    }
+    debugPrint('UnifiedPaymentService initialized - M-Pesa (Android) and web (iOS)');
   }
 
   /// Check if current platform is iOS
@@ -41,17 +38,12 @@ class UnifiedPaymentService {
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   /// Get the payment method name for display
-  static String get paymentMethodName => isIOS ? 'Apple Pay' : 'M-Pesa';
+  static String get paymentMethodName => isAndroid ? 'M-Pesa' : 'Web';
 
   /// Check if payment is available on current platform
   static Future<bool> isPaymentAvailable() async {
-    if (isIOS) {
-      return await StripeService.isApplePayAvailable();
-    } else if (isAndroid) {
-      // M-Pesa is always available if user has phone number
-      return true;
-    }
-    return false;
+    // M-Pesa available on Android, web redirect on iOS
+    return isAndroid || isIOS;
   }
 
   /// Process payment using platform-appropriate method
@@ -80,21 +72,13 @@ class UnifiedPaymentService {
     debugPrint('Method: $paymentMethodName');
 
     if (isIOS) {
-      // Use Apple Pay via Stripe
-      final result = await StripeService.pay(
-        objectId: objectId,
-        model: model,
-        amount: amount,
-        itemName: itemName,
-        showSnackbar: showSnackbar,
-      );
-
+      // iOS: Return redirect guard - user navigates via URL instead
+      const String redirectUrl = 'https://damakenya.org/';
+      debugPrint('iOS payment redirecting to: $redirectUrl');
       return PaymentResult(
-        success: result.success,
-        errorMessage: result.errorMessage,
-        transactionId: result.transactionId,
+        success: false,
+        errorMessage: 'iOS payments redirect to website',
         paymentMethod: PaymentMethod.applePay,
-        rawResponse: result.rawResponse,
       );
     } else if (isAndroid) {
       // Use M-Pesa
@@ -135,13 +119,10 @@ class UnifiedPaymentService {
   static Future<List<PaymentMethod>> getAvailableMethods() async {
     List<PaymentMethod> methods = [];
 
-    if (isIOS && await StripeService.isApplePayAvailable()) {
-      methods.add(PaymentMethod.applePay);
-    }
-
     if (isAndroid) {
       methods.add(PaymentMethod.mpesa);
     }
+    // iOS uses web redirect (not advertised as payment method)
 
     return methods;
   }

@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PlansScreen extends StatefulWidget {
   const PlansScreen({super.key});
@@ -1572,13 +1573,15 @@ class _PlansScreenState extends State<PlansScreen> {
                         ),
                       ),
                     if (!isIOS) const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child:
-                            isProcessing
-                                ? Container(
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child:
+                              isProcessing
+                                  ? Container(
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 16,
                                   ),
@@ -1605,9 +1608,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
-                                        isIOS
-                                            ? 'Processing Apple Pay...'
-                                            : 'Processing Payment...',
+                                        isIOS ? 'Opening...' : 'Processing Payment...',
                                         style: const TextStyle(
                                           color: kWhite,
                                           fontWeight: FontWeight.bold,
@@ -1618,45 +1619,20 @@ class _PlansScreenState extends State<PlansScreen> {
                                   ),
                                 )
                                 : isIOS
-                                // Apple Pay button for iOS
+                                // View button for iOS
                                 ? GestureDetector(
                                   onTap: () async {
-                                    setModalState(() {
-                                      isProcessing = true;
-                                    });
-
-                                    final result = await _processPayment(
-                                      plan,
-                                    );
-
-                                    setModalState(() {
-                                      isProcessing = false;
-                                    });
-
-                                    if (result['success'] == true) {
-                                      if (modalContext.mounted) {
-                                        Navigator.pop(modalContext);
-                                      }
-                                      if (context.mounted) {
-                                        showSuccessBottomSheet(
-                                          context,
-                                          plan.membership,
-                                          'Payment completed',
-                                          'KES ${_formatPrice(correctPrice)}',
-                                          isDarkMode,
-                                        );
-                                      }
+                                    final Uri url = Uri.parse('https://damakenya.org/');
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(url);
                                     } else {
                                       Get.snackbar(
-                                        'Payment Error',
-                                        result['error'] ??
-                                            'Payment failed. Please try again.',
+                                        'Error',
+                                        'Could not open the website',
                                         snackPosition: SnackPosition.TOP,
                                         backgroundColor: Colors.red,
                                         colorText: Colors.white,
-                                        duration: const Duration(
-                                          seconds: 4,
-                                        ),
+                                        duration: const Duration(seconds: 3),
                                         margin: const EdgeInsets.all(10),
                                       );
                                     }
@@ -1666,7 +1642,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                       vertical: 16,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black,
+                                      color: kBlue,
                                       borderRadius: BorderRadius.circular(
                                         8,
                                       ),
@@ -1676,13 +1652,13 @@ class _PlansScreenState extends State<PlansScreen> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Icon(
-                                          Icons.apple,
+                                          Icons.visibility,
                                           color: Colors.white,
                                           size: 24,
                                         ),
                                         SizedBox(width: 8),
                                         Text(
-                                          'Pay with Apple Pay',
+                                          'View',
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
@@ -1759,7 +1735,8 @@ class _PlansScreenState extends State<PlansScreen> {
                                 ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),

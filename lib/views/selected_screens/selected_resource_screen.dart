@@ -21,6 +21,7 @@ import 'package:get/get.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SelectedResourceScreen extends StatefulWidget {
   final String title;
@@ -330,9 +331,7 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                                         ),
                                         const SizedBox(width: 12),
                                         Text(
-                                          isIOS
-                                              ? 'Processing Apple Pay...'
-                                              : 'Processing Payment...',
+                                          'Opening...',
                                           style: const TextStyle(
                                             color: kWhite,
                                             fontWeight: FontWeight.bold,
@@ -343,26 +342,30 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                                     ),
                                   )
                                   : isIOS
-                                  // Apple Pay button for iOS
+                                  // View button for iOS
                                   ? GestureDetector(
                                     onTap: () async {
-                                      setModalState(() {
-                                        isProcessing = true;
-                                      });
-                                      Navigator.pop(modalContext);
-                                      _payForResource(
-                                        context,
-                                        title,
-                                        price,
-                                        isDark,
-                                      );
+                                      final Uri url = Uri.parse('https://damakenya.org/');
+                                      if (await canLaunchUrl(url)) {
+                                        await launchUrl(url);
+                                      } else {
+                                        Get.snackbar(
+                                          'Error',
+                                          'Could not open the website',
+                                          snackPosition: SnackPosition.TOP,
+                                          backgroundColor: Colors.red,
+                                          colorText: Colors.white,
+                                          duration: const Duration(seconds: 3),
+                                          margin: const EdgeInsets.all(10),
+                                        );
+                                      }
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 16,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.black,
+                                        color: kBlue,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: const Row(
@@ -370,13 +373,13 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                                             MainAxisAlignment.center,
                                         children: [
                                           Icon(
-                                            Icons.apple,
+                                            Icons.visibility,
                                             color: Colors.white,
                                             size: 24,
                                           ),
                                           SizedBox(width: 8),
                                           Text(
-                                            'Pay with Apple Pay',
+                                            'View',
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,

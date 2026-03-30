@@ -20,6 +20,7 @@ import 'package:provider/provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SelectedEventScreen extends StatefulWidget {
   final String title;
@@ -506,9 +507,7 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                           ),
                                           const SizedBox(width: 12),
                                           Text(
-                                            isIOS
-                                                ? 'Processing Apple Pay...'
-                                                : 'Processing Payment...',
+                                            'Opening...',
                                             style: const TextStyle(
                                               color: kWhite,
                                               fontWeight: FontWeight.bold,
@@ -519,30 +518,30 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                       ),
                                     )
                                     : isIOS
-                                    // Apple Pay button for iOS
+                                    // View button for iOS
                                     ? GestureDetector(
-                                      onTap: () {
-                                        setModalState(() {
-                                          isProcessing = true;
-                                        });
-                                        Navigator.pop(modalContext);
-                                        _payForEvent(
-                                          context,
-                                          widget.title,
-                                          widget.date
-                                              .toLocal()
-                                              .toString()
-                                              .split(' ')[0],
-                                          widget.location,
-                                          isDark,
-                                        );
+                                      onTap: () async {
+                                        final Uri url = Uri.parse('https://damakenya.org/');
+                                        if (await canLaunchUrl(url)) {
+                                          await launchUrl(url);
+                                        } else {
+                                          Get.snackbar(
+                                            'Error',
+                                            'Could not open the website',
+                                            snackPosition: SnackPosition.TOP,
+                                            backgroundColor: Colors.red,
+                                            colorText: Colors.white,
+                                            duration: const Duration(seconds: 3),
+                                            margin: const EdgeInsets.all(10),
+                                          );
+                                        }
                                       },
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 16,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.black,
+                                          color: kBlue,
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
@@ -552,13 +551,13 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                               MainAxisAlignment.center,
                                           children: [
                                             Icon(
-                                              Icons.apple,
+                                              Icons.visibility,
                                               color: Colors.white,
                                               size: 24,
                                             ),
                                             SizedBox(width: 8),
                                             Text(
-                                              'Pay with Apple Pay',
+                                              'View',
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold,

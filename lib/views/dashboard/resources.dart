@@ -16,6 +16,7 @@ import 'package:get/get.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Resources extends StatefulWidget {
   final VoidCallback onMenuTap;
@@ -358,9 +359,7 @@ class _ResourcesState extends State<Resources>
                                         ),
                                         const SizedBox(width: 12),
                                         Text(
-                                          isIOS
-                                              ? 'Processing Apple Pay...'
-                                              : 'Processing Payment...',
+                                          'Opening...',
                                           style: const TextStyle(
                                             color: kWhite,
                                             fontWeight: FontWeight.bold,
@@ -371,54 +370,21 @@ class _ResourcesState extends State<Resources>
                                     ),
                                   )
                                   : isIOS
-                                  // Apple Pay button for iOS
+                                  // View button for iOS
                                   ? GestureDetector(
                                     onTap: () async {
-                                      setModalState(() {
-                                        isProcessing = true;
-                                      });
-
-                                      final success = await _processPayment(
-                                        context,
-                                        resource,
-                                      );
-
-                                      if (modalContext.mounted) {
-                                        Navigator.pop(modalContext);
-                                      }
-
-                                      if (success && context.mounted) {
-                                        showSuccessBottomSheet(
-                                          context,
-                                          resource.title,
-                                          'Resource purchased',
-                                          'KES ${resource.price}',
-                                          isDarkMode,
-                                        );
-                                        Future.delayed(
-                                          const Duration(seconds: 3),
-                                          () {
-                                            if (context.mounted) {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (
-                                                        context,
-                                                      ) => PDFViewerPage(
-                                                        title: resource.title,
-                                                        pdfUrl:
-                                                            resource
-                                                                .resourceLink,
-                                                        onBack:
-                                                            () => Navigator.pop(
-                                                              context,
-                                                            ),
-                                                      ),
-                                                ),
-                                              );
-                                            }
-                                          },
+                                      final Uri url = Uri.parse('https://damakenya.org/');
+                                      if (await canLaunchUrl(url)) {
+                                        await launchUrl(url);
+                                      } else {
+                                        Get.snackbar(
+                                          'Error',
+                                          'Could not open the website',
+                                          snackPosition: SnackPosition.TOP,
+                                          backgroundColor: Colors.red,
+                                          colorText: Colors.white,
+                                          duration: const Duration(seconds: 3),
+                                          margin: const EdgeInsets.all(10),
                                         );
                                       }
                                     },
@@ -427,7 +393,7 @@ class _ResourcesState extends State<Resources>
                                         vertical: 16,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.black,
+                                        color: kBlue,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: const Row(
@@ -435,13 +401,13 @@ class _ResourcesState extends State<Resources>
                                             MainAxisAlignment.center,
                                         children: [
                                           Icon(
-                                            Icons.apple,
+                                            Icons.visibility,
                                             color: Colors.white,
                                             size: 24,
                                           ),
                                           SizedBox(width: 8),
                                           Text(
-                                            'Pay with Apple Pay',
+                                            'View',
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,

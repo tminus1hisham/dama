@@ -19,6 +19,7 @@ class SelectedResource extends StatelessWidget {
     this.relatedResources = const [],
     this.onRelatedResourceTap,
     this.onRatingSubmitted,
+    this.buttonText,
   });
 
   final double rating;
@@ -33,6 +34,7 @@ class SelectedResource extends StatelessWidget {
   final List<ResourceModel> relatedResources;
   final Function(ResourceModel)? onRelatedResourceTap;
   final Function(double)? onRatingSubmitted;
+  final String? buttonText;
 
   @override
   Widget build(BuildContext context) {
@@ -104,11 +106,14 @@ class SelectedResource extends StatelessWidget {
                     icon: Icon(
                       (isPaid || priceInt == 0)
                           ? Icons.menu_book_outlined
-                          : Icons.shopping_cart_outlined,
+                          : (buttonText == 'View')
+                              ? Icons.visibility
+                              : Icons.shopping_cart_outlined,
                       size: 18,
                     ),
                     label: Text(
-                      (isPaid || priceInt == 0) ? 'Read Now' : 'Purchase',
+                      buttonText ??
+                          ((isPaid || priceInt == 0) ? 'Read Now' : 'Purchase'),
                       style: const TextStyle(
                         color: kWhite,
                         fontWeight: FontWeight.w600,

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dama/controller/plans_controller.dart';
 import 'package:dama/services/unified_payment_service.dart';
 import 'package:dama/models/plans_model.dart';
@@ -82,14 +84,6 @@ class _PlansScreenState extends State<PlansScreen> {
         'gradientEnd': const Color(0xFFF59E0B),
         'badgeBg': const Color(0xFFE5B80B),
       };
-    } else if (lower.contains('institution')) {
-      return {
-        'primary': const Color(0xFF7C3AED), // Platinum/Violet
-        'accent': const Color(0xA855F7),
-        'gradientStart': const Color(0xFFC4B5FD),
-        'gradientEnd': const Color(0xFFD8B4FE),
-        'badgeBg': const Color(0xFF7C3AED),
-      };
     }
 
     return {
@@ -113,7 +107,7 @@ class _PlansScreenState extends State<PlansScreen> {
   // Check if button should be disabled
   bool _isButtonDisabled(String planType) {
     final lower = planType.toLowerCase();
-    return lower.contains('student');
+    return false; // All plans are now clickable
   }
 
   @override
@@ -284,6 +278,11 @@ class _PlansScreenState extends State<PlansScreen> {
         );
       }
 
+      // Filter out Institution plans
+      final filteredPlans = _plansController.plansList
+          .where((plan) => !plan.membership.toLowerCase().contains('institution'))
+          .toList();
+
       // Plans Grid
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -296,9 +295,9 @@ class _PlansScreenState extends State<PlansScreen> {
             mainAxisSpacing: 16,
             // Removed mainAxisExtent to allow card height to shrink
           ),
-          itemCount: _plansController.plansList.length,
+          itemCount: filteredPlans.length,
           itemBuilder: (context, index) {
-            final plan = _plansController.plansList[index];
+            final plan = filteredPlans[index];
             return FutureBuilder<bool>(
               future: _isMembershipExpired(),
               builder: (context, snapshot) {
@@ -1291,6 +1290,21 @@ class _PlansScreenState extends State<PlansScreen> {
                                 final isProfessional = plan.membership
                                     .toLowerCase()
                                     .contains('professional');
+                                final isStudent = plan.membership
+                                    .toLowerCase()
+                                    .contains('student');
+
+                                // iOS redirect for payable plans
+                                if (Platform.isIOS &&
+                                    (isCorporate ||
+                                        (isProfessional &&
+                                            isCurrentPlanExpired) ||
+                                        (isStudent &&
+                                            isCurrentPlanExpired))) {
+                                  Navigator.pop(context);
+                                  _redirectToWebsite();
+                                  return;
+                                }
 
                                 if (isCorporate) {
                                   // Show payment modal for Corporate plan
@@ -1307,6 +1321,14 @@ class _PlansScreenState extends State<PlansScreen> {
                                     'Professional membership expired - showing payment modal',
                                   );
                                   _showPaymentModal(context, plan, isDarkMode);
+                                } else if (isStudent &&
+                                    isCurrentPlanExpired) {
+                                  // Student plan after expiry - show payment modal
+                                  Navigator.pop(context);
+                                  debugPrint(
+                                    'Student membership expired - showing payment modal',
+                                  );
+                                  _showPaymentModal(context, plan, isDarkMode);
                                 } else if (isProfessional) {
                                   // Current plan - just close modal
                                   Navigator.pop(context);
@@ -1317,39 +1339,73 @@ class _PlansScreenState extends State<PlansScreen> {
                                   // Other plans - just close modal
                                   Navigator.pop(context);
                                   debugPrint(
-                                    'Joining plan: ${plan.membership}',
+                                    'Plan selected: ${plan.membership}',
                                   );
                                 }
                               },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (_isButtonDisabled(plan.membership))
-                            const Icon(
-                              Icons.lock_rounded,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          if (_isButtonDisabled(plan.membership))
-                            const SizedBox(width: 6),
-                          if (!_isButtonDisabled(plan.membership))
-                            Icon(
-                              isCurrentPlanExpired
-                                  ? Icons.refresh_rounded
-                                  : plan.membership.toLowerCase().contains(
+                          Icon(
+                            () {
+                              final isCorporate = plan.membership
+                                  .toLowerCase()
+                                  .contains('corporate');
+                              final isProfessional = plan.membership
+                                  .toLowerCase()
+                                  .contains('professional');
+                              final isStudent = plan.membership
+                                  .toLowerCase()
+                                  .contains('student');
+                              final isPayable = isCorporate ||
+                                  (isProfessional && isCurrentPlanExpired) ||
+                                  (isStudent && isCurrentPlanExpired);
+
+                              // Show visibility icon on iOS for payable plans
+                              if (Platform.isIOS && isPayable) {
+                                return Icons.visibility;
+                              }
+
+                              // Otherwise show refresh or check/crown icon
+                              if (isCurrentPlanExpired) {
+                                return Icons.refresh_rounded;
+                              }
+                              return plan.membership.toLowerCase().contains(
                                     'professional',
                                   )
                                   ? Icons.check_circle_rounded
-                                  : FontAwesomeIcons.crown,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          if (!_isButtonDisabled(plan.membership))
-                            const SizedBox(width: 6),
+                                  : FontAwesomeIcons.crown;
+                            }(),
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 6),
                           Text(
-                            isCurrentPlanExpired
-                                ? 'Activate'
-                                : _getButtonText(plan.membership),
+                            () {
+                              final isCorporate = plan.membership
+                                  .toLowerCase()
+                                  .contains('corporate');
+                              final isProfessional = plan.membership
+                                  .toLowerCase()
+                                  .contains('professional');
+                              final isStudent = plan.membership
+                                  .toLowerCase()
+                                  .contains('student');
+                              final isPayable = isCorporate ||
+                                  (isProfessional && isCurrentPlanExpired) ||
+                                  (isStudent && isCurrentPlanExpired);
+
+                              // Show "View" on iOS for payable plans
+                              if (Platform.isIOS && isPayable) {
+                                return 'View';
+                              }
+
+                              // Otherwise show upgrade or button text
+                              if (isCurrentPlanExpired) {
+                                return 'Upgrade';
+                              }
+                              return _getButtonText(plan.membership);
+                            }(),
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -1385,6 +1441,24 @@ class _PlansScreenState extends State<PlansScreen> {
   /// Format price with thousands separator
   String _formatPrice(int price) {
     return NumberFormat('#,###').format(price);
+  }
+
+  /// Redirect to damakenya.org website
+  Future<void> _redirectToWebsite() async {
+    final Uri url = Uri.parse('https://damakenya.org/');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      Get.snackbar(
+        'Error',
+        'Could not open the website',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(10),
+      );
+    }
   }
 
   /// Show payment modal for Corporate plan upgrade

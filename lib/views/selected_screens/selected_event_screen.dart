@@ -1,4 +1,5 @@
 import 'package:dama/controller/get_user_data.dart';
+import 'dart:io';
 import 'package:dama/controller/user_event_controller.dart';
 import 'package:dama/services/unified_payment_service.dart';
 import 'package:dama/services/local_storage_service.dart';
@@ -697,10 +698,15 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
                                   child: ListView(
                                     children: [
                                       SelectedEventCard(
-                                        onPay:
-                                            () => _showPhoneNumberModal(
+                                        onPay: Platform.isIOS
+                                            ? _redirectToWebsite
+                                            : () => _showPhoneNumberModal(
                                               isDarkMode,
                                             ),
+                                        buttonText:
+                                            Platform.isIOS && widget.price > 0
+                                                ? 'VIEW'
+                                                : null,
                                         onRegister: _registerForEvent,
                                         onUnregister: _unregisterFromEvent,
                                         isRegistered: isUserRegistered,
@@ -889,5 +895,23 @@ class _SelectedEventScreenState extends State<SelectedEventScreen> {
         ),
       );
     });
+  }
+
+  Future<void> _redirectToWebsite() async {
+    const url = 'https://damakenya.org/';
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch website')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error opening website')),
+      );
+    }
   }
 }

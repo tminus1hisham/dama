@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:dama/models/training_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:dama/controller/training_controller.dart';
 import 'package:dama/controller/user_training_controller.dart';
 import 'package:dama/utils/constants.dart';
@@ -333,8 +335,9 @@ class _TrainingScreenState extends State<TrainingScreen>
                   width: double.infinity,
                   height: 40,
                   child: ElevatedButton(
-                    onPressed:
-                        () =>
+                    onPressed: Platform.isIOS
+                        ? _redirectToWebsite
+                        : () =>
                             _showTrainingDetails(context, training, isDarkMode),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kBlue,
@@ -345,10 +348,12 @@ class _TrainingScreenState extends State<TrainingScreen>
                       ),
                     ),
                     child: Text(
-                      training.learningTracks.isNotEmpty &&
-                              training.learningTracks.first.price > 0
-                          ? 'Enroll Now - ${training.learningTracks.first.currency} ${training.learningTracks.first.price.toStringAsFixed(0)}'
-                          : 'Enroll Now - Free',
+                      Platform.isIOS
+                          ? 'View'
+                          : (training.learningTracks.isNotEmpty &&
+                                  training.learningTracks.first.price > 0
+                              ? 'Enroll Now - ${training.learningTracks.first.currency} ${training.learningTracks.first.price.toStringAsFixed(0)}'
+                              : 'Enroll Now - Free'),
                       style: const TextStyle(fontSize: kNormalTextSize),
                     ),
                   ),
@@ -1015,5 +1020,23 @@ class _TrainingScreenState extends State<TrainingScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _redirectToWebsite() async {
+    const url = 'https://damakenya.org/';
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch website')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error opening website')),
+      );
+    }
   }
 }

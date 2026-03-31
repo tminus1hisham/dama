@@ -23,6 +23,7 @@ class SelectedEventCard extends StatelessWidget {
     required this.isRegistered,
     required this.isRegistering,
     this.onViewTicket,
+    this.buttonText,
   });
 
   final DateTime date;
@@ -38,6 +39,7 @@ class SelectedEventCard extends StatelessWidget {
   final bool isRegistered;
   final bool isRegistering;
   final VoidCallback? onViewTicket;
+  final String? buttonText;
 
   Uri _mapsUrl(String location) => Uri.parse(
     'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}',
@@ -256,7 +258,10 @@ class SelectedEventCard extends StatelessWidget {
                       Expanded(
                         child: CustomButton(
                           callBackFunction: isPast ? null : onPay,
-                          label: isPast ? "EVENT PAST" : "RSVP",
+                          label:
+                              isPast
+                                  ? "EVENT PAST"
+                                  : (buttonText ?? "RSVP"),
                           backgroundColor: isPast ? Colors.grey : kBlue,
                         ),
                       ),

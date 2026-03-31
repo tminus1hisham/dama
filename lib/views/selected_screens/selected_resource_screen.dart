@@ -1,4 +1,5 @@
 import 'package:dama/controller/get_user_data.dart';
+import 'dart:io';
 import 'package:dama/controller/rating_controller.dart';
 import 'package:dama/services/unified_payment_service.dart';
 import 'package:dama/controller/resource_controller.dart';
@@ -727,36 +728,45 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
                                           onRatingSubmitted:
                                               (rating) => _submitRating(rating),
                                           isPaid: _hasPurchased,
-                                          onPressed:
-                                              (_hasPurchased ||
-                                                      widget.price == 0)
-                                                  ? () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder:
-                                                            (
+                                          buttonText: Platform.isIOS &&
+                                                  !_hasPurchased &&
+                                                  widget.price > 0
+                                              ? 'View'
+                                              : null,
+                                          onPressed: () {
+                                            final isIOS = Platform.isIOS;
+                                            final isPaidOrFree =
+                                                _hasPurchased ||
+                                                    widget.price == 0;
+
+                                            if (isIOS &&
+                                                !isPaidOrFree) {
+                                              _redirectToWebsite();
+                                            } else if (isPaidOrFree) {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      PDFViewerPage(
+                                                        title:
+                                                            widget.title,
+                                                        pdfUrl:
+                                                            widget.viewUrl,
+                                                        onBack: () =>
+                                                            Navigator.pop(
                                                               context,
-                                                            ) => PDFViewerPage(
-                                                              title:
-                                                                  widget.title,
-                                                              pdfUrl:
-                                                                  widget
-                                                                      .viewUrl,
-                                                              onBack:
-                                                                  () =>
-                                                                      Navigator.pop(
-                                                                        context,
-                                                                      ),
                                                             ),
                                                       ),
-                                                    );
-                                                  }
-                                                  : () => _showPhoneNumberModal(
-                                                    isDarkMode,
-                                                    widget.title,
-                                                    widget.price,
-                                                  ),
+                                                ),
+                                              );
+                                            } else {
+                                              _showPhoneNumberModal(
+                                                isDarkMode,
+                                                widget.title,
+                                                widget.price,
+                                              );
+                                            }
+                                          },
                                           heading: widget.title,
                                           imageUrl: widget.imageUrl,
                                           rating: _currentRating,
@@ -815,5 +825,23 @@ class _SelectedResourceScreenState extends State<SelectedResourceScreen> {
           ),
       ],
     );
+  }
+
+  Future<void> _redirectToWebsite() async {
+    const url = 'https://damakenya.org/';
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch website')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error opening website')),
+      );
+    }
   }
 }

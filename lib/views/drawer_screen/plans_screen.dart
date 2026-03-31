@@ -869,16 +869,25 @@ class _PlansScreenState extends State<PlansScreen> {
                                 debugPrint(
                                   'Card Upgrade tapped for: ${plan.membership}',
                                 );
-                                _showPaymentModal(context, plan, isDarkMode);
+                                if (Platform.isIOS) {
+                                  _redirectToWebsite();
+                                } else {
+                                  _showPaymentModal(context, plan, isDarkMode);
+                                }
                               },
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(Icons.trending_up_rounded, size: 16),
-                                  SizedBox(width: 6),
+                                children: [
+                                  Icon(
+                                    Platform.isIOS
+                                        ? Icons.visibility
+                                        : Icons.trending_up_rounded,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
                                   Text(
-                                    'Upgrade',
-                                    style: TextStyle(
+                                    Platform.isIOS ? 'View' : 'Upgrade',
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
                                     ),

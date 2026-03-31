@@ -42,3 +42,4 @@ android/app/upload-keystore.jks
 /android/app/profile
 /android/app/release
 *.hprof
+*.hprof
